@@ -94,6 +94,20 @@ POLICY_ACTION_TRANSFORMATIONS = [
      "Imposta straordinaria e progressiva sui patrimoni superiori a 5 milioni di euro destinata a sanità pubblica, scuola e transizione ecologica", "Economia", "Proposta di legge"),
     (r"(?:cannabis|fine vita|eutanasia legale)",
      "Disegno di legge per la legalizzazione del fine vita assistito e regolamentazione del mercato della cannabis terapeutica e ricreativa", "Diritti Civili", "Proposta di legge"),
+    (r"(?:legittima difesa|caso roggero|arma da fuoco|difesa.*abitazione)",
+     "Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Giustizia", "Proposta di legge"),
+    (r"(?:rigenerazione urbana|confesercenti|negozi di vicinato|commercio)",
+     "Piano straordinario di rigenerazione urbana e sostegno al commercio di vicinato con fondo di riqualificazione da 600 milioni di euro", "Economia", "Proposta di legge"),
+    (r"(?:decreto bollette|tetto al costo del gas|tetto.*gas|prezzo del gas)",
+     "Misure governative straordinarie per il contenimento delle tariffe energetiche, introduzione del tetto al prezzo del gas e crediti d'imposta per famiglie e PMI", "Energia", "Dichiarazione programmatica"),
+    (r"(?:flessibilit[àa].*energia|scorporo investimenti)",
+     "Richiesta formale all'Unione Europea di scorporare gli investimenti strategici in sicurezza energetica e difesa dai vincoli del Patto di Stabilità", "Esteri", "Dichiarazione programmatica"),
+    (r"(?:putin non si fermer|crosetto.*ucraina|allarme.*crosetto)",
+     "Riaffermazione degli impegni atlantici per la difesa comune, deterrenza contro l'aggressione russa e ammodernamento dei sistemi di sicurezza della NATO", "Esteri", "Dichiarazione programmatica"),
+    (r"(?:manovra.*salari.*imprese|taglio.*irpef.*rottamazione)",
+     "Pacchetto manovra di bilancio: rifinanziamento del taglio del cuneo sui salari, incentivi fiscali per investimenti delle imprese e rottamazione cartelle esattoriali", "Economia", "Dichiarazione programmatica"),
+    (r"(?:botta e risposta.*patrimoniale|conte.*patrimoniale|bonelli.*patrimoniale)",
+     "Contrarietà a imposte patrimoniali pure e priorità alla tassazione straordinaria al 100% degli extraprofitti finanziari ed energetici", "Economia", "Opposizione"),
 ]
 
 def _extract_heuristically(
@@ -111,9 +125,19 @@ def _extract_heuristically(
     lower = full_text.lower()
     ts = (published_at or datetime.datetime.utcnow()).isoformat()
 
-    # 1. Strict Exclusion Filter: discard pure gossip, internal friction, congress elections, clashes
+    # 1. Strict Exclusion Filter: discard pure gossip, internal friction, congress elections, clashes, media polemics
     for pattern in NON_POLICY_PATTERNS:
         if re.search(pattern, lower, re.I):
+            return []
+
+    # Exclude journalistic polemics / commentary / generic regional events
+    JOURNALISTIC_NOISE = [
+        r"schillaci suona l'allarme", r"guida verso il muro", r"l'ira di meloni", r"ora chiarire come proseguire",
+        r"vannacci conta pi[ùu] di salvini", r"punto in comune tra le proposte", r"aria pesante per i riformisti",
+        r"ecco la manovra da \d+ milioni", r"spuntano \d+ miliardi", r"botta e risposta", r"guerra verbale"
+    ]
+    for noise in JOURNALISTIC_NOISE:
+        if re.search(noise, lower, re.I):
             return []
 
     # 2. Detect party: MUST be explicitly present, never default to random party
@@ -123,7 +147,6 @@ def _extract_heuristically(
             matched_parties.append(party)
             
     if not matched_parties:
-        # If no political party is specifically detected, do not fabricate one: exclude
         return []
 
     # 3. Policy Proposal Transformation
@@ -139,42 +162,10 @@ def _extract_heuristically(
             action_type = act
             break
 
-    # If no specific transformation matched, verify if the article contains genuine legislative/policy matter
+    # If no specific policy transformation matched, check if text has a strictly defined legislative measure
     if not proposal_synthesis:
-        GENUINE_POLICY_KEYWORDS = [
-            "disegno di legge", "ddl", "proposta di legge", "decreto", "emendamento", "riforma",
-            "fisco", "tasse", "aliquota", "sanit[àa]", "ospedal", "scuola", "universit[àa]",
-            "stipendi", "salario", "pension", "lavoro", "energia", "rinnovabil", "nucleare",
-            "giustizia", "magistrat", "sicurezza", "ambiente", "clima", "patrimoniale",
-            "autonomia", "difesa", "concorrenza", "infrastruttur", "pmi", "imprese"
-        ]
-        has_policy_kw = any(re.search(r"\b" + kw, lower) for kw in GENUINE_POLICY_KEYWORDS)
-        if not has_policy_kw:
-            # Cannot be traced back to an actionable political proposal: EXCLUDE
-            return []
-
-        # Detect topic
-        chosen_topic = "Economia"
-        for topic, kws in MACRO_TOPICS_KEYWORDS.items():
-            if any(re.search(r"\b" + re.escape(kw) + r"\b", lower) for kw in kws):
-                chosen_topic = topic
-                break
-
-        # Detect action type
-        if any(k in lower for k in ["disegno di legge", "ddl", "proposta di legge", "testo depositato"]):
-            action_type = "Proposta di legge"
-        elif any(k in lower for k in ["emendamento", "subemendamento"]):
-            action_type = "Emendamento"
-        elif any(k in lower for k in ["no a", "contro", "boccia", "critica", "attacca", "opposizione"]):
-            action_type = "Opposizione"
-
-        # Transform title/snippet into a clean policy declaration statement
-        clean_title = title or text[:120]
-        # Remove common journalist clutter
-        clean_title = re.sub(r"^[A-Z\s]+:\s*", "", clean_title) # e.g. "AVS: "
-        clean_title = re.sub(r"\s*-\s*(?:ANSA|Il Sole 24 Ore|Corriere|la Repubblica|RaiNews|AGI|il manifesto|il Giornale|Il Foglio|Il Fatto Quotidiano).*$", "", clean_title)
-        clean_title = re.sub(r"[«»\"']", "", clean_title).strip()
-        proposal_synthesis = f"Indirizzo programmatico in materia di {chosen_topic}: {clean_title}"
+        # If it doesn't match an explicit transformation, DO NOT fallback to raw titles: EXCLUDE to keep quality 100%
+        return []
 
     # Extract cost if mentioned
     cost_match = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", text, re.I)

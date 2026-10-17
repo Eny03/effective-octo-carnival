@@ -81,13 +81,13 @@ def seed_database_if_empty():
             db.commit()
 
         # Seed Proposals
+        parties_map = {p.name: p.id for p in db.query(PoliticalParty).all()}
+        from app.ai.embeddings import _local_deterministic_embedding
+
         if db.query(PoliticalProposal).count() == 0:
             print("[Database] Seeding documented proposals and precomputing embeddings...")
-            parties_map = {p.name: p.id for p in db.query(PoliticalParty).all()}
-            
             for prop in PROPOSALS_SEED:
                 party_id = parties_map.get(prop["partito"])
-                from app.ai.embeddings import _local_deterministic_embedding
                 emb_list = _local_deterministic_embedding(f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}")
                 
                 ts_val = prop.get("timestamp")
@@ -120,6 +120,45 @@ def seed_database_if_empty():
                 db.add(record)
             db.commit()
             print(f"[Database] Successfully seeded {len(PROPOSALS_SEED)} political proposals.")
+        else:
+            # Automatic startup sanitization: purge noise, journalistic headlines and misattributions
+            import re
+            noise_patterns = [
+                r"landini annuncia", r"l'ira di meloni", r"vannacci conta pi[ùu]", r"schillaci suona",
+                r"ecco la manovra da \d+", r"botta e risposta", r"punto in comune", r"spuntano \d+ miliardi",
+                r"^pd sul salario minimo$"
+            ]
+            to_delete = []
+            for p in db.query(PoliticalProposal).all():
+                t = p.dichiarazione_sintesi.lower()
+                if any(re.search(pat, t) for pat in noise_patterns):
+                    to_delete.append(p)
+                elif p.partito == "Lega - Salvini Premier" and "salario minimo" in t and "proposta di legge" in p.tipo_azione.lower():
+                    to_delete.append(p)
+            for d in to_delete:
+                db.delete(d)
+            if to_delete:
+                db.commit()
+                print(f"[Database] Purged {len(to_delete)} invalid or noisy proposal records on startup.")
+
+            # Sanitize titles that might retain journalist suffixes or "Indirizzo programmatico"
+            for p in db.query(PoliticalProposal).all():
+                orig = p.dichiarazione_sintesi
+                clean = re.sub(r"\s*-\s*(?:ANSA|Il Sole 24 Ore|Il Sole 24 ORE|Corriere della Sera|Corriere|la Repubblica|La Repubblica|RaiNews|AGI|il manifesto|il Giornale|Il Foglio|Il Fatto Quotidiano|Fanpage|LiveSicilia|Adnkronos|Pagella Politica|Quotidiano Sanit[àa]|fratelli-italia\.it).*$", "", orig, flags=re.IGNORECASE)
+                clean = re.sub(r"^Indirizzo programmatico in materia di [^:]+:\s*", "", clean, flags=re.IGNORECASE)
+                clean = clean.strip(' «»"\'').strip()
+                if clean != orig:
+                    p.dichiarazione_sintesi = clean
+                    p.embedding = json.dumps(_local_deterministic_embedding(f"{p.partito} {p.macro_argomento} {p.dichiarazione_sintesi}"))
+            db.commit()
+
+        # Update all party dossiers on startup
+        try:
+            from app.ingestion.dossier_generator import update_all_party_dossiers
+            update_all_party_dossiers(db)
+        except Exception as de:
+            print(f"[Database] Dossier update notice: {de}")
+
     except Exception as e:
         db.rollback()
         print(f"[Database] Seeding error: {e}")
