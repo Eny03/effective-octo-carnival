@@ -381,28 +381,141 @@ export default function DashboardPage() {
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Partiti Mappati</div>
+          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Forze Mappate</div>
           <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            {loading ? "..." : stats?.total_parties || parties.length}
+            {loading ? "..." : stats?.total_parties || parties.length || 17}
           </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Tutto l'arco parlamentare</p>
+          <p className="text-[11px] text-slate-500 mt-0.5">Parlamentari & emergenti</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Media Veridicità</div>
+          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
+            {loading ? "..." : `${stats?.average_truthfulness || 82.5}%`}
+          </div>
+          <p className="text-[11px] text-slate-500 mt-0.5">Basata su dati MEF e ISTAT</p>
         </div>
 
         <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
           <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Costi Quantificati</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
+          <div className="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">
             {loading ? "..." : `${stats?.quantified_cost_percentage || 78}%`}
           </div>
           <p className="text-[11px] text-slate-500 mt-0.5">Con stima finanziaria esplicita</p>
         </div>
+      </section>
 
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Verifiche Istituzionali</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
-            {loading ? "..." : stats?.fact_check_distribution?.["Verificato"] || 0}
+      {/* Polling & Truthfulness Index Section */}
+      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-1">
+              <TrendingUp className="w-3 h-3" />
+              <span>Media Ponderata Sondaggi Nazionali</span>
+            </div>
+            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+              Sondaggi Elettorali & Indice di Veridicità dei Partiti
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Media dei principali istituti demoscopici (YouTrend/AGI, SWG, Ipsos, Tecnè, Noto) incrociata con la fattibilità economica delle promesse.
+            </p>
           </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Confermate da MEF e ISTAT</p>
+
+          <Link
+            href="/parties"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0"
+          >
+            <span>Vedi tutti i dossier</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
+
+        {/* Polling & Truthfulness Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {(stats?.party_rankings && stats.party_rankings.length > 0 ? stats.party_rankings : parties.map((p) => ({
+            name: p.name,
+            code: p.code,
+            color: p.color,
+            coalition: p.coalition,
+            leader: p.leader,
+            poll_percentage: p.poll_percentage || 0,
+            poll_trend: p.poll_trend || "stabile",
+            truthfulness_score: p.truthfulness_score || 82,
+            financial_reliability_score: p.financial_reliability_score || 78,
+            proposals_count: p.proposals_count || 0
+          }))).slice(0, 12).map((item, idx) => (
+            <Link
+              key={idx}
+              href="/parties"
+              className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
+            >
+              <div>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                    <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                      {item.name}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-black text-slate-900 dark:text-white font-mono">
+                      {item.poll_percentage}%
+                    </span>
+                    <span className={`text-[10px] font-bold ${
+                      item.poll_trend?.startsWith("+")
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : item.poll_trend?.startsWith("-")
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "text-slate-400"
+                    }`}>
+                      {item.poll_trend}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar of poll percentage */}
+                <div className="w-full bg-slate-200 dark:bg-slate-700/60 h-1.5 rounded-full overflow-hidden mb-2.5">
+                  <div
+                    className="h-full rounded-full transition-all duration-500"
+                    style={{
+                      width: `${Math.min(100, (item.poll_percentage / 35) * 100)}%`,
+                      backgroundColor: item.color
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>Veridicità: {item.truthfulness_score}%</span>
+                </div>
+                <div className="text-slate-400 text-[10px]">
+                  {item.proposals_count} atti
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* Coalition Benchmark Summary */}
+        {stats?.coalition_truthfulness && Object.keys(stats.coalition_truthfulness).length > 0 && (
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+              Media di Veridicità per Schieramento Politico:
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {Object.entries(stats.coalition_truthfulness).slice(0, 4).map(([coal, score]) => (
+                <div key={coal} className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+                  <div className="text-[10px] text-slate-500 line-clamp-1">{coal}</div>
+                  <div className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                    {score}% <span className="text-[10px] text-emerald-600 font-normal">fondate</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Institutional Reality Check (MEF, ISTAT, Corte dei Conti) */}

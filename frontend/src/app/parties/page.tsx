@@ -76,7 +76,16 @@ export default function PartiesPage() {
     }
   };
 
-  const coalitions = ["Tutte", "Centrodestra", "Centrosinistra", "Movimento 5 Stelle", "Centro / Liberaldemocratici"];
+  const coalitions = [
+    "Tutte",
+    "Centrodestra",
+    "Centrosinistra",
+    "Movimento 5 Stelle",
+    "Centro / Liberaldemocratici",
+    "Sinistra Radicale",
+    "Sovranismo Popolare",
+    "Autonomie Regionali"
+  ];
 
   const filteredParties = parties.filter((p) => {
     if (filterCoalition === "Tutte") return true;
@@ -96,13 +105,13 @@ export default function PartiesPage() {
       <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
           <Sparkles className="w-3.5 h-3.5" />
-          <span>Dossier Autonomi Generati dall'AI</span>
+          <span>Dossier & Sondaggi Elettorali Aggiornati dall'AI</span>
         </div>
         <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Dossier e Programmi dei Partiti
+          Dossier e Programmi dei Partiti ({parties.length} Forze Politiche)
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          L'intelligenza artificiale dell'app scansiona tutto il web ogni 10 minuti, confronta dichiarazioni, manifesti ed eventi e compila i dossier programmatici di ciascuna forza politica.
+          L'intelligenza artificiale dell'app scansiona tutto il web ogni 10 minuti, confronta dichiarazioni, manifesti ed eventi e calcola la media ponderata dei sondaggi elettorali nazionali.
         </p>
       </div>
 
@@ -122,6 +131,11 @@ export default function PartiesPage() {
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
               <span>{p.name}</span>
+              {p.poll_percentage ? (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-mono font-bold">
+                  {p.poll_percentage}%
+                </span>
+              ) : null}
             </button>
           );
         })}
@@ -172,9 +186,16 @@ export default function PartiesPage() {
                       </div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    {p.proposals_count} atti
-                  </span>
+                  <div className="text-right shrink-0">
+                    {p.poll_percentage ? (
+                      <div className="text-xs font-black text-blue-600 dark:text-blue-400 font-mono">
+                        {p.poll_percentage}%
+                      </div>
+                    ) : null}
+                    <span className="text-[10px] font-semibold text-slate-400">
+                      {p.proposals_count} atti
+                    </span>
+                  </div>
                 </button>
               );
             })}
@@ -203,16 +224,34 @@ export default function PartiesPage() {
                     <p className="text-xs text-slate-500 mt-1">
                       Schieramento: <strong>{selectedParty.coalition}</strong> {selectedParty.leader && `• Leader: ${selectedParty.leader}`}
                     </p>
+
+                    {/* Live Poll & Veridicità Badges */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2.5">
+                      {selectedParty.poll_percentage !== undefined && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                          <TrendingUp className="w-3.5 h-3.5" />
+                          <span>Sondaggi: {selectedParty.poll_percentage}% ({selectedParty.poll_trend || "stabile"})</span>
+                        </span>
+                      )}
+                      {selectedParty.truthfulness_score !== undefined && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Veridicità: {selectedParty.truthfulness_score}%</span>
+                        </span>
+                      )}
+                      {selectedParty.financial_reliability_score !== undefined && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                          <Coins className="w-3.5 h-3.5" />
+                          <span>Coperture: {selectedParty.financial_reliability_score}%</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      {selectedParty.poll_sources || "Media ponderata Supermedia YouTrend/AGI, SWG, Ipsos, Tecnè, Noto"}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {partyDossier && (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        <span>Fattibilità: {partyDossier.score_affidabilita}</span>
-                      </span>
-                    )}
-
                     {selectedParty.official_website && (
                       <a
                         href={selectedParty.official_website}

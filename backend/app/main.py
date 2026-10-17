@@ -30,19 +30,37 @@ def seed_database_if_empty():
     Base.metadata.create_all(bind=engine)
     try:
         with engine.connect() as conn:
-            conn.execute(text("ALTER TABLE political_parties ADD COLUMN dossier_ai TEXT"))
-            conn.commit()
+            for col, ctype in [
+                ("dossier_ai", "TEXT"),
+                ("poll_percentage", "FLOAT"),
+                ("poll_trend", "VARCHAR(20)"),
+                ("poll_sources", "VARCHAR(255)"),
+                ("truthfulness_score", "FLOAT"),
+                ("financial_reliability_score", "FLOAT")
+            ]:
+                try:
+                    conn.execute(text(f"ALTER TABLE political_parties ADD COLUMN {col} {ctype}"))
+                    conn.commit()
+                except Exception:
+                    pass
     except Exception:
         pass
     db: Session = SessionLocal()
     try:
-        # Seed Parties
-        if db.query(PoliticalParty).count() == 0:
-            print("[Database] Seeding political parties...")
-            for p_data in PARTIES_SEED:
-                party = PoliticalParty(**p_data)
-                db.add(party)
-            db.commit()
+        # Seed or sync parties
+        existing_parties = {p.code: p for p in db.query(PoliticalParty).all()}
+        for p_data in PARTIES_SEED:
+            code = p_data["code"]
+            if code not in existing_parties:
+                print(f"[Database] Adding new party: {p_data['name']}")
+                new_party = PoliticalParty(**p_data)
+                db.add(new_party)
+            else:
+                curr = existing_parties[code]
+                curr.poll_percentage = p_data.get("poll_percentage", curr.poll_percentage)
+                curr.poll_trend = p_data.get("poll_trend", curr.poll_trend)
+                curr.poll_sources = p_data.get("poll_sources", curr.poll_sources)
+        db.commit()
 
         # Seed Benchmarks
         if db.query(InstitutionalBenchmark).count() == 0:

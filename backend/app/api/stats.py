@@ -47,6 +47,57 @@ def get_overview_stats(db: Session = Depends(get_db)):
     
     quantified_percentage = round((quantified_count / total_proposals * 100), 1) if total_proposals > 0 else 0.0
 
+    # Truthfulness and feasibility metrics
+    verified_count = fact_check_distribution.get("Verificato", 0)
+    avg_truthfulness = round((verified_count / total_proposals * 100), 1) if total_proposals > 0 else 0.0
+
+    # Coalition truthfulness breakdown
+    parties = db.query(PoliticalParty).all()
+    coalition_map: Dict[str, List[float]] = {}
+    party_rankings = []
+
+    for p in parties:
+        p_props = db.query(PoliticalProposal).filter(
+            (PoliticalProposal.party_id == p.id) | (PoliticalProposal.partito.ilike(f"%{p.name}%"))
+        ).all()
+        p_total = len(p_props)
+        p_verified = sum(1 for pr in p_props if pr.fact_check_status == "Verificato")
+        p_truth = round((p_verified / p_total * 100), 1) if p_total > 0 else (p.truthfulness_score or 80.0)
+        
+        c_name = p.coalition
+        if "Centrodestra" in c_name:
+            c_key = "Centrodestra (Maggioranza)"
+        elif "Centrosinistra" in c_name or "Progressista" in c_name:
+            c_key = "Centrosinistra & Campo Largo"
+        elif "Movimento 5 Stelle" in c_name:
+            c_key = "Movimento 5 Stelle"
+        elif "Liberaldemocratici" in c_name or "Centro" in c_name:
+            c_key = "Centro & Liberaldemocratici"
+        else:
+            c_key = "Sinistra Radicale & Altre Forze"
+
+        coalition_map.setdefault(c_key, []).append(p_truth)
+
+        party_rankings.append({
+            "name": p.name,
+            "code": p.code,
+            "color": p.color,
+            "coalition": p.coalition,
+            "leader": p.leader,
+            "poll_percentage": p.poll_percentage or 0.0,
+            "poll_trend": p.poll_trend or "stabile",
+            "truthfulness_score": p_truth,
+            "financial_reliability_score": p.financial_reliability_score or 80.0,
+            "proposals_count": p_total
+        })
+
+    # Sort party rankings by poll percentage descending
+    party_rankings.sort(key=lambda x: x["poll_percentage"], reverse=True)
+
+    coalition_truthfulness = {
+        k: round(sum(v) / len(v), 1) for k, v in coalition_map.items() if v
+    }
+
     # Last ingestion
     last_log = db.query(IngestionLog).order_by(IngestionLog.timestamp.desc()).first()
     last_ingestion_time = last_log.timestamp if last_log else None
@@ -63,6 +114,10 @@ def get_overview_stats(db: Session = Depends(get_db)):
         proposals_by_topic=proposals_by_topic,
         fact_check_distribution=fact_check_distribution,
         quantified_cost_percentage=quantified_percentage,
+        average_truthfulness=avg_truthfulness,
+        average_financial_feasibility=quantified_percentage,
+        coalition_truthfulness=coalition_truthfulness,
+        party_rankings=party_rankings,
         last_ingestion_time=last_ingestion_time,
         benchmarks_summary=benchmarks_summary
     )

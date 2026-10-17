@@ -179,6 +179,48 @@ MONITORED_FEEDS = [
         "is_active": True
     },
     {
+        "name": "Live Web Search - Partito Liberal Democratico & Marattin",
+        "url": "https://news.google.com/rss/search?q=Partito+Liberal+Democratico+Marattin+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Futuro Nazionale / ORA!",
+        "url": "https://news.google.com/rss/search?q=Futuro+Nazionale+Vannacci+ORA+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Radicali Italiani",
+        "url": "https://news.google.com/rss/search?q=Radicali+Italiani+Hallissey+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Rifondazione Comunista & Acerbo",
+        "url": "https://news.google.com/rss/search?q=Rifondazione+Comunista+Maurizio+Acerbo+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Potere al Popolo",
+        "url": "https://news.google.com/rss/search?q=Potere+al+Popolo+Granato+Collot+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Democrazia Sovrana Popolare & Rizzo",
+        "url": "https://news.google.com/rss/search?q=Democrazia+Sovrana+Popolare+Marco+Rizzo+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
         "name": "Live Web Search - Senato & Camera dei Deputati",
         "url": "https://news.google.com/rss/search?q=Parlamento+Camera+Senato+disegno+di+legge+approvato&hl=it&gl=IT&ceid=IT:it",
         "category": "Atti Parlamentari",
@@ -238,6 +280,41 @@ PARTY_OFFICIAL_CHANNELS = {
         "website": "https://www.noimoderati.it",
         "social_handles": ["@Maurizio_Lupi", "@NoiModerati", "facebook.com/noimoderati"],
         "rss": "https://www.noimoderati.it/feed/"
+    },
+    "Partito Liberal Democratico": {
+        "website": "https://orizzontiliberali.it",
+        "social_handles": ["@marattin", "@LibDem_IT"],
+        "rss": "https://orizzontiliberali.it/feed/"
+    },
+    "Futuro Nazionale / ORA!": {
+        "website": "https://futuronazionale.it",
+        "social_handles": ["@RobertoVannacci", "@FuturoNaz"],
+        "rss": "https://futuronazionale.it/feed/"
+    },
+    "Radicali Italiani": {
+        "website": "https://www.radicali.it",
+        "social_handles": ["@radicali", "@m_hallissey"],
+        "rss": "https://www.radicali.it/feed/"
+    },
+    "Rifondazione Comunista": {
+        "website": "https://www.rifondazione.it",
+        "social_handles": ["@RifondazioneSin", "@maurizioacerbo"],
+        "rss": "https://www.rifondazione.it/feed/"
+    },
+    "Potere al Popolo": {
+        "website": "https://poterealpopolo.org",
+        "social_handles": ["@potere_alpopolo", "@GiulianoGranato"],
+        "rss": "https://poterealpopolo.org/feed/"
+    },
+    "Democrazia Sovrana Popolare": {
+        "website": "https://democraziasovranapopolare.it",
+        "social_handles": ["@MarcoRizzo", "@DSP_Italia"],
+        "rss": "https://democraziasovranapopolare.it/feed/"
+    },
+    "Südtiroler Volkspartei": {
+        "website": "https://www.svp.eu",
+        "social_handles": ["@svp_online"],
+        "rss": "https://www.svp.eu/feed/"
     }
 }
 
@@ -249,10 +326,17 @@ PARTY_ALIASES = {
     "Lega - Salvini Premier": ["lega", "lega - salvini premier", "matteo salvini", "salvini", "giorgetti", "calderoli", "crippa", "fedriga", "zaia", "borghi", "bagnai"],
     "Forza Italia": ["forza italia", "fi", "antonio tajani", "tajani", "barelli", "ronzulli", "gasparri", "berlusconi", "occhipinti", "cannizzaro"],
     "Alleanza Verdi e Sinistra": ["alleanza verdi e sinistra", "alleanza verdi sinistra", "avs", "verdi e sinistra", "angelo bonelli", "nicola fratoianni", "bonelli", "fratoianni", "europa verde", "sinistra italiana", "salis"],
-    "Azione": ["azione", "carlo calenda", "calenda", "marattin", "gelmini", "carfagna", "benzoni", "costa", "lombardo"],
-    "Italia Viva": ["italia viva", "iv", "matteo renzi", "renzi", "boschi", "faraone", "marattin", "bellanova", "delbono"],
+    "Azione": ["azione", "carlo calenda", "calenda", "gelmini", "carfagna", "benzoni", "costa", "lombardo"],
+    "Italia Viva": ["italia viva", "iv", "matteo renzi", "renzi", "boschi", "faraone", "bellanova", "delbono"],
     "+Europa": ["+europa", "più europa", "piu europa", "riccardo magi", "magi", "emma bonino", "bonino", "della vedova"],
-    "Noi Moderati": ["noi moderati", "maurizio lupi", "lupi", "saverio romano", "cugusi", "bicchielli"]
+    "Noi Moderati": ["noi moderati", "maurizio lupi", "lupi", "saverio romano", "cugusi", "bicchielli"],
+    "Partito Liberal Democratico": ["partito liberal democratico", "liberal democratici", "libdem", "orizzonti liberali", "luigi marattin", "marattin", "andrea marcucci"],
+    "Futuro Nazionale / ORA!": ["futuro nazionale", "movimento ora", "ora!", "roberto vannacci", "vannacci"],
+    "Radicali Italiani": ["radicali italiani", "radicali", "matteo hallissey", "hallissey", "giulia crivellini", "maurizio turco", "partito radicale"],
+    "Rifondazione Comunista": ["rifondazione comunista", "prc", "maurizio acerbo", "acerbo", "sinistra europea"],
+    "Potere al Popolo": ["potere al popolo", "pap", "giuliano granato", "granato", "marta collot", "collot"],
+    "Democrazia Sovrana Popolare": ["democrazia sovrana popolare", "dsp", "marco rizzo", "rizzo", "francesco toscano"],
+    "Südtiroler Volkspartei": ["südtiroler volkspartei", "svp", "dieter steger", "steger", "herbert dorfmann"]
 }
 
 # Macro-topics detection keywords

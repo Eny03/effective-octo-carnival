@@ -15,6 +15,11 @@ class PoliticalParty(Base):
     official_website = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
     dossier_ai = Column(Text, nullable=True)
+    poll_percentage = Column(Float, default=0.0)
+    poll_trend = Column(String(20), default="stabile")
+    poll_sources = Column(String(255), default="Media YouTrend/AGI, SWG, Ipsos, Tecnè, Noto")
+    truthfulness_score = Column(Float, default=0.0)
+    financial_reliability_score = Column(Float, default=0.0)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     proposals = relationship("PoliticalProposal", back_populates="party_rel")

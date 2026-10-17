@@ -10,6 +10,11 @@ export interface PoliticalParty {
   official_website?: string;
   description?: string;
   dossier_ai?: string;
+  poll_percentage?: number;
+  poll_trend?: string;
+  poll_sources?: string;
+  truthfulness_score?: number;
+  financial_reliability_score?: number;
   proposals_count: number;
 }
 
@@ -128,6 +133,19 @@ export interface InstitutionalBenchmark {
   url_fonte?: string;
 }
 
+export interface PartyRankingItem {
+  name: string;
+  code: string;
+  color: string;
+  coalition: string;
+  leader?: string;
+  poll_percentage: number;
+  poll_trend: string;
+  truthfulness_score: number;
+  financial_reliability_score: number;
+  proposals_count: number;
+}
+
 export interface StatsOverview {
   total_proposals: number;
   total_parties: number;
@@ -136,6 +154,10 @@ export interface StatsOverview {
   proposals_by_topic: Record<string, number>;
   fact_check_distribution: Record<string, number>;
   quantified_cost_percentage: number;
+  average_truthfulness?: number;
+  average_financial_feasibility?: number;
+  coalition_truthfulness?: Record<string, number>;
+  party_rankings?: PartyRankingItem[];
   last_ingestion_time?: string;
   benchmarks_summary: InstitutionalBenchmark[];
 }

@@ -11,7 +11,7 @@ router = APIRouter(prefix="/api/parties", tags=["Partiti Politici"])
 @router.get("", response_model=List[PoliticalPartySchema])
 def list_parties(db: Session = Depends(get_db)):
     """Returns all registered political parties with current proposal count."""
-    parties = db.query(PoliticalParty).order_by(PoliticalParty.coalition, PoliticalParty.name).all()
+    parties = db.query(PoliticalParty).order_by(PoliticalParty.poll_percentage.desc()).all()
     results = []
     for p in parties:
         count = db.query(func.count(PoliticalProposal.id)).filter(PoliticalProposal.party_id == p.id).scalar() or 0
@@ -28,6 +28,11 @@ def list_parties(db: Session = Depends(get_db)):
             official_website=p.official_website,
             description=p.description,
             dossier_ai=p.dossier_ai,
+            poll_percentage=p.poll_percentage or 0.0,
+            poll_trend=p.poll_trend or "stabile",
+            poll_sources=p.poll_sources or "Media YouTrend/AGI, SWG, Ipsos, Tecnè, Noto",
+            truthfulness_score=p.truthfulness_score or 0.0,
+            financial_reliability_score=p.financial_reliability_score or 0.0,
             proposals_count=count
         )
         results.append(party_data)

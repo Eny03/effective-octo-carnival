@@ -34,6 +34,11 @@ class PoliticalPartySchema(BaseModel):
     official_website: Optional[str] = None
     description: Optional[str] = None
     dossier_ai: Optional[str] = None
+    poll_percentage: Optional[float] = 0.0
+    poll_trend: Optional[str] = "stabile"
+    poll_sources: Optional[str] = "Media YouTrend/AGI, SWG, Ipsos, Tecnè, Noto"
+    truthfulness_score: Optional[float] = 0.0
+    financial_reliability_score: Optional[float] = 0.0
     proposals_count: Optional[int] = 0
 
     class Config:
@@ -151,5 +156,9 @@ class StatsOverviewResponse(BaseModel):
     proposals_by_topic: Dict[str, int]
     fact_check_distribution: Dict[str, int]
     quantified_cost_percentage: float
+    average_truthfulness: float = 0.0
+    average_financial_feasibility: float = 0.0
+    coalition_truthfulness: Dict[str, float] = {}
+    party_rankings: List[Dict[str, Any]] = []
     last_ingestion_time: Optional[datetime] = None
     benchmarks_summary: List[InstitutionalBenchmarkSchema]
