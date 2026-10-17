@@ -57,6 +57,12 @@ def seed_database_if_empty():
                 db.add(new_party)
             else:
                 curr = existing_parties[code]
+                curr.name = p_data.get("name", curr.name)
+                curr.coalition = p_data.get("coalition", curr.coalition)
+                curr.leader = p_data.get("leader", curr.leader)
+                curr.color = p_data.get("color", curr.color)
+                curr.description = p_data.get("description", curr.description)
+                curr.official_website = p_data.get("official_website", curr.official_website)
                 curr.poll_percentage = p_data.get("poll_percentage", curr.poll_percentage)
                 curr.poll_trend = p_data.get("poll_trend", curr.poll_trend)
                 curr.poll_sources = p_data.get("poll_sources", curr.poll_sources)

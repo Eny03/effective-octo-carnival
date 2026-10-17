@@ -46,46 +46,69 @@ async def run_pipeline_scan():
             )
             
             for item in extracted_items:
-                item_hash = compute_content_hash(f"{art['url']}_{item.partito}_{item.macro_argomento}_{item.dichiarazione_sintesi}")
-                existing_item = db.query(PoliticalProposal).filter(PoliticalProposal.content_hash == item_hash).first()
-                if existing_item:
-                    continue
-
                 # Find matching party in database to link FK
                 party_obj = db.query(PoliticalParty).filter(
                     (PoliticalParty.name.ilike(f"%{item.partito}%")) |
                     (PoliticalParty.code.ilike(f"%{item.partito}%"))
                 ).first()
-                
+                party_id = party_obj.id if party_obj else None
+
                 # Compute embedding
                 text_to_embed = f"{item.partito} {item.macro_argomento} {item.dichiarazione_sintesi}"
                 emb_list = await get_text_embedding(text_to_embed)
                 emb_json = json.dumps(emb_list) if emb_list else None
-                
-                dt = datetime.datetime.fromisoformat(item.timestamp) if item.timestamp else art["published_at"]
-                
-                proposal_record = PoliticalProposal(
-                    party_id=party_obj.id if party_obj else None,
+                item_hash = compute_content_hash(f"{item.partito}_{item.macro_argomento}_{item.dichiarazione_sintesi}")
+
+                # AI Semantic Deduplication & Policy Evolution
+                from app.ai.policy_merger import find_matching_existing_proposal, merge_or_update_policy_proposal
+                matching_existing = find_matching_existing_proposal(
+                    db=db,
+                    party_id=party_id,
                     partito=item.partito,
                     macro_argomento=item.macro_argomento,
                     dichiarazione_sintesi=item.dichiarazione_sintesi,
-                    tipo_azione=item.tipo_azione,
-                    costo_stimato=item.impatto_economico.costo_stimato,
-                    coperture_dichiarate=item.impatto_economico.coperture_dichiarate,
-                    fattibilita_finanziaria=item.impatto_economico.fattibilita_finanziaria,
-                    fact_check_status=item.fact_check.status,
-                    fact_check_motivazione=item.fact_check.motivazione_oggettiva,
-                    fact_check_fonte=item.fact_check.fonte_verifica,
-                    fonte_url=item.fonte_url or art["url"],
-                    fonte_titolo=art["title"],
-                    fonte_testata=art["source_name"],
-                    raw_text=raw_text,
-                    content_hash=item_hash,
-                    embedding=emb_json,
-                    timestamp=dt
+                    emb_list=emb_list
                 )
-                db.add(proposal_record)
-                total_proposals += 1
+
+                if matching_existing:
+                    # Update existing proposal with the newest position / amended details
+                    print(f"[AI Ingestion] Aggiornamento posizione per {item.partito} ({item.macro_argomento}): '{item.dichiarazione_sintesi[:60]}...'")
+                    merge_or_update_policy_proposal(
+                        db=db,
+                        existing=matching_existing,
+                        item=item,
+                        url=art["url"],
+                        title=art["title"],
+                        source_name=art["source_name"],
+                        published_at=art["published_at"],
+                        raw_text=raw_text,
+                        content_hash=item_hash,
+                        emb_json=emb_json
+                    )
+                else:
+                    dt = datetime.datetime.fromisoformat(item.timestamp) if item.timestamp else art["published_at"]
+                    proposal_record = PoliticalProposal(
+                        party_id=party_id,
+                        partito=item.partito,
+                        macro_argomento=item.macro_argomento,
+                        dichiarazione_sintesi=item.dichiarazione_sintesi,
+                        tipo_azione=item.tipo_azione,
+                        costo_stimato=item.impatto_economico.costo_stimato,
+                        coperture_dichiarate=item.impatto_economico.coperture_dichiarate,
+                        fattibilita_finanziaria=item.impatto_economico.fattibilita_finanziaria,
+                        fact_check_status=item.fact_check.status,
+                        fact_check_motivazione=item.fact_check.motivazione_oggettiva,
+                        fact_check_fonte=item.fact_check.fonte_verifica,
+                        fonte_url=item.fonte_url or art["url"],
+                        fonte_titolo=art["title"],
+                        fonte_testata=art["source_name"],
+                        raw_text=raw_text,
+                        content_hash=item_hash,
+                        embedding=emb_json,
+                        timestamp=dt
+                    )
+                    db.add(proposal_record)
+                    total_proposals += 1
                 
         # Autonomously synthesize and update AI Dossiers for all political parties
         try:

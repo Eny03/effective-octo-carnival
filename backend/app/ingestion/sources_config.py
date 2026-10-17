@@ -186,8 +186,15 @@ MONITORED_FEEDS = [
         "is_active": True
     },
     {
-        "name": "Live Web Search - Futuro Nazionale / ORA!",
-        "url": "https://news.google.com/rss/search?q=Futuro+Nazionale+Vannacci+ORA+proposte&hl=it&gl=IT&ceid=IT:it",
+        "name": "Live Web Search - Futuro Nazionale & Vannacci",
+        "url": "https://news.google.com/rss/search?q=Futuro+Nazionale+Roberto+Vannacci+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Movimento ORA!",
+        "url": "https://news.google.com/rss/search?q=Movimento+ORA+proposte+riforme&hl=it&gl=IT&ceid=IT:it",
         "category": "Ricerca Web AI",
         "reliability": "Massima",
         "is_active": True
@@ -286,10 +293,15 @@ PARTY_OFFICIAL_CHANNELS = {
         "social_handles": ["@marattin", "@LibDem_IT"],
         "rss": "https://orizzontiliberali.it/feed/"
     },
-    "Futuro Nazionale / ORA!": {
+    "Futuro Nazionale": {
         "website": "https://futuronazionale.it",
         "social_handles": ["@RobertoVannacci", "@FuturoNaz"],
         "rss": "https://futuronazionale.it/feed/"
+    },
+    "ORA!": {
+        "website": "https://movimento-ora.it",
+        "social_handles": ["@MovimentoOra", "@Ora_Italia"],
+        "rss": "https://movimento-ora.it/feed/"
     },
     "Radicali Italiani": {
         "website": "https://www.radicali.it",
@@ -331,7 +343,8 @@ PARTY_ALIASES = {
     "+Europa": ["+europa", "più europa", "piu europa", "riccardo magi", "magi", "emma bonino", "bonino", "della vedova"],
     "Noi Moderati": ["noi moderati", "maurizio lupi", "lupi", "saverio romano", "cugusi", "bicchielli"],
     "Partito Liberal Democratico": ["partito liberal democratico", "liberal democratici", "libdem", "orizzonti liberali", "luigi marattin", "marattin", "andrea marcucci"],
-    "Futuro Nazionale / ORA!": ["futuro nazionale", "movimento ora", "ora!", "roberto vannacci", "vannacci"],
+    "Futuro Nazionale": ["futuro nazionale", "roberto vannacci", "vannacci"],
+    "ORA!": ["movimento ora", "ora!", "comitato ora", "ora italia"],
     "Radicali Italiani": ["radicali italiani", "radicali", "matteo hallissey", "hallissey", "giulia crivellini", "maurizio turco", "partito radicale"],
     "Rifondazione Comunista": ["rifondazione comunista", "prc", "maurizio acerbo", "acerbo", "sinistra europea"],
     "Potere al Popolo": ["potere al popolo", "pap", "giuliano granato", "granato", "marta collot", "collot"],
