@@ -46,6 +46,11 @@ async def run_pipeline_scan():
             )
             
             for item in extracted_items:
+                item_hash = compute_content_hash(f"{art['url']}_{item.partito}_{item.macro_argomento}_{item.dichiarazione_sintesi}")
+                existing_item = db.query(PoliticalProposal).filter(PoliticalProposal.content_hash == item_hash).first()
+                if existing_item:
+                    continue
+
                 # Find matching party in database to link FK
                 party_obj = db.query(PoliticalParty).filter(
                     (PoliticalParty.name.ilike(f"%{item.partito}%")) |
@@ -75,7 +80,7 @@ async def run_pipeline_scan():
                     fonte_titolo=art["title"],
                     fonte_testata=art["source_name"],
                     raw_text=raw_text,
-                    content_hash=content_hash,
+                    content_hash=item_hash,
                     embedding=emb_json,
                     timestamp=dt
                 )

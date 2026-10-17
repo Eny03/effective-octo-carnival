@@ -17,7 +17,7 @@ class Settings(BaseModel):
     
     # Ingestion & Scheduler (Scansione e aggiornamento continuo ogni 10 minuti)
     INGESTION_INTERVAL_MINUTES: int = int(os.getenv("INGESTION_INTERVAL_MINUTES", "10"))
-    MAX_ARTICLES_PER_FEED: int = int(os.getenv("MAX_ARTICLES_PER_FEED", "25"))
+    MAX_ARTICLES_PER_FEED: int = int(os.getenv("MAX_ARTICLES_PER_FEED", "5"))
     ENABLE_AUTO_SCHEDULER: bool = os.getenv("ENABLE_AUTO_SCHEDULER", "true").lower() == "true"
     
     # Benchmark Parameters (Italia / ISTAT / MEF / Eurostat 2024-2025)

@@ -85,6 +85,77 @@ MONITORED_FEEDS = [
         "category": "Web & Inchieste",
         "reliability": "Media-Alta",
         "is_active": True
+    },
+    # --- Live Web Search AI Crawler (Scansione Web Nazionale per Partito) ---
+    {
+        "name": "Live Web Search - Fratelli d'Italia & Governo",
+        "url": "https://news.google.com/rss/search?q=Fratelli+d%27Italia+Meloni+governo+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Partito Democratico & Schlein",
+        "url": "https://news.google.com/rss/search?q=Partito+Democratico+Schlein+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Movimento 5 Stelle & Conte",
+        "url": "https://news.google.com/rss/search?q=Movimento+5+Stelle+Giuseppe+Conte+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Lega & Salvini",
+        "url": "https://news.google.com/rss/search?q=Lega+Salvini+proposte+riforme&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Forza Italia & Tajani",
+        "url": "https://news.google.com/rss/search?q=Forza+Italia+Antonio+Tajani+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Alleanza Verdi e Sinistra",
+        "url": "https://news.google.com/rss/search?q=Alleanza+Verdi+Sinistra+Bonelli+Fratoianni&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Azione & Calenda",
+        "url": "https://news.google.com/rss/search?q=Azione+Carlo+Calenda+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Italia Viva & Renzi",
+        "url": "https://news.google.com/rss/search?q=Italia+Viva+Matteo+Renzi+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - +Europa & Magi",
+        "url": "https://news.google.com/rss/search?q=Piu+Europa+Riccardo+Magi+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Senato & Camera dei Deputati",
+        "url": "https://news.google.com/rss/search?q=Parlamento+Camera+Senato+disegno+di+legge+approvato&hl=it&gl=IT&ceid=IT:it",
+        "category": "Atti Parlamentari",
+        "reliability": "Massima",
+        "is_active": True
     }
 ]
 
