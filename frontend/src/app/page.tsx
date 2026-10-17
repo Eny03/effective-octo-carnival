@@ -431,7 +431,7 @@ export default function DashboardPage() {
           </Link>
         </div>
 
-        {/* Polling & Truthfulness Cards Grid */}
+        {/* Polling & Truthfulness Cards Grid (All 18 Monitored Parties) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {(stats?.party_rankings && stats.party_rankings.length > 0 ? stats.party_rankings : parties.map((p) => ({
             name: p.name,
@@ -444,21 +444,26 @@ export default function DashboardPage() {
             truthfulness_score: p.truthfulness_score || 82,
             financial_reliability_score: p.financial_reliability_score || 78,
             proposals_count: p.proposals_count || 0
-          }))).slice(0, 12).map((item, idx) => (
+          }))).map((item, idx) => (
             <Link
               key={idx}
-              href="/parties"
+              href={`/parties?code=${item.code}`}
               className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
-                      {item.name}
-                    </span>
+                    <div>
+                      <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                        {item.name}
+                      </span>
+                      <span className="text-[10px] text-slate-400 block line-clamp-1">
+                        {item.leader || item.coalition}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 shrink-0">
                     <span className="text-xs font-black text-slate-900 dark:text-white font-mono">
                       {item.poll_percentage}%
                     </span>
@@ -487,9 +492,13 @@ export default function DashboardPage() {
               </div>
 
               <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold">
+                <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold" title="Indice di veridicità AI">
                   <CheckCircle2 className="w-3 h-3" />
                   <span>Veridicità: {item.truthfulness_score}%</span>
+                </div>
+                <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold" title="Indice coperture finanziarie">
+                  <Coins className="w-3 h-3" />
+                  <span>Coperture: {item.financial_reliability_score}%</span>
                 </div>
                 <div className="text-slate-400 text-[10px]">
                   {item.proposals_count} atti
@@ -699,9 +708,21 @@ export default function DashboardPage() {
                   <span className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">{party.name}</span>
                 </div>
                 <div className="text-[11px] text-slate-500 line-clamp-1">{party.leader || party.coalition}</div>
+                <div className="flex items-center gap-1.5 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800">
+                  {party.poll_percentage !== undefined && (
+                    <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">
+                      {party.poll_percentage}%
+                    </span>
+                  )}
+                  {party.truthfulness_score !== undefined && (
+                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
+                      • {party.truthfulness_score}% V
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-2 flex items-center gap-0.5">
-                <span>Vedi posizioni</span>
+                <span>Vedi dossier</span>
                 <ChevronRight className="w-2.5 h-2.5" />
               </div>
             </Link>

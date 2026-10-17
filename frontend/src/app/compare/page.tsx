@@ -68,7 +68,18 @@ export default function ComparePage() {
     "Diritti Civili"
   ];
   const macroTopics = matrixData?.macro_argomenti?.length ? ["Tutti", ...matrixData.macro_argomenti] : defaultMacroTopics;
-  const coalitions = ["Tutte", "Centrodestra", "Centrosinistra", "Movimento 5 Stelle", "Centro / Liberaldemocratici"];
+  const coalitions = [
+    "Tutte",
+    "Centrodestra",
+    "Centrosinistra",
+    "Movimento 5 Stelle",
+    "Centro / Liberaldemocratici",
+    "Destra Identitaria / Sovranismo",
+    "Sinistra Radicale",
+    "Sovranismo Popolare",
+    "Autonomie Regionali",
+    "Civici & Nuove Forze"
+  ];
 
   // Filter parties by coalition
   const filteredParties = parties.filter((p) => {

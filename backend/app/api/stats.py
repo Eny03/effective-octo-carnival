@@ -62,7 +62,8 @@ def get_overview_stats(db: Session = Depends(get_db)):
         ).all()
         p_total = len(p_props)
         p_verified = sum(1 for pr in p_props if pr.fact_check_status == "Verificato")
-        p_truth = round((p_verified / p_total * 100), 1) if p_total > 0 else (p.truthfulness_score or 80.0)
+        p_pending = sum(1 for pr in p_props if pr.fact_check_status == "In attesa di copertura")
+        p_truth = round(((p_verified * 100) + (p_pending * 50)) / p_total, 1) if p_total > 0 else (p.truthfulness_score or 80.0)
         
         c_name = p.coalition
         if "Centrodestra" in c_name:

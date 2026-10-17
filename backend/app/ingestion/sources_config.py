@@ -289,19 +289,19 @@ PARTY_OFFICIAL_CHANNELS = {
         "rss": "https://www.noimoderati.it/feed/"
     },
     "Partito Liberal Democratico": {
-        "website": "https://orizzontiliberali.it",
-        "social_handles": ["@marattin", "@LibDem_IT"],
-        "rss": "https://orizzontiliberali.it/feed/"
+        "website": "https://partitoliberaldemocratico.com",
+        "social_handles": ["@marattin", "@LibDem_IT", "@OrizzontiLib"],
+        "rss": "https://partitoliberaldemocratico.com/feed/"
     },
     "Futuro Nazionale": {
         "website": "https://futuronazionale.it",
-        "social_handles": ["@RobertoVannacci", "@FuturoNaz"],
+        "social_handles": ["@RobertoVannacci", "@FuturoNaz", "@simoni_m"],
         "rss": "https://futuronazionale.it/feed/"
     },
     "ORA!": {
-        "website": "https://movimento-ora.it",
-        "social_handles": ["@MovimentoOra", "@Ora_Italia"],
-        "rss": "https://movimento-ora.it/feed/"
+        "website": "https://ora-italia.it",
+        "social_handles": ["@Ora_Italia", "@micheleboldrin", "@forchielli"],
+        "rss": "https://ora-italia.it/feed/"
     },
     "Radicali Italiani": {
         "website": "https://www.radicali.it",
@@ -342,9 +342,9 @@ PARTY_ALIASES = {
     "Italia Viva": ["italia viva", "iv", "matteo renzi", "renzi", "boschi", "faraone", "bellanova", "delbono"],
     "+Europa": ["+europa", "più europa", "piu europa", "riccardo magi", "magi", "emma bonino", "bonino", "della vedova"],
     "Noi Moderati": ["noi moderati", "maurizio lupi", "lupi", "saverio romano", "cugusi", "bicchielli"],
-    "Partito Liberal Democratico": ["partito liberal democratico", "liberal democratici", "libdem", "orizzonti liberali", "luigi marattin", "marattin", "andrea marcucci"],
-    "Futuro Nazionale": ["futuro nazionale", "roberto vannacci", "vannacci"],
-    "ORA!": ["movimento ora", "ora!", "comitato ora", "ora italia"],
+    "Partito Liberal Democratico": ["partito liberal democratico", "partito liberaldemocratico", "pld", "liberal democratici", "libdem", "orizzonti liberali", "luigi marattin", "marattin", "andrea marcucci"],
+    "Futuro Nazionale": ["futuro nazionale", "fnv", "roberto vannacci", "vannacci", "massimiliano simoni"],
+    "ORA!": ["movimento ora", "ora!", "comitato ora", "ora italia", "alberto forchielli", "forchielli", "michele boldrin", "boldrin", "drin drin"],
     "Radicali Italiani": ["radicali italiani", "radicali", "matteo hallissey", "hallissey", "giulia crivellini", "maurizio turco", "partito radicale"],
     "Rifondazione Comunista": ["rifondazione comunista", "prc", "maurizio acerbo", "acerbo", "sinistra europea"],
     "Potere al Popolo": ["potere al popolo", "pap", "giuliano granato", "granato", "marta collot", "collot"],
