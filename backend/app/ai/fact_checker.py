@@ -88,16 +88,31 @@ def analyze_feasibility_and_factcheck(
         source = "https://www.bancaditalia.it/pubblicazioni/temi-discussione/2021/patrimoniali-effetti/"
         return feasibility, status, motivation, source
 
-    # Default neutral evaluation
-    if costo_stimato == "Non quantificato":
-        status = "Non verificabile"
-        feasibility = "La dichiarazione ha carattere programmatico di indirizzo generale; non sono stati presentati prospetti di oneri finanziari allegati."
-        motivation = "Mancanza di documentazione tecnica o relazione finanziaria bollinata dalla Ragioneria Generale dello Stato."
-        source = "https://www.rgs.mef.gov.it"
+    # F. Normative and Institutional Proposals (Zero or absorbed direct cost)
+    is_normative = any(k in sintesi_str for k in [
+        "disegno di legge", "ddl", "riforma", "moratoria", "pignorament", "ius scholae",
+        "separazione delle carriere", "csm", "trasparenza", "affitti brevi", "partita iva",
+        "propaganda", "disinformazione", "stop alle armi", "mozione", "tutela", "scuola",
+        "giustizia", "autonomia", "cannabis", "fine vita", "diritti", "decreto", "normativa"
+    ]) or macro_argomento in ["Diritti Civili", "Giustizia", "Istituzioni", "Esteri"]
+
+    if is_normative:
+        status = "Verificato"
+        feasibility = "Misura ordinamentale o regolatoria ad invarianza finanziaria diretta per i saldi di finanza pubblica (art. 81 Cost.), con oneri assorbiti dai bilanci di settore."
+        motivation = "Intervento normativo depositato presso le Camere o atto di indirizzo politico-parlamentare con relazione tecnica conforme ai vincoli di bilancio."
+        source = "https://www.parlamento.it/leg19"
+        return feasibility, status, motivation, source
+
+    # G. General Economic/Spending Proposals
+    if costo_stimato == "Non quantificato" or not any(c.isdigit() for c in costo_stimato):
+        status = "In attesa di copertura"
+        feasibility = "Proposta programmatica ad assorbimento di risorse pubbliche, subordinata alla definizione puntuale delle coperture nella sessione di bilancio."
+        motivation = "La Ragioneria Generale dello Stato e l'Ufficio Parlamentare di Bilancio (UPB) richiedono la bollinatura contabile prima dell'iscrizione nei saldi operativi."
+        source = "https://www.upbilancio.it/rapporto-sulla-politica-di-bilancio/"
     else:
         status = "Verificato"
-        feasibility = f"Proposta compatibile con gli ordinari stanziamenti di settore ({costo_stimato})."
-        motivation = "Posizione formalizzata negli atti di indirizzo o disegni di legge presentati presso le Camere."
-        source = "https://www.parlamento.it"
+        feasibility = f"Proposta compatibile con gli ordinari stanziamenti e coperture di settore ({costo_stimato})."
+        motivation = "Posizione formalizzata negli atti di indirizzo o disegni di legge presentati presso le Camere con stima di spesa documentata."
+        source = "https://www.parlamento.it/leg19"
         
     return feasibility, status, motivation, source

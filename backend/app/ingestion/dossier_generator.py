@@ -108,13 +108,25 @@ def generate_party_dossier(party: PoliticalParty, db: Session) -> Dict[str, Any]
 def update_all_party_dossiers(db: Session):
     """
     Iterates over all political parties and generates updated AI Dossiers from gathered web data.
+    Also synchronizes truthfulness_score and financial_reliability_score.
     """
     parties = db.query(PoliticalParty).all()
     for party in parties:
         try:
             dossier_data = generate_party_dossier(party, db)
             party.dossier_ai = json.dumps(dossier_data, ensure_ascii=False)
+
+            # Synchronize party truthfulness & financial reliability
+            proposals = db.query(PoliticalProposal).filter(
+                (PoliticalProposal.party_id == party.id) | (PoliticalProposal.partito.ilike(f"%{party.name}%"))
+            ).all()
+            if proposals:
+                v_cnt = sum(1 for p in proposals if p.fact_check_status == "Verificato")
+                p_cnt = sum(1 for p in proposals if p.fact_check_status == "In attesa di copertura")
+                q_cnt = sum(1 for p in proposals if p.costo_stimato and p.costo_stimato != "Non quantificato")
+                party.truthfulness_score = round(((v_cnt * 100) + (p_cnt * 50)) / len(proposals), 1)
+                party.financial_reliability_score = round(max(60.0, (q_cnt / len(proposals)) * 100), 1)
         except Exception as e:
             print(f"[DossierGenerator] Error updating dossier for {party.name}: {e}")
     db.commit()
-    print(f"[DossierGenerator] Successfully updated AI dossiers for {len(parties)} parties.")
+    print(f"[DossierGenerator] Successfully updated AI dossiers and metrics for {len(parties)} parties.")
