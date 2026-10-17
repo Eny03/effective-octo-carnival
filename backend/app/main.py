@@ -60,6 +60,10 @@ def seed_database_if_empty():
                 curr.poll_percentage = p_data.get("poll_percentage", curr.poll_percentage)
                 curr.poll_trend = p_data.get("poll_trend", curr.poll_trend)
                 curr.poll_sources = p_data.get("poll_sources", curr.poll_sources)
+                curr.truthfulness_score = p_data.get("truthfulness_score", curr.truthfulness_score)
+                curr.financial_reliability_score = p_data.get("financial_reliability_score", curr.financial_reliability_score)
+                if not curr.dossier_ai and p_data.get("dossier_ai"):
+                    curr.dossier_ai = p_data.get("dossier_ai")
         db.commit()
 
         # Seed Benchmarks
@@ -80,6 +84,15 @@ def seed_database_if_empty():
                 from app.ai.embeddings import _local_deterministic_embedding
                 emb_list = _local_deterministic_embedding(f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}")
                 
+                ts_val = prop.get("timestamp")
+                if isinstance(ts_val, str):
+                    try:
+                        ts_val = datetime.datetime.fromisoformat(ts_val)
+                    except Exception:
+                        ts_val = datetime.datetime.utcnow()
+                elif not isinstance(ts_val, datetime.datetime):
+                    ts_val = datetime.datetime.utcnow()
+
                 record = PoliticalProposal(
                     party_id=party_id,
                     partito=prop["partito"],
@@ -96,7 +109,7 @@ def seed_database_if_empty():
                     fonte_titolo=prop["fonte_titolo"],
                     fonte_testata=prop["fonte_testata"],
                     embedding=json.dumps(emb_list),
-                    timestamp=prop["timestamp"]
+                    timestamp=ts_val
                 )
                 db.add(record)
             db.commit()

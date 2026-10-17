@@ -14,8 +14,8 @@ venv/
 ENV/
 
 # Local database
-*.db
-politilens.db
+test_fresh.db
+*.sqlite3
 
 # OS / Environment
 .env
