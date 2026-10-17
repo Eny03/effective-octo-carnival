@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" />
+      <stop offset="50%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#020617" />
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="50%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bgGrad)"/>
+  <!-- PolitiLens Symbol: Scale & Lens -->
+  <circle cx="256" cy="256" r="160" fill="none" stroke="url(#lensGrad)" stroke-width="24" stroke-linecap="round"/>
+  <!-- Center Beam -->
+  <line x1="256" y1="140" x2="256" y2="340" stroke="#f8fafc" stroke-width="16" stroke-linecap="round"/>
+  <line x1="160" y1="200" x2="352" y2="200" stroke="#f8fafc" stroke-width="16" stroke-linecap="round"/>
+  <!-- Left Pan -->
+  <polygon points="120,280 200,280 160,200" fill="none" stroke="#38bdf8" stroke-width="12" stroke-linejoin="round"/>
+  <ellipse cx="160" cy="285" rx="42" ry="12" fill="#38bdf8"/>
+  <!-- Right Pan -->
+  <polygon points="312,280 392,280 352,200" fill="none" stroke="#34d399" stroke-width="12" stroke-linejoin="round"/>
+  <ellipse cx="352" cy="285" rx="42" ry="12" fill="#34d399"/>
+  <!-- Base -->
+  <line x1="200" y1="360" x2="312" y2="360" stroke="#f8fafc" stroke-width="18" stroke-linecap="round"/>
+</svg>
