@@ -153,6 +153,7 @@ export default function DashboardPage() {
       }
     }, 1000);
     return () => clearInterval(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedulerStatus, scanPhase]);
 
   useEffect(() => {

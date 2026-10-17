@@ -78,6 +78,7 @@ export interface PoliticalProposal {
   fonte_url: string;
   fonte_titolo?: string;
   fonte_testata?: string;
+  raw_text?: string;
   timestamp: string;
   created_at: string;
   party_color?: string;

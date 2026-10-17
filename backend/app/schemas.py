@@ -60,6 +60,7 @@ class PoliticalProposalDetail(BaseModel):
     fonte_url: str
     fonte_titolo: Optional[str] = None
     fonte_testata: Optional[str] = None
+    raw_text: Optional[str] = None
     timestamp: datetime
     created_at: datetime
     party_color: Optional[str] = None

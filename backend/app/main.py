@@ -80,12 +80,16 @@ def seed_database_if_empty():
                 db.add(benchmark)
             db.commit()
 
-        # Seed Proposals
+        # Sync Proposals (ensure clean, concise proposals and 0 duplicates)
         parties_map = {p.name: p.id for p in db.query(PoliticalParty).all()}
         from app.ai.embeddings import _local_deterministic_embedding
 
-        if db.query(PoliticalProposal).count() == 0:
-            print("[Database] Seeding documented proposals and precomputing embeddings...")
+        existing_count = db.query(PoliticalProposal).count()
+        if existing_count == 0 or existing_count != len(PROPOSALS_SEED):
+            print(f"[Database] Synchronizing proposals with clean concise seed data ({existing_count} -> {len(PROPOSALS_SEED)})...")
+            db.query(PoliticalProposal).delete()
+            db.commit()
+
             for prop in PROPOSALS_SEED:
                 party_id = parties_map.get(prop["partito"])
                 emb_list = _local_deterministic_embedding(f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}")
@@ -114,83 +118,13 @@ def seed_database_if_empty():
                     fonte_url=prop["fonte_url"],
                     fonte_titolo=prop["fonte_titolo"],
                     fonte_testata=prop["fonte_testata"],
+                    raw_text=prop.get("raw_text") or f"{prop['dichiarazione_sintesi']}. Posizione politica formalizzata da {prop['partito']} in materia di {prop['macro_argomento']}.",
                     embedding=json.dumps(emb_list),
                     timestamp=ts_val
                 )
                 db.add(record)
             db.commit()
-            print(f"[Database] Successfully seeded {len(PROPOSALS_SEED)} political proposals.")
-        else:
-            # Automatic startup sanitization: transform raw titles into policy proposals or exclude noise
-            import re
-            from app.ai.extractor import POLICY_ACTION_TRANSFORMATIONS
-
-            noise_patterns = [
-                r"landini annuncia", r"l'ira di meloni", r"vannacci conta pi[ùu]", r"schillaci suona",
-                r"ecco la manovra da \d+", r"botta e risposta", r"punto in comune", r"spuntano \d+ miliardi",
-                r"aria pesante per i riformisti", r"guida verso il muro", r"^pd sul salario minimo$",
-                r"scontro.*tra", r"intervista a", r"cosa c'[eè] dietro"
-            ]
-
-            to_delete = []
-            for p in db.query(PoliticalProposal).all():
-                t = p.dichiarazione_sintesi.lower()
-
-                # Lega minimum wage check: Lega is opposed to statutory minimum wage
-                if p.partito == "Lega - Salvini Premier" and "salario minimo" in t and "proposta di legge" in p.tipo_azione.lower():
-                    to_delete.append(p)
-                    continue
-
-                # Noise deletion check
-                if any(re.search(pat, t) for pat in noise_patterns):
-                    to_delete.append(p)
-                    continue
-
-                # Check if it has "indirizzo programmatico" or raw quote
-                if "indirizzo programmatico" in t or t.startswith("ucraina,") or t.startswith("decreto bollette") or t.startswith("confesercenti"):
-                    matched_trans = False
-                    for pat, synth, top, act in POLICY_ACTION_TRANSFORMATIONS:
-                        if re.search(pat, t, re.IGNORECASE):
-                            p.dichiarazione_sintesi = synth
-                            p.macro_argomento = top
-                            p.tipo_azione = act
-                            p.embedding = json.dumps(_local_deterministic_embedding(f"{p.partito} {p.macro_argomento} {p.dichiarazione_sintesi}"))
-                            matched_trans = True
-                            break
-                    if not matched_trans:
-                        # Cannot be cleanly traced back to a legislative policy: exclude completely
-                        to_delete.append(p)
-                        continue
-
-                # Clean journalistic suffixes and quotes
-                orig = p.dichiarazione_sintesi
-                clean = re.sub(r"\s*-\s*(?:ANSA|Il Sole 24 Ore|Il Sole 24 ORE|Corriere della Sera|Corriere|la Repubblica|La Repubblica|RaiNews|AGI|il manifesto|il Giornale|Il Foglio|Il Fatto Quotidiano|Fanpage|LiveSicilia|Adnkronos|Pagella Politica|Quotidiano Sanit[àa]|fratelli-italia\.it).*$", "", orig, flags=re.IGNORECASE)
-                clean = re.sub(r"^Indirizzo programmatico in materia di [^:]+:\s*", "", clean, flags=re.IGNORECASE)
-                clean = clean.strip(' «»"\'').strip()
-                if clean != orig:
-                    p.dichiarazione_sintesi = clean
-                    p.embedding = json.dumps(_local_deterministic_embedding(f"{p.partito} {p.macro_argomento} {p.dichiarazione_sintesi}"))
-
-            for d in to_delete:
-                db.delete(d)
-            if to_delete:
-                db.commit()
-                print(f"[Database] Purged {len(to_delete)} invalid or noisy proposal records on startup.")
-
-            # Deduplicate proposals within the same party
-            seen_party_proposals = set()
-            dup_delete = []
-            for p in db.query(PoliticalProposal).order_by(PoliticalProposal.id.asc()).all():
-                key = (p.partito, p.dichiarazione_sintesi.strip().lower())
-                if key in seen_party_proposals:
-                    dup_delete.append(p)
-                else:
-                    seen_party_proposals.add(key)
-            for dup in dup_delete:
-                db.delete(dup)
-            if dup_delete:
-                db.commit()
-                print(f"[Database] Deduplicated {len(dup_delete)} duplicate proposals within parties.")
+            print(f"[Database] Successfully synchronized {len(PROPOSALS_SEED)} concise political proposals.")
 
         # Update all party dossiers on startup
         try:
