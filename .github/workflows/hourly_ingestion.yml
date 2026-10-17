@@ -1,0 +1,41 @@
+name: Scansione e Aggiornamento Continuo Ogni 10 Minuti (24/7)
+
+on:
+  schedule:
+    # Esegue automaticamente ogni 10 minuti, 24 ore su 24, 7 giorni su 7 nei server cloud di GitHub
+    - cron: '*/10 * * * *'
+  workflow_dispatch: # Permette anche l'avvio manuale su richiesta
+
+jobs:
+  hourly_crawl_and_factcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: Configurazione Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Installazione dipendenze
+        run: |
+          cd backend
+          pip install -r requirements.txt
+
+      - name: Esecuzione Ingestion e Fact-Checking Orario
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'sqlite:///backend/politilens.db' }}
+        run: |
+          cd backend
+          python -c "import asyncio; from app.main import seed_database_if_empty; from app.ingestion.scheduler import run_pipeline_scan; seed_database_if_empty(); asyncio.run(run_pipeline_scan())"
+
+      - name: Commit e aggiornamento dati (se si usa SQLite su repository)
+        if: ${{ env.DATABASE_URL == 'sqlite:///backend/politilens.db' }}
+        run: |
+          git config --local user.email "bot@politilens.local"
+          git config --local user.name "PolitiLens Autonomous Bot"
+          git add backend/politilens.db
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto-update: Nuove proposte e verifiche di bilancio orarie [skip ci]"
+          git push

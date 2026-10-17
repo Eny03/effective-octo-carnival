@@ -1,18 +1,33 @@
-# Configuration of monitored political RSS feeds, official institutions, and media sources
+# Configuration of monitored political RSS feeds, official institutions, media sources and social channels
 
 MONITORED_FEEDS = [
+    # --- Agenzie di Stampa e Istituzioni ---
     {
         "name": "ANSA Politica & Istituzioni",
         "url": "https://www.ansa.it/sito/ansait_rss.xml",
         "category": "Agenzia Nazionale",
-        "reliability": "Alta",
+        "reliability": "Massima",
         "is_active": True
     },
     {
-        "name": "Il Sole 24 Ore - Politica & Economia",
+        "name": "ANSA Economia & Finanza Pubblica",
+        "url": "https://www.ansa.it/canale_economia/notizie/economia_rss.xml",
+        "category": "Economia & Fisco",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Il Sole 24 Ore - Politica & Riforme",
         "url": "https://www.ilsole24ore.com/rss/italia--politica.xml",
-        "category": "Finanza & Istituzioni",
-        "reliability": "Alta",
+        "category": "Economia & Istituzioni",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Il Sole 24 Ore - Fisco & Conti Pubblici",
+        "url": "https://www.ilsole24ore.com/rss/norme-e-tributi.xml",
+        "category": "Fisco & Bilancio",
+        "reliability": "Massima",
         "is_active": True
     },
     {
@@ -23,35 +38,126 @@ MONITORED_FEEDS = [
         "is_active": True
     },
     {
-        "name": "RaiNews Politica",
+        "name": "Adnkronos Economia & Lavoro",
+        "url": "https://www.adnkronos.com/feed/economia.xml",
+        "category": "Lavoro & Welfare",
+        "reliability": "Alta",
+        "is_active": True
+    },
+    {
+        "name": "RaiNews Politica & Parlamento",
         "url": "https://www.rainews.it/rss/politica.xml",
         "category": "Servizio Pubblico",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Sky TG24 - Politica & Governance",
+        "url": "https://tg24.sky.it/rss/politica.xml",
+        "category": "Informazione Televisiva",
         "reliability": "Alta",
+        "is_active": True
+    },
+    {
+        "name": "Corriere della Sera - Politica",
+        "url": "https://xml2.corriereobjects.it/rss/politica.xml",
+        "category": "Quotidiano Nazionale",
+        "reliability": "Alta",
+        "is_active": True
+    },
+    {
+        "name": "La Repubblica - Politica",
+        "url": "https://www.repubblica.it/rss/politica/rss2.0.xml",
+        "category": "Quotidiano Nazionale",
+        "reliability": "Alta",
+        "is_active": True
+    },
+    {
+        "name": "Open - Fact-Checking & Politica",
+        "url": "https://www.open.online/feed/",
+        "category": "Fact-Checking & Web",
+        "reliability": "Alta",
+        "is_active": True
+    },
+    {
+        "name": "Fanpage Politica & Interviste",
+        "url": "https://www.fanpage.it/feed/",
+        "category": "Web & Inchieste",
+        "reliability": "Media-Alta",
         "is_active": True
     }
 ]
 
+# Canali ufficiali e monitoraggio social media/web dei partiti politici
+PARTY_OFFICIAL_CHANNELS = {
+    "Fratelli d'Italia": {
+        "website": "https://www.fratelli-italia.it",
+        "social_handles": ["@GiorgiaMeloni", "@FratellidItalia", "facebook.com/fratelliditalia"],
+        "rss": "https://www.fratelli-italia.it/feed/"
+    },
+    "Partito Democratico": {
+        "website": "https://www.partitodemocratico.it",
+        "social_handles": ["@ellyesse", "@pdnetwork", "facebook.com/partitodemocratico"],
+        "rss": "https://www.partitodemocratico.it/feed/"
+    },
+    "Movimento 5 Stelle": {
+        "website": "https://www.movimento5stelle.eu",
+        "social_handles": ["@GiuseppeConteIT", "@M5S_Europa", "facebook.com/movimentocinquestelle"],
+        "rss": "https://www.movimento5stelle.eu/feed/"
+    },
+    "Lega - Salvini Premier": {
+        "website": "https://www.legaonline.it",
+        "social_handles": ["@matteosalvinimi", "@LegaSalvini", "facebook.com/salviniofficial"],
+        "rss": "https://www.legaonline.it/feed/"
+    },
+    "Forza Italia": {
+        "website": "https://www.forzaitalia.it",
+        "social_handles": ["@Antonio_Tajani", "@forza_italia", "facebook.com/forzaitalia"],
+        "rss": "https://www.forzaitalia.it/feed/"
+    },
+    "Alleanza Verdi e Sinistra": {
+        "website": "https://verdisinistra.it",
+        "social_handles": ["@AngeloBonelli1", "@NFratoianni", "@VerdiSinistra"],
+        "rss": "https://verdisinistra.it/feed/"
+    },
+    "Azione": {
+        "website": "https://www.azione.it",
+        "social_handles": ["@CarloCalenda", "@Azione_it", "facebook.com/AzioneIT"],
+        "rss": "https://www.azione.it/feed/"
+    },
+    "Italia Viva": {
+        "website": "https://www.italiaviva.it",
+        "social_handles": ["@matteorenzi", "@ItaliaViva", "facebook.com/ItaliaViva"],
+        "rss": "https://www.italiaviva.it/feed/"
+    },
+    "+Europa": {
+        "website": "https://www.piueuropa.eu",
+        "social_handles": ["@riccardomagi", "@Piu_Europa", "facebook.com/piueuropa"],
+        "rss": "https://www.piueuropa.eu/feed/"
+    }
+}
+
 # Party detection aliases to accurately map textual mentions to normalized party codes
 PARTY_ALIASES = {
-    "Fratelli d'Italia": ["fratelli d'italia", "fdi", "giorgia meloni", "meloni", "crosetto", "lollobrigida", "donzelli"],
-    "Partito Democratico": ["partito democratico", "pd", "elly schlein", "schlein", "provenzano", "boccia", "braga"],
-    "Movimento 5 Stelle": ["movimento 5 stelle", "m5s", "giuseppe conte", "conte", "cinquestelle", "5 stelle", "appendino", "patuanelli"],
-    "Lega - Salvini Premier": ["lega", "lega - salvini premier", "matteo salvini", "salvini", "giorgetti", "calderoli", "crippa", "fedriga"],
-    "Forza Italia": ["forza italia", "fi", "antonio tajani", "tajani", "barelli", "ronzulli", "gasparri", "berlusconi"],
-    "Alleanza Verdi e Sinistra": ["alleanza verdi e sinistra", "alleanza verdi sinistra", "avs", "verdi e sinistra", "angelo bonelli", "nicola fratoianni", "bonelli", "fratoianni", "europa verde", "sinistra italiana"],
-    "Azione": ["azione", "carlo calenda", "calenda", "marattin", "gelmini", "carfagna", "benzoni"],
-    "Italia Viva": ["italia viva", "iv", "matteo renzi", "renzi", "boschi", "faraone", "marattin"],
+    "Fratelli d'Italia": ["fratelli d'italia", "fdi", "giorgia meloni", "meloni", "crosetto", "lollobrigida", "donzelli", "fitto", "fazzolari", "bignami"],
+    "Partito Democratico": ["partito democratico", "pd", "elly schlein", "schlein", "provenzano", "boccia", "braga", "misiani", "orlando", "gualtieri"],
+    "Movimento 5 Stelle": ["movimento 5 stelle", "m5s", "giuseppe conte", "conte", "cinquestelle", "5 stelle", "appendino", "patuanelli", "todde", "traversi"],
+    "Lega - Salvini Premier": ["lega", "lega - salvini premier", "matteo salvini", "salvini", "giorgetti", "calderoli", "crippa", "fedriga", "zaia", "borghi", "bagnai"],
+    "Forza Italia": ["forza italia", "fi", "antonio tajani", "tajani", "barelli", "ronzulli", "gasparri", "berlusconi", "occhipinti", "cannizzaro"],
+    "Alleanza Verdi e Sinistra": ["alleanza verdi e sinistra", "alleanza verdi sinistra", "avs", "verdi e sinistra", "angelo bonelli", "nicola fratoianni", "bonelli", "fratoianni", "europa verde", "sinistra italiana", "salis"],
+    "Azione": ["azione", "carlo calenda", "calenda", "marattin", "gelmini", "carfagna", "benzoni", "costa", "lombardo"],
+    "Italia Viva": ["italia viva", "iv", "matteo renzi", "renzi", "boschi", "faraone", "marattin", "bellanova", "delbono"],
     "+Europa": ["+europa", "più europa", "piu europa", "riccardo magi", "magi", "emma bonino", "bonino", "della vedova"]
 }
 
 # Macro-topics detection keywords
 MACRO_TOPICS_KEYWORDS = {
-    "Lavoro": ["salario minimo", "lavoro", "occupazione", "cuneo fiscale", "contratti", "inps", "disoccupazione", "precariato", "stage", "settimana corta", "pensioni", "quota 41", "fornero"],
-    "Economia": ["fisco", "tasse", "flat tax", "irpef", "iva", "manovra", "patrimoniale", "debito pubblico", "pil", "def", "extraprofitti", "privatizzazioni", "bilancio", "inflazione", "superbonus"],
-    "Energia": ["nucleare", "rinnovabili", "eolico", "fotovoltaico", "gas", "smr", "bollette", "caro energia", "transizione energetica", "idrogeno", "mase", "trivelle"],
-    "Ambiente": ["clima", "siccità", "inquinamento", "co2", "decarbonizzazione", "green deal", "dissesto idrogeologico", "sad", "biodiversità", "auto elettriche"],
-    "Sanità": ["sanità", "ssn", "medici", "infermieri", "ospedali", "liste d'attesa", "pronto soccorso", "fondo sanitario", "mes sanitario", "ticket"],
-    "Istruzione": ["scuola", "università", "docenti", "insegnanti", "istruzione", "its", "ricerca", "stipendi docenti", "tempo pieno", "valditara", "maturità"],
-    "Diritti Civili": ["diritti civili", "giustizia", "magistrati", "csm", "separazione delle carriere", "ius scholae", "cittadinanza", "carceri", "fine vita", "matrimonio egualitario", "adozioni"],
-    "Esteri": ["ucraina", "russia", "medio oriente", "gaza", "israele", "nato", "spese militari", "difesa europea", "eurobond", "piano mattei", "europa", "ue", "politica estera"]
+    "Lavoro": ["salario minimo", "lavoro", "occupazione", "cuneo fiscale", "contratti", "inps", "disoccupazione", "precariato", "stage", "settimana corta", "pensioni", "quota 41", "fornero", "sicurezza sul lavoro", "decontribuzione", "smart working"],
+    "Economia": ["fisco", "tasse", "flat tax", "irpef", "iva", "manovra", "patrimoniale", "debito pubblico", "pil", "def", "extraprofitti", "privatizzazioni", "bilancio", "inflazione", "superbonus", "concordato preventivo", "rottamazione"],
+    "Energia": ["nucleare", "rinnovabili", "eolico", "fotovoltaico", "gas", "smr", "bollette", "caro energia", "transizione energetica", "idrogeno", "mase", "trivelle", "nucleare pulito", "comunità energetiche"],
+    "Ambiente": ["clima", "siccità", "inquinamento", "co2", "decarbonizzazione", "green deal", "dissesto idrogeologico", "sad", "biodiversità", "auto elettriche", "alluvioni", "case green"],
+    "Sanità": ["sanità", "ssn", "medici", "infermieri", "ospedali", "liste d'attesa", "pronto soccorso", "fondo sanitario", "mes sanitario", "ticket", "carenza personale", "salute mentale"],
+    "Istruzione": ["scuola", "università", "docenti", "insegnanti", "istruzione", "its", "ricerca", "stipendi docenti", "tempo pieno", "valditara", "maturità", "precari scuola", "edilizia scolastica"],
+    "Diritti Civili": ["diritti civili", "giustizia", "magistrati", "csm", "separazione delle carriere", "ius scholae", "cittadinanza", "carceri", "fine vita", "matrimonio egualitario", "adozioni", "carriere alias", "ddl zan", "prescrizione"],
+    "Esteri": ["ucraina", "russia", "medio oriente", "gaza", "israele", "nato", "spese militari", "difesa europea", "eurobond", "piano mattei", "europa", "ue", "politica estera", "armi ucraina", "migranti albania"]
 }

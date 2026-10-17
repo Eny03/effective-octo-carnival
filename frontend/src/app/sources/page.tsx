@@ -111,7 +111,7 @@ export default function SourcesPage() {
             Monitoraggio Fonti, Ingestion & Trasparenza
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Visualizza lo stato di scansione dei feed nazionali ufficiali e inserisci manualmente nuovi comunicati per l'estrazione AI.
+            Scansione continua ogni 10 minuti di agenzie di stampa (ANSA, Sole 24 Ore, Adnkronos), siti e canali ufficiali dei partiti, atti parlamentari e dichiarazioni pubbliche.
           </p>
         </div>
 

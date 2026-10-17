@@ -148,6 +148,6 @@ def get_scheduler_status():
     return {
         "is_active": is_active,
         "interval_minutes": settings.INGESTION_INTERVAL_MINUTES,
-        "frequency": "Ogni 1 ora (60 minuti)",
+        "frequency": f"Ogni {settings.INGESTION_INTERVAL_MINUTES} minuti (continuo 24/7)",
         "next_run_time": next_run
     }

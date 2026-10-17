@@ -15,9 +15,9 @@ class Settings(BaseModel):
     OLLAMA_CHAT_MODEL: str = os.getenv("OLLAMA_CHAT_MODEL", "qwen2.5:14b")
     OLLAMA_EMBED_MODEL: str = os.getenv("OLLAMA_EMBED_MODEL", "bge-m3")
     
-    # Ingestion & Scheduler (Scansione e aggiornamento orario continuo)
-    INGESTION_INTERVAL_MINUTES: int = int(os.getenv("INGESTION_INTERVAL_MINUTES", "60"))
-    MAX_ARTICLES_PER_FEED: int = int(os.getenv("MAX_ARTICLES_PER_FEED", "10"))
+    # Ingestion & Scheduler (Scansione e aggiornamento continuo ogni 10 minuti)
+    INGESTION_INTERVAL_MINUTES: int = int(os.getenv("INGESTION_INTERVAL_MINUTES", "10"))
+    MAX_ARTICLES_PER_FEED: int = int(os.getenv("MAX_ARTICLES_PER_FEED", "25"))
     ENABLE_AUTO_SCHEDULER: bool = os.getenv("ENABLE_AUTO_SCHEDULER", "true").lower() == "true"
     
     # Benchmark Parameters (Italia / ISTAT / MEF / Eurostat 2024-2025)

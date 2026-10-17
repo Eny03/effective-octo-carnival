@@ -8,14 +8,18 @@ from app.schemas import ComparisonMatrixResponse, TopicComparisonRow, Comparison
 router = APIRouter(prefix="/api/comparison", tags=["Manifesto Dinamico & Comparatore"])
 
 MACRO_ARGOMENTI_DEFAULT = [
+    "Fisco",
     "Lavoro",
-    "Economia",
-    "Energia",
-    "Ambiente",
     "Sanità",
+    "Pensioni",
+    "Energia",
+    "Istituzioni",
+    "Immigrazione",
+    "Cittadinanza",
     "Istruzione",
-    "Diritti Civili",
-    "Esteri"
+    "Infrastrutture",
+    "Politica Estera",
+    "Diritti Civili"
 ]
 
 @router.get("/matrix", response_model=ComparisonMatrixResponse)

@@ -1,29 +1,16 @@
 services:
-  # Backend API FastAPI con scheduler orario integrato
+  # PolitiLens - Piattaforma Unificata Tutto-in-Uno
+  # Serve sia le API e lo scheduler orario, sia l'App Web & PWA per smartphone
   - type: web
-    name: politilens-backend
+    name: politilens
     env: python
-    buildCommand: pip install -r backend/requirements.txt
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.9
       - key: INGESTION_INTERVAL_MINUTES
-        value: "60"
+        value: "10"
       - key: ENABLE_AUTO_SCHEDULER
         value: "true"
-
-  # Frontend Next.js PWA ottimizzato per smartphone
-  - type: web
-    name: politilens-frontend
-    env: node
-    buildCommand: cd frontend && npm install && npm run build
-    startCommand: cd frontend && npm start
-    envVars:
-      - key: NODE_VERSION
-        value: 20.10.0
-      - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: politilens-backend
-          property: host
