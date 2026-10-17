@@ -1,0 +1,18 @@
+{
+  "name": "PolitiLens - Osservatorio Politico",
+  "short_name": "PolitiLens",
+  "description": "Analizzatore e comparatore politico autonomo, neutrale e open-source con fact-checking istituzionale.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#0f172a",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

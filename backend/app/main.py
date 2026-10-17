@@ -1,7 +1,10 @@
+import os
 import json
 import asyncio
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
@@ -49,12 +52,8 @@ def seed_database_if_empty():
             
             for prop in PROPOSALS_SEED:
                 party_id = parties_map.get(prop["partito"])
-                # Compute embedding asynchronously via event loop or sync fallback
-                text_to_embed = f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}"
-                
-                # Use local fast embedding for seeding
                 from app.ai.embeddings import _local_deterministic_embedding
-                emb_list = _local_deterministic_embedding(text_to_embed)
+                emb_list = _local_deterministic_embedding(f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}")
                 
                 record = PoliticalProposal(
                     party_id=party_id,
@@ -85,12 +84,10 @@ def seed_database_if_empty():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup
     print("[PolitiLens] Inizializzazione piattaforma e database...")
     seed_database_if_empty()
     start_scheduler()
     yield
-    # Shutdown
     print("[PolitiLens] Arresto servizi...")
     stop_scheduler()
 
@@ -101,7 +98,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# CORS Middleware for Next.js Frontend
+# CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -118,8 +115,8 @@ app.include_router(chat_router)
 app.include_router(ingestion_router)
 app.include_router(stats_router)
 
-@app.get("/")
-async def root():
+@app.get("/api/health")
+async def health_check():
     ollama_ok = await ollama_client.is_available()
     models = await ollama_client.list_models() if ollama_ok else []
     return {
@@ -128,6 +125,70 @@ async def root():
         "version": settings.APP_VERSION,
         "neutrality_policy": "Absolute Political Impartiality & Institutional Fact-Checking",
         "ollama_connected": ollama_ok,
-        "ollama_models": models,
-        "docs_url": "/docs"
+        "ollama_models": models
     }
+
+# Unified Frontend Serving
+# Find static files directory
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "..", "static")
+
+if os.path.exists(STATIC_DIR):
+    # Mount _next assets
+    next_dir = os.path.join(STATIC_DIR, "_next")
+    if os.path.exists(next_dir):
+        app.mount("/_next", StaticFiles(directory=next_dir), name="next_assets")
+
+    @app.get("/icon.svg")
+    async def serve_icon():
+        return FileResponse(os.path.join(STATIC_DIR, "icon.svg"))
+
+    @app.get("/manifest.json")
+    async def serve_manifest():
+        return FileResponse(os.path.join(STATIC_DIR, "manifest.json"))
+
+    @app.get("/favicon.ico")
+    async def serve_favicon():
+        return FileResponse(os.path.join(STATIC_DIR, "favicon.ico"))
+
+    @app.get("/compare")
+    async def serve_compare():
+        return FileResponse(os.path.join(STATIC_DIR, "compare.html"))
+
+    @app.get("/chat")
+    async def serve_chat():
+        return FileResponse(os.path.join(STATIC_DIR, "chat.html"))
+
+    @app.get("/fact-check")
+    async def serve_factcheck():
+        return FileResponse(os.path.join(STATIC_DIR, "fact-check.html"))
+
+    @app.get("/parties")
+    async def serve_parties():
+        return FileResponse(os.path.join(STATIC_DIR, "parties.html"))
+
+    @app.get("/sources")
+    async def serve_sources():
+        return FileResponse(os.path.join(STATIC_DIR, "sources.html"))
+
+    @app.get("/")
+    async def serve_root():
+        index_file = os.path.join(STATIC_DIR, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+        return await health_check()
+
+    @app.get("/{full_path:path}")
+    async def serve_catch_all(full_path: str):
+        file_path = os.path.join(STATIC_DIR, full_path)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+        html_file = os.path.join(STATIC_DIR, f"{full_path}.html")
+        if os.path.isfile(html_file):
+            return FileResponse(html_file)
+        # Default fallback to index.html
+        return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+else:
+    @app.get("/")
+    async def root():
+        return await health_check()
