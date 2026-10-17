@@ -9,7 +9,52 @@ export interface PoliticalParty {
   color: string;
   official_website?: string;
   description?: string;
+  dossier_ai?: string;
   proposals_count: number;
+}
+
+export interface AIDossierPillar {
+  tema: string;
+  proposta_chiave: string;
+  tipo_azione: string;
+  costo: string;
+  coperture: string;
+  status_verifica: string;
+  motivazione: string;
+  fonte_url: string;
+  fonte_testata: string;
+}
+
+export interface AIDossierQuote {
+  data: string;
+  titolo: string;
+  dichiarazione: string;
+  fonte: string;
+  url: string;
+}
+
+export interface AIDossierData {
+  partito_nome: string;
+  partito_codice: string;
+  coalizione: string;
+  leader?: string;
+  sintesi_strategica: string;
+  score_affidabilita: string;
+  statistiche_atti: {
+    totale_atti: number;
+    verificati: number;
+    in_attesa_copertura: number;
+    esagerati_o_non_quantificati: number;
+  };
+  pilastri_programmatici: AIDossierPillar[];
+  valutazione_finanziaria: {
+    score_fattibilita: string;
+    atti_quantificati: string;
+    analisi_coperture: string;
+  };
+  dichiarazioni_recenti_web: AIDossierQuote[];
+  parametri_macro_confronto: Record<string, string>;
+  ultimo_aggiornamento_web: string;
 }
 
 export interface PoliticalProposal {
@@ -203,7 +248,9 @@ export async function submitManualIngest(data: {
 export interface SchedulerStatus {
   is_active: boolean;
   interval_minutes: number;
+  interval_seconds?: number;
   frequency: string;
+  server_time?: string;
   next_run_time?: string;
 }
 

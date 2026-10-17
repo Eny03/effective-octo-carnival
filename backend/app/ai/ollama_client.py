@@ -6,15 +6,25 @@ from app.config import settings
 class OllamaClient:
     def __init__(self, base_url: Optional[str] = None):
         self.base_url = (base_url or settings.OLLAMA_BASE_URL).rstrip("/")
+        self._cached_available: Optional[bool] = None
+        self._last_check_time: float = 0
         
     async def is_available(self) -> bool:
-        """Checks if local Ollama server is running and reachable."""
+        """Checks if local Ollama server is running and reachable (cached for 60s)."""
+        import time
+        now = time.time()
+        if self._cached_available is not None and (now - self._last_check_time) < 60:
+            return self._cached_available
+
         try:
-            async with httpx.AsyncClient(timeout=1.5) as client:
+            async with httpx.AsyncClient(timeout=0.6) as client:
                 res = await client.get(f"{self.base_url}/api/tags")
-                return res.status_code == 200
+                self._cached_available = (res.status_code == 200)
         except Exception:
-            return False
+            self._cached_available = False
+
+        self._last_check_time = now
+        return self._cached_available
 
     async def list_models(self) -> List[str]:
         """Returns list of installed local models in Ollama."""

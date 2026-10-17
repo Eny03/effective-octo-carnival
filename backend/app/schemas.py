@@ -33,6 +33,7 @@ class PoliticalPartySchema(BaseModel):
     color: str
     official_website: Optional[str] = None
     description: Optional[str] = None
+    dossier_ai: Optional[str] = None
     proposals_count: Optional[int] = 0
 
     class Config:

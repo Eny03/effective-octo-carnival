@@ -60,11 +60,24 @@ def fetch_rss_feed_entries(feed_info: Dict[str, Any], max_items: int = 10) -> Li
         
     return items
 
+import concurrent.futures
+
 def fetch_all_active_feeds(max_items_per_feed: int = 10) -> List[Dict[str, Any]]:
-    """Fetches articles from all active RSS feeds."""
+    """Fetches articles from all active RSS feeds in parallel."""
+    active_feeds = [f for f in MONITORED_FEEDS if f.get("is_active", True)]
     all_articles = []
-    for feed in MONITORED_FEEDS:
-        if feed.get("is_active", True):
-            feed_items = fetch_rss_feed_entries(feed, max_items=max_items_per_feed)
-            all_articles.extend(feed_items)
+    
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_feed = {
+            executor.submit(fetch_rss_feed_entries, feed, max_items_per_feed): feed
+            for feed in active_feeds
+        }
+        for future in concurrent.futures.as_completed(future_to_feed):
+            try:
+                items = future.result()
+                all_articles.extend(items)
+            except Exception as e:
+                feed = future_to_feed[future]
+                print(f"[RSSFetcher] Parallel worker failed for {feed.get('name')}: {e}")
+                
     return all_articles

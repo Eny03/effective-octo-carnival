@@ -151,6 +151,34 @@ MONITORED_FEEDS = [
         "is_active": True
     },
     {
+        "name": "Live Web Search - Noi Moderati & Lupi",
+        "url": "https://news.google.com/rss/search?q=Noi+Moderati+Maurizio+Lupi+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Manovra Economica & Fisco",
+        "url": "https://news.google.com/rss/search?q=governo+opposizione+manovra+fisco+proposte+mef&hl=it&gl=IT&ceid=IT:it",
+        "category": "Economia & Finanza Pubblica",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Lavoro, Salari & Pensioni",
+        "url": "https://news.google.com/rss/search?q=partiti+salario+minimo+pensioni+quota+41+lavoro&hl=it&gl=IT&ceid=IT:it",
+        "category": "Lavoro & Welfare",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
+        "name": "Live Web Search - Sanità Pubblica & Liste d'Attesa",
+        "url": "https://news.google.com/rss/search?q=sanita+fondi+ospedali+liste+attesa+partiti+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Sanità & Servizi",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
         "name": "Live Web Search - Senato & Camera dei Deputati",
         "url": "https://news.google.com/rss/search?q=Parlamento+Camera+Senato+disegno+di+legge+approvato&hl=it&gl=IT&ceid=IT:it",
         "category": "Atti Parlamentari",
@@ -205,6 +233,11 @@ PARTY_OFFICIAL_CHANNELS = {
         "website": "https://www.piueuropa.eu",
         "social_handles": ["@riccardomagi", "@Piu_Europa", "facebook.com/piueuropa"],
         "rss": "https://www.piueuropa.eu/feed/"
+    },
+    "Noi Moderati": {
+        "website": "https://www.noimoderati.it",
+        "social_handles": ["@Maurizio_Lupi", "@NoiModerati", "facebook.com/noimoderati"],
+        "rss": "https://www.noimoderati.it/feed/"
     }
 }
 
@@ -218,7 +251,8 @@ PARTY_ALIASES = {
     "Alleanza Verdi e Sinistra": ["alleanza verdi e sinistra", "alleanza verdi sinistra", "avs", "verdi e sinistra", "angelo bonelli", "nicola fratoianni", "bonelli", "fratoianni", "europa verde", "sinistra italiana", "salis"],
     "Azione": ["azione", "carlo calenda", "calenda", "marattin", "gelmini", "carfagna", "benzoni", "costa", "lombardo"],
     "Italia Viva": ["italia viva", "iv", "matteo renzi", "renzi", "boschi", "faraone", "marattin", "bellanova", "delbono"],
-    "+Europa": ["+europa", "più europa", "piu europa", "riccardo magi", "magi", "emma bonino", "bonino", "della vedova"]
+    "+Europa": ["+europa", "più europa", "piu europa", "riccardo magi", "magi", "emma bonino", "bonino", "della vedova"],
+    "Noi Moderati": ["noi moderati", "maurizio lupi", "lupi", "saverio romano", "cugusi", "bicchielli"]
 }
 
 # Macro-topics detection keywords

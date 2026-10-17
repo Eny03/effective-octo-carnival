@@ -27,6 +27,7 @@ def list_parties(db: Session = Depends(get_db)):
             color=p.color,
             official_website=p.official_website,
             description=p.description,
+            dossier_ai=p.dossier_ai,
             proposals_count=count
         )
         results.append(party_data)
@@ -34,7 +35,10 @@ def list_parties(db: Session = Depends(get_db)):
 
 @router.get("/{party_code_or_id}")
 def get_party_detail(party_code_or_id: str, db: Session = Depends(get_db)):
-    """Returns specific party profile with all associated proposals and thematic distribution."""
+    """Returns specific party profile with AI Strategic Dossier, associated proposals and thematic distribution."""
+    import json
+    from app.ingestion.dossier_generator import generate_party_dossier
+
     party = None
     if party_code_or_id.isdigit():
         party = db.query(PoliticalParty).filter(PoliticalParty.id == int(party_code_or_id)).first()
@@ -45,6 +49,22 @@ def get_party_detail(party_code_or_id: str, db: Session = Depends(get_db)):
 
     if not party:
         raise HTTPException(status_code=404, detail="Partito politico non trovato")
+
+    # If dossier is not generated yet, synthesize it now
+    dossier_dict = None
+    if party.dossier_ai:
+        try:
+            dossier_dict = json.loads(party.dossier_ai)
+        except Exception:
+            dossier_dict = None
+
+    if not dossier_dict:
+        try:
+            dossier_dict = generate_party_dossier(party, db)
+            party.dossier_ai = json.dumps(dossier_dict, ensure_ascii=False)
+            db.commit()
+        except Exception as e:
+            print(f"[PartiesAPI] Error generating dynamic dossier: {e}")
 
     proposals = db.query(PoliticalProposal).filter(
         (PoliticalProposal.party_id == party.id) | (PoliticalProposal.partito.ilike(f"%{party.name}%"))
@@ -59,5 +79,7 @@ def get_party_detail(party_code_or_id: str, db: Session = Depends(get_db)):
         "party": PoliticalPartySchema.model_validate(party),
         "total_proposals": len(proposals),
         "topic_distribution": topic_counts,
+        "dossier": dossier_dict,
         "proposals": [PoliticalProposalDetail.model_validate(p) for p in proposals]
     }
+

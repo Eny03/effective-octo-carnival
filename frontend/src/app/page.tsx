@@ -58,7 +58,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [schedulerStatus, setSchedulerStatus] = useState<any>(null);
-  const [secondsLeft, setSecondsLeft] = useState<number>(600);
   const [scanPhase, setScanPhase] = useState<"idle" | "searching" | "updating" | "done">("idle");
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
 
@@ -90,16 +89,39 @@ export default function DashboardPage() {
     }
   };
 
+  // Sincronizzazione continua 24/7 con il clock reale e il backend scheduler
+  const getSecondsToNextBlock = (nextRunIso?: string): number => {
+    if (nextRunIso) {
+      try {
+        const target = new Date(nextRunIso).getTime();
+        const now = Date.now();
+        const diff = Math.round((target - now) / 1000);
+        if (diff > 0 && diff <= 600) return diff;
+      } catch (e) {}
+    }
+    const now = new Date();
+    const elapsed = (now.getMinutes() % 10) * 60 + now.getSeconds();
+    const remaining = 600 - elapsed;
+    return remaining <= 0 ? 600 : remaining;
+  };
+
+  const [secondsLeft, setSecondsLeft] = useState<number>(() => getSecondsToNextBlock());
+
+  // Sincronizza subito all'avvio e ad ogni aggiornamento dello schedulerStatus
+  useEffect(() => {
+    setSecondsLeft(getSecondsToNextBlock(schedulerStatus?.next_run_time));
+  }, [schedulerStatus]);
+
   const triggerUpdateCycle = async () => {
     if (scanPhase !== "idle") return;
     
-    // Step 1: Searching the web & news & social
+    // Step 1: Searching the entire web
     setScanPhase("searching");
     try {
       await triggerFeedScan().catch(() => {});
     } catch (e) {}
 
-    // Step 2: After 3.5 seconds -> Updating information & fact checks
+    // Step 2: After 3.5 seconds -> AI synthesis, fact checks, updating dossiers
     setTimeout(async () => {
       setScanPhase("updating");
       await loadData();
@@ -108,28 +130,30 @@ export default function DashboardPage() {
       setTimeout(() => {
         setScanPhase("done");
 
-        // Step 4: Reset countdown and restart timer
+        // Step 4: Resume continuous 24/7 countdown
         setTimeout(() => {
           setScanPhase("idle");
-          setSecondsLeft(600);
+          setSecondsLeft(getSecondsToNextBlock());
         }, 2200);
       }, 2500);
     }, 3500);
   };
 
-  // Live 1-second countdown ticker
+  // Live 1-second real-world 24/7 clock ticker
   useEffect(() => {
     const timer = setInterval(() => {
-      setSecondsLeft((prev) => {
-        if (prev <= 1) {
+      const remaining = getSecondsToNextBlock(schedulerStatus?.next_run_time);
+      setSecondsLeft(remaining);
+
+      // Scatta automaticamente al compimento del blocco di 10 minuti
+      if (remaining === 600 || remaining <= 1) {
+        if (scanPhase === "idle") {
           triggerUpdateCycle();
-          return 600;
         }
-        return prev - 1;
-      });
+      }
     }, 1000);
     return () => clearInterval(timer);
-  }, [scanPhase]);
+  }, [schedulerStatus, scanPhase]);
 
   useEffect(() => {
     loadData();
@@ -246,49 +270,49 @@ export default function DashboardPage() {
               {scanPhase === "searching" ? (
                 <div>
                   <div className="font-extrabold text-sm text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                    <span>Sto cercando sul web...</span>
+                    <span>Sto cercando su tutto il web...</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-100 animate-pulse">
                       In corso
                     </span>
                   </div>
                   <p className="text-xs text-amber-800 dark:text-amber-300/80 mt-0.5">
-                    Controllo in tempo reale di agenzie di stampa (ANSA, Sole 24 Ore, Adnkronos, Rai), siti e canali social dei partiti.
+                    Scansione autonoma di motori di ricerca, agenzie di stampa (ANSA, Sole 24 Ore, Rai, Quotidiani), comunicati, social e atti di ogni partito.
                   </p>
                 </div>
               ) : scanPhase === "updating" ? (
                 <div>
                   <div className="font-extrabold text-sm text-blue-900 dark:text-blue-200 flex items-center gap-2">
-                    <span>Sto aggiornando le informazioni...</span>
+                    <span>Sto confrontando tutte le informazioni con l'AI...</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-200 dark:bg-blue-900/80 text-blue-900 dark:text-blue-100 animate-pulse">
                       Elaborazione AI
                     </span>
                   </div>
                   <p className="text-xs text-blue-800 dark:text-blue-300/80 mt-0.5">
-                    Estrazione delle dichiarazioni, verifica delle coperture finanziarie con i dati di bilancio dello Stato.
+                    Sintesi neutrale dei dossier, verifica delle dichiarazioni e controllo di fattibilità con i dati ufficiali di bilancio (MEF, ISTAT, Corte dei Conti).
                   </p>
                 </div>
               ) : scanPhase === "done" ? (
                 <div>
                   <div className="font-extrabold text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
-                    <span>Informazioni aggiornate con successo!</span>
+                    <span>Dossier e informazioni aggiornati con successo!</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-200 dark:bg-emerald-900/80 text-emerald-900 dark:text-emerald-100">
                       Completato
                     </span>
                   </div>
                   <p className="text-xs text-emerald-800 dark:text-emerald-300/80 mt-0.5">
-                    Tutti i dati e i dossier dei partiti sono allineati. Il timer riparte adesso.
+                    Tutti i dati e i dossier dei partiti sono riallineati con le ultime notizie dal web. Il timer continuo 24/7 riprende adesso.
                   </p>
                 </div>
               ) : (
                 <div>
                   <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>Scansione e Aggiornamento Continuo Ogni 10 Minuti</span>
+                    <span>Scansione e Aggiornamento Continuo 24/7 (Ogni 10 Minuti)</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                       24/7 Attivo
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    L'AI scansiona ogni 10 min il web, agenzie di stampa, social, manifesti ed eventi di tutti i partiti.
+                    L'AI scansiona costantemente tutto il web ogni 10 min (ai minuti :00, :10, :20, :30, :40, :50) creando e aggiornando i dossier.
                   </p>
                 </div>
               )}
@@ -299,7 +323,7 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-800/60">
             <div className="text-left sm:text-right">
               <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                {scanPhase === "idle" ? "Prossimo aggiornamento tra" : "Stato scansione"}
+                {scanPhase === "idle" ? "Prossimo ciclo 24/7 tra" : "Stato scansione"}
               </div>
               <div className="font-mono text-base font-extrabold text-slate-900 dark:text-white flex items-center sm:justify-end gap-1.5 mt-0.5">
                 {scanPhase === "idle" ? (

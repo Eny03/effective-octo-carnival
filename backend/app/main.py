@@ -26,7 +26,14 @@ from app.api.stats import router as stats_router
 
 def seed_database_if_empty():
     """Seeds initial parties, documented proposals, and economic benchmarks if not present."""
+    from sqlalchemy import text
     Base.metadata.create_all(bind=engine)
+    try:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE political_parties ADD COLUMN dossier_ai TEXT"))
+            conn.commit()
+    except Exception:
+        pass
     db: Session = SessionLocal()
     try:
         # Seed Parties

@@ -111,7 +111,7 @@ export default function SourcesPage() {
             Monitoraggio Fonti, Ingestion & Trasparenza
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Scansione continua ogni 10 minuti di agenzie di stampa (ANSA, Sole 24 Ore, Adnkronos), siti e canali ufficiali dei partiti, atti parlamentari e dichiarazioni pubbliche.
+            Scansione autonoma continua 24/7 ogni 10 minuti di tutto il web: motori di ricerca, agenzie di stampa (ANSA, Sole 24 Ore, Rai, Quotidiani), canali ufficiali di ogni partito, manifesti ed eventi.
           </p>
         </div>
 
@@ -121,7 +121,7 @@ export default function SourcesPage() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-500 text-white shadow-md disabled:opacity-60 transition-all self-start md:self-auto"
         >
           <RefreshCw className={`w-3.5 h-3.5 ${isScanning ? "animate-spin" : ""}`} />
-          <span>{isScanning ? "Scansione in corso..." : "Esegui Scansione Feed Ora"}</span>
+          <span>{isScanning ? "Scansione web in corso..." : "Esegui Scansione Web Ora"}</span>
         </button>
       </div>
 

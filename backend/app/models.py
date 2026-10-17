@@ -14,6 +14,7 @@ class PoliticalParty(Base):
     color = Column(String(20), default="#3b82f6") # Hex color for UI representation
     official_website = Column(String(255), nullable=True)
     description = Column(Text, nullable=True)
+    dossier_ai = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     proposals = relationship("PoliticalProposal", back_populates="party_rel")

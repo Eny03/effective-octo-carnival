@@ -87,25 +87,32 @@ async def run_pipeline_scan():
                 db.add(proposal_record)
                 total_proposals += 1
                 
+        # Autonomously synthesize and update AI Dossiers for all political parties
+        try:
+            from app.ingestion.dossier_generator import update_all_party_dossiers
+            update_all_party_dossiers(db)
+        except Exception as de:
+            print(f"[Scheduler] AI Dossier generation warning: {de}")
+
         # Record Ingestion Log
         log_entry = IngestionLog(
-            source_name="RSS Scheduler Monitor",
-            source_url="Multiple Active Feeds (ANSA, Sole 24 Ore, Adnkronos, RaiNews)",
+            source_name="AI Universal Web Crawler & Monitor",
+            source_url="Scansione Web Nazionale & Feed Istituzionali (ANSA, Sole 24 Ore, Rai, Quotidiani, Partiti)",
             articles_found=total_articles,
             proposals_extracted=total_proposals,
             status="SUCCESS",
-            log_message=f"Scansione completata: {total_articles} articoli analizzati, {total_proposals} nuove posizioni politiche estratte."
+            log_message=f"Scansione completata: {total_articles} articoli analizzati dal web, {total_proposals} nuove posizioni politiche estratte e dossier AI aggiornati."
         )
         db.add(log_entry)
         db.commit()
-        print(f"[Scheduler] Pipeline completed: {total_articles} articles, {total_proposals} proposals extracted.")
+        print(f"[Scheduler] Pipeline completed: {total_articles} articles, {total_proposals} proposals extracted, dossiers updated.")
     except Exception as e:
         db.rollback()
         print(f"[Scheduler] Ingestion error: {e}")
         try:
             err_log = IngestionLog(
-                source_name="RSS Scheduler Monitor",
-                source_url="Feeds",
+                source_name="AI Universal Web Crawler & Monitor",
+                source_url="Web & Feeds",
                 articles_found=total_articles,
                 proposals_extracted=total_proposals,
                 status="FAILED",
@@ -124,17 +131,18 @@ def _scheduler_job():
     asyncio.run(run_pipeline_scan())
 
 def start_scheduler():
-    """Starts the background scheduler if enabled in settings (hourly runs)."""
+    """Starts the continuous 24/7 background scheduler (running at :00, :10, :20, :30, :40, :50)."""
     if settings.ENABLE_AUTO_SCHEDULER and not scheduler.running:
         scheduler.add_job(
             _scheduler_job,
-            "interval",
-            minutes=settings.INGESTION_INTERVAL_MINUTES,
+            "cron",
+            minute="*/10",
+            second="0",
             id="political_rss_monitor",
             replace_existing=True
         )
         scheduler.start()
-        print(f"[Scheduler] Background political ingestion scheduler active (running every {settings.INGESTION_INTERVAL_MINUTES} minutes).")
+        print(f"[Scheduler] Continuous 24/7 background scheduler active (triggering at :00, :10, :20, :30, :40, :50).")
 
 def stop_scheduler():
     """Stops the background scheduler."""
@@ -142,7 +150,7 @@ def stop_scheduler():
         scheduler.shutdown(wait=False)
 
 def get_scheduler_status():
-    """Returns current scheduler state, interval, and next run time."""
+    """Returns current scheduler state, interval, server time, and exact next run time."""
     is_active = scheduler.running
     next_run = None
     if is_active:
@@ -150,9 +158,14 @@ def get_scheduler_status():
         if job and job.next_run_time:
             next_run = job.next_run_time.isoformat()
             
+    server_now = datetime.datetime.utcnow().isoformat() + "Z"
+
     return {
         "is_active": is_active,
-        "interval_minutes": settings.INGESTION_INTERVAL_MINUTES,
-        "frequency": f"Ogni {settings.INGESTION_INTERVAL_MINUTES} minuti (continuo 24/7)",
+        "interval_minutes": 10,
+        "interval_seconds": 600,
+        "frequency": "Continuo 24/7 ogni 10 minuti (ai minuti :00, :10, :20, :30, :40, :50)",
+        "server_time": server_now,
         "next_run_time": next_run
     }
+
