@@ -1,11 +1,16 @@
 import math
 import re
 import json
+import hashlib
 from typing import List, Dict, Any, Tuple
 import numpy as np
 from app.ai.ollama_client import ollama_client
 
 DIMENSION = 384
+
+def _stable_hash(s: str) -> int:
+    """Computes stable 32-bit integer hash independent of Python process hash randomization."""
+    return int(hashlib.md5(s.encode("utf-8")).hexdigest()[:8], 16)
 
 def _local_deterministic_embedding(text: str, dim: int = DIMENSION) -> List[float]:
     """
@@ -20,13 +25,13 @@ def _local_deterministic_embedding(text: str, dim: int = DIMENSION) -> List[floa
         return vec.tolist()
         
     for word in clean_words:
-        # Word hash
-        h = hash(word) % dim
+        # Stable Word hash
+        h = _stable_hash(word) % dim
         vec[h] += 1.0
         # Character bigram hashes
         for i in range(len(word) - 1):
             bg = word[i:i+2]
-            h_bg = (hash(bg) * 31) % dim
+            h_bg = (_stable_hash(bg) * 31) % dim
             vec[h_bg] += 0.5
             
     # L2 normalize

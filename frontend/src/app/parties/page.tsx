@@ -305,13 +305,13 @@ export default function PartiesPage() {
                 )}
 
                 {/* Sub-Tabs: AI Dossier, Web News, Catalog of Proposals */}
-                <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3">
+                <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 overflow-x-auto scrollbar-none pb-1">
                   <button
                     onClick={() => setActiveTab("dossier")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       activeTab === "dossier"
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
@@ -320,10 +320,10 @@ export default function PartiesPage() {
 
                   <button
                     onClick={() => setActiveTab("web_news")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       activeTab === "web_news"
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
                     <Globe className="w-3.5 h-3.5" />
@@ -332,10 +332,10 @@ export default function PartiesPage() {
 
                   <button
                     onClick={() => setActiveTab("proposals")}
-                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                    className={`shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                       activeTab === "proposals"
-                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                     }`}
                   >
                     <FileText className="w-3.5 h-3.5" />

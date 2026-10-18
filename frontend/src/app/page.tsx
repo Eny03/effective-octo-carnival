@@ -491,16 +491,16 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] sm:text-[11px] pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
                 <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold" title="Indice di veridicità AI">
-                  <CheckCircle2 className="w-3 h-3" />
+                  <CheckCircle2 className="w-3 h-3 shrink-0" />
                   <span>Veridicità: {item.truthfulness_score}%</span>
                 </div>
                 <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold" title="Indice coperture finanziarie">
-                  <Coins className="w-3 h-3" />
+                  <Coins className="w-3 h-3 shrink-0" />
                   <span>Coperture: {item.financial_reliability_score}%</span>
                 </div>
-                <div className="text-slate-400 text-[10px]">
+                <div className="text-slate-400 text-[10px] ml-auto">
                   {item.proposals_count} atti
                 </div>
               </div>
