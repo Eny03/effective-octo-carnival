@@ -124,6 +124,18 @@ async def run_pipeline_scan():
         except Exception as ge:
             print(f"[Scheduler] Targeted gap search notice: {ge}")
 
+        # Step 2b: Multi-Agent AI Consensus Engine (OpenWebScout + PolicyDistiller + FiscalAuditor + ConsensusArbiter)
+        try:
+            from app.ai.multi_agent_consensus import run_multi_agent_consensus_pipeline
+            print("[Scheduler] Esecuzione Consensus Multi-AI continuo su tutto il web...")
+            consensus_res = await run_multi_agent_consensus_pipeline(db)
+            if consensus_res:
+                c_added = consensus_res.get("proposals_added", 0)
+                total_proposals += c_added
+                print(f"[Scheduler] Multi-AI Consensus: {consensus_res.get('message')}")
+        except Exception as ce:
+            print(f"[Scheduler] Multi-AI Consensus notice: {ce}")
+
         # Step 3: Autonomously synthesize and update AI Dossiers for all political parties
         try:
             from app.ingestion.dossier_generator import update_all_party_dossiers

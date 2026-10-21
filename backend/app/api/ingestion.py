@@ -52,6 +52,13 @@ def trigger_dossiers_update(db: Session = Depends(get_db)):
     update_all_party_dossiers(db)
     return {"status": "UPDATED", "message": "Dossier strategici e parametri finanziari dei 18 partiti aggiornati con successo."}
 
+@router.post("/consensus/trigger")
+async def trigger_multi_agent_consensus(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+    """Triggers an immediate multi-agent AI consensus cycle across the open web."""
+    from app.ai.multi_agent_consensus import run_multi_agent_consensus_pipeline
+    background_tasks.add_task(run_multi_agent_consensus_pipeline, db)
+    return {"status": "CONSENSUS_TRIGGERED", "message": "Pipeline Multi-AI Consensus (Scout + Distiller + FiscalAuditor + Arbiter) avviata in background."}
+
 @router.post("/manual", response_model=List[PoliticalProposalDetail])
 async def ingest_manual(req: IngestionRequest, db: Session = Depends(get_db)):
     """

@@ -134,22 +134,17 @@ export default function PartiesPage() {
             <button
               key={p.id}
               onClick={() => selectParty(p)}
-              className={`shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all ${
+              className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
                 isSelected
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-sm ring-2 ring-blue-500/30"
-                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs ring-2 ring-blue-500/30"
+                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
             >
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-              <span>{p.name}</span>
+              <span className="truncate">{p.name}</span>
               {p.poll_percentage !== undefined && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-mono font-bold">
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100/80 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-mono font-bold">
                   {p.poll_percentage}%
-                </span>
-              )}
-              {p.truthfulness_score !== undefined && (
-                <span className="text-[10px] px-1 py-0.5 rounded-md bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 font-mono font-bold">
-                  {p.truthfulness_score}% V
                 </span>
               )}
             </button>
@@ -260,19 +255,19 @@ export default function PartiesPage() {
                     {/* Live Poll & Veridicità Badges */}
                     <div className="flex flex-wrap items-center gap-2 pt-2.5">
                       {selectedParty.poll_percentage !== undefined && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap">
                           <TrendingUp className="w-3.5 h-3.5" />
                           <span>Sondaggi: {selectedParty.poll_percentage}% ({selectedParty.poll_trend || "stabile"})</span>
                         </span>
                       )}
                       {selectedParty.truthfulness_score !== undefined && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Veridicità: {selectedParty.truthfulness_score}%</span>
                         </span>
                       )}
                       {selectedParty.financial_reliability_score !== undefined && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
                           <Coins className="w-3.5 h-3.5" />
                           <span>Coperture: {selectedParty.financial_reliability_score}%</span>
                         </span>

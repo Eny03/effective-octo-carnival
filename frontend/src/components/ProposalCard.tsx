@@ -32,11 +32,11 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
     <>
       <article 
         onClick={() => setIsDetailOpen(true)}
-        className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/90 dark:border-slate-800 p-5 hover:border-slate-400 dark:hover:border-slate-600 hover:shadow-lg transition-all flex flex-col justify-between shadow-xs cursor-pointer select-none relative"
+        className="group bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all flex flex-col justify-between shadow-2xs cursor-pointer select-none relative"
       >
         <div>
           {/* Top: Party & Topic & Historical Pill */}
-          <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center justify-between gap-2 mb-2.5">
             <div className="flex items-center gap-2 min-w-0">
               <span
                 className="w-2.5 h-2.5 rounded-full shrink-0 shadow-xs"
@@ -48,7 +48,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               {isHistorical && (
-                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60 whitespace-nowrap">
                   {proposalYear}
                 </span>
               )}
@@ -63,31 +63,33 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
             </span>
           </div>
 
-          {/* Clear, Concise Headline */}
-          <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold leading-snug mb-3 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
+          {/* Clear, Concise Headline with clamp */}
+          <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold leading-snug mb-3 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors line-clamp-2 sm:line-clamp-3">
             {proposal.dichiarazione_sintesi}
           </h3>
 
-          {/* Minimal Economic & Fact-Check Summary */}
-          <div className="space-y-2 mb-3">
+          {/* Minimal Economic & Fact-Check Summary (Anti-overlap responsive layout) */}
+          <div className="space-y-1.5 mb-3 text-xs">
             {/* Economics */}
-            <div className="flex items-center justify-between text-xs py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
-              <span className="text-slate-500 text-[11px] font-medium">Impatto Finanziario:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate max-w-[190px]">
+            <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-2">
+              <span className="text-slate-500 text-[11px] font-medium shrink-0">Costo Stimato:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate text-right">
                 {proposal.costo_stimato !== "Non quantificato" ? proposal.costo_stimato : "Non quantificato"}
               </span>
             </div>
 
             {/* Fact-Check Status */}
-            <div className="flex items-center justify-between py-1.5 px-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800 text-xs">
-              <span className="text-[11px] font-semibold text-slate-500">Verifica Istituzionale:</span>
-              <StatusBadge status={proposal.fact_check_status} size="sm" />
+            <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-2">
+              <span className="text-[11px] font-semibold text-slate-500 shrink-0">Verifica:</span>
+              <div className="shrink-0">
+                <StatusBadge status={proposal.fact_check_status} size="sm" />
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer Info & Expand Trigger */}
-        <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
+        <div className="pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px]">
           <span className="flex items-center gap-1.5 font-mono text-slate-500 dark:text-slate-400">
             <Calendar className="w-3 h-3 text-slate-400" />
             {formattedDate}
