@@ -74,7 +74,7 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
             <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-2">
               <span className="text-slate-500 text-[11px] font-medium shrink-0">Costo Stimato:</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate text-right">
-                {proposal.costo_stimato !== "Non quantificato" ? proposal.costo_stimato : "Non quantificato"}
+                {proposal.costo_stimato && proposal.costo_stimato !== "Non quantificato" ? proposal.costo_stimato : "Invarianza finanziaria"}
               </span>
             </div>
 

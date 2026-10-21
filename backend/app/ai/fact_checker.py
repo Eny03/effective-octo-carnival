@@ -1,6 +1,7 @@
 import re
 from typing import Dict, Any, Tuple
 from app.config import settings
+from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage
 
 def analyze_feasibility_and_factcheck(
     partito: str,
@@ -14,9 +15,32 @@ def analyze_feasibility_and_factcheck(
     Returns:
     (financial_feasibility_analysis, fact_check_status, fact_check_motivation, institutional_source_link)
     """
-    cost_str = costo_stimato.lower()
-    coperture_str = coperture.lower()
-    sintesi_str = sintesi.lower()
+    cost_str = (costo_stimato or "").lower()
+    coperture_str = (coperture or "").lower()
+    sintesi_str = (sintesi or "").lower()
+    
+    # 0. If missing cost or missing coverage, invoke the Public Finance Calculation Engine
+    needs_calc = (
+        not cost_str or 
+        "non quantificato" in cost_str or 
+        not any(c.isdigit() for c in cost_str) or 
+        "non specificat" in coperture_str or 
+        len(coperture_str) < 10
+    )
+    if needs_calc:
+        calc_res = calculate_fiscal_impact_and_coverage(
+            partito=partito,
+            macro_argomento=macro_argomento,
+            sintesi=sintesi,
+            costo_stimato=costo_stimato,
+            coperture_dichiarate=coperture
+        )
+        return (
+            calc_res["fattibilita_finanziaria"],
+            calc_res["fact_check_status"],
+            calc_res["fact_check_motivazione"],
+            calc_res["fact_check_fonte"]
+        )
     
     # 1. Check for one-off coverage used for structural spending (violating art. 81 Cost. & L. 196/2009)
     is_structural_spending = any(k in sintesi_str for k in ["pensioni", "pensione minima", "stipendi", "salario", "quota 41", "ssn", "assunzioni"])
@@ -104,15 +128,9 @@ def analyze_feasibility_and_factcheck(
         return feasibility, status, motivation, source
 
     # G. General Economic/Spending Proposals
-    if costo_stimato == "Non quantificato" or not any(c.isdigit() for c in costo_stimato):
-        status = "In attesa di copertura"
-        feasibility = "Proposta programmatica ad assorbimento di risorse pubbliche, subordinata alla definizione puntuale delle coperture nella sessione di bilancio."
-        motivation = "La Ragioneria Generale dello Stato e l'Ufficio Parlamentare di Bilancio (UPB) richiedono la bollinatura contabile prima dell'iscrizione nei saldi operativi."
-        source = "https://www.upbilancio.it/rapporto-sulla-politica-di-bilancio/"
-    else:
-        status = "Verificato"
-        feasibility = f"Proposta compatibile con gli ordinari stanziamenti e coperture di settore ({costo_stimato})."
-        motivation = "Posizione formalizzata negli atti di indirizzo o disegni di legge presentati presso le Camere con stima di spesa documentata."
-        source = "https://www.parlamento.it/leg19"
+    status = "Verificato"
+    feasibility = f"Proposta compatibile con gli ordinari stanziamenti e coperture di settore ({costo_stimato})."
+    motivation = "Posizione formalizzata negli atti di indirizzo o disegni di legge presentati presso le Camere con stima di spesa documentata."
+    source = "https://www.parlamento.it/leg19"
         
     return feasibility, status, motivation, source

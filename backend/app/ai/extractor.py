@@ -6,6 +6,7 @@ from app.config import settings
 from app.schemas import ProposalExtractionSchema, ImpattoEconomicoSchema, FactCheckSchema
 from app.ai.ollama_client import ollama_client
 from app.ai.fact_checker import analyze_feasibility_and_factcheck
+from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
 from app.ingestion.sources_config import PARTY_ALIASES, MACRO_TOPICS_KEYWORDS
 
 EXTRACTION_SYSTEM_PROMPT = """Sei l'assistente AI analista politico e istituzionale neutrale di PolitiLens.
@@ -228,28 +229,32 @@ def _extract_heuristically(
 
     results = []
     for party in matched_parties[:2]: # Max 2 parties per article
-        feasibility, status, motivazione, fonte_verif = analyze_feasibility_and_factcheck(
+        clean_synth = sanitize_proposal_title(proposal_synthesis, party)
+        if not clean_synth:
+            continue
+
+        fiscal_info = calculate_fiscal_impact_and_coverage(
             partito=party,
             macro_argomento=chosen_topic,
-            sintesi=proposal_synthesis,
+            sintesi=clean_synth,
             costo_stimato=cost,
-            coperture=coverage
+            coperture_dichiarate=coverage
         )
 
         item = ProposalExtractionSchema(
             partito=party,
             macro_argomento=chosen_topic,
-            dichiarazione_sintesi=proposal_synthesis,
+            dichiarazione_sintesi=clean_synth,
             tipo_azione=action_type,
             impatto_economico=ImpattoEconomicoSchema(
-                costo_stimato=cost,
-                coperture_dichiarate=coverage,
-                fattibilita_finanziaria=feasibility
+                costo_stimato=fiscal_info["costo_stimato"],
+                coperture_dichiarate=fiscal_info["coperture_dichiarate"],
+                fattibilita_finanziaria=fiscal_info["fattibilita_finanziaria"]
             ),
             fact_check=FactCheckSchema(
-                status=status,
-                motivazione_oggettiva=motivazione,
-                fonte_verifica=fonte_verif
+                status=fiscal_info["fact_check_status"],
+                motivazione_oggettiva=fiscal_info["fact_check_motivazione"],
+                fonte_verifica=fiscal_info["fact_check_fonte"]
             ),
             fonte_url=url,
             timestamp=ts

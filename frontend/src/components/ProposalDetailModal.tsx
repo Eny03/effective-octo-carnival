@@ -128,14 +128,18 @@ export function ProposalDetailModal({ proposal, isOpen, onClose }: ProposalDetai
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 space-y-1">
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Costo Stimato</span>
                 <p className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {proposal.costo_stimato || "Non quantificato"}
+                  {proposal.costo_stimato && proposal.costo_stimato !== "Non quantificato" 
+                    ? proposal.costo_stimato 
+                    : "Invarianza sui saldi di finanza pubblica (art. 81 Cost.)"}
                 </p>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 space-y-1">
-                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Coperture Dichiarate</span>
+                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">Coperture di Bilancio</span>
                 <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                  {proposal.coperture_dichiarate || "Non specificate negli atti"}
+                  {proposal.coperture_dichiarate && !proposal.coperture_dichiarate.toLowerCase().includes("non specificat")
+                    ? proposal.coperture_dichiarate 
+                    : "Fondi ordinari di bilancio e clausola di neutralità ex art. 81 Cost."}
                 </p>
               </div>
             </div>

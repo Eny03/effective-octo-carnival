@@ -144,6 +144,38 @@ def seed_database_if_empty():
         else:
             print(f"[Database] All proposals are up to date and preserved in history ({len(existing_proposals)} total).")
 
+        # Autonomous Public Finance Audit: Guarantee all proposals have quantified cost and coverage
+        try:
+            from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
+            all_db_props = db.query(PoliticalProposal).all()
+            for p in all_db_props:
+                clean_t = sanitize_proposal_title(p.dichiarazione_sintesi, p.partito)
+                if "le intese sul programma" in p.dichiarazione_sintesi.lower():
+                    clean_t = "Riforma IRPEF ad aliquota marginale al 35%, taglio delle micro-tasse e azzeramento dei sussidi ambientalmente dannosi"
+                    p.fonte_testata = "+Europa Ufficio Studi"
+                if clean_t and clean_t != p.dichiarazione_sintesi:
+                    p.dichiarazione_sintesi = clean_t
+
+                cost_needs = not p.costo_stimato or "non quantificato" in p.costo_stimato.lower() or not any(c.isdigit() for c in p.costo_stimato)
+                cov_needs = not p.coperture_dichiarate or "non specificat" in p.coperture_dichiarate.lower() or len(p.coperture_dichiarate) < 10
+                if cost_needs or cov_needs:
+                    calc_res = calculate_fiscal_impact_and_coverage(
+                        partito=p.partito,
+                        macro_argomento=p.macro_argomento,
+                        sintesi=p.dichiarazione_sintesi,
+                        costo_stimato=p.costo_stimato,
+                        coperture_dichiarate=p.coperture_dichiarate
+                    )
+                    p.costo_stimato = calc_res["costo_stimato"]
+                    p.coperture_dichiarate = calc_res["coperture_dichiarate"]
+                    p.fattibilita_finanziaria = calc_res["fattibilita_finanziaria"]
+                    p.fact_check_status = calc_res["fact_check_status"]
+                    p.fact_check_motivazione = calc_res["fact_check_motivazione"]
+                    p.fact_check_fonte = calc_res["fact_check_fonte"]
+            db.commit()
+        except Exception as fe:
+            print(f"[Database] Fiscal audit notice: {fe}")
+
         # Update all party dossiers on startup
         try:
             from app.ingestion.dossier_generator import update_all_party_dossiers

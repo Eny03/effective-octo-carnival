@@ -4,6 +4,7 @@ import re
 from typing import Dict, Any, List, Optional
 from sqlalchemy.orm import Session
 from app.models import PoliticalParty, PoliticalProposal, InstitutionalBenchmark
+from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage
 
 # Specialized Institutional Knowledge Base for all 18 Monitored Political Forces
 PARTY_PROFILES_KNOWLEDGE_BASE: Dict[str, Dict[str, Any]] = {
@@ -395,14 +396,34 @@ def generate_party_dossier(party: PoliticalParty, db: Session) -> Dict[str, Any]
             if len(sintesi_chiara) > 0 and sintesi_chiara[0].islower():
                 sintesi_chiara = sintesi_chiara[0].upper() + sintesi_chiara[1:]
 
+            cost_str = item.costo_stimato or ""
+            cov_str = item.coperture_dichiarate or ""
+            if not cost_str or cost_str == "Non quantificato" or not any(c.isdigit() for c in cost_str) or not cov_str or cov_str == "Non specificate":
+                f_calc = calculate_fiscal_impact_and_coverage(
+                    partito=party.name,
+                    macro_argomento=topic,
+                    sintesi=sintesi_chiara,
+                    costo_stimato=cost_str,
+                    coperture_dichiarate=cov_str
+                )
+                cost_final = f_calc["costo_stimato"]
+                cov_final = f_calc["coperture_dichiarate"]
+                status_final = f_calc["fact_check_status"]
+                mot_final = f_calc["fact_check_motivazione"]
+            else:
+                cost_final = cost_str
+                cov_final = cov_str
+                status_final = item.fact_check_status or "Verificato"
+                mot_final = item.fact_check_motivazione or item.fattibilita_finanziaria or "Valutazione oggettiva basata su parametri MEF/ISTAT."
+
             pillars.append({
                 "tema": topic,
                 "proposta_chiave": sintesi_chiara,
                 "tipo_azione": item.tipo_azione or "Dichiarazione programmatica",
-                "costo": item.costo_stimato or "Non quantificato",
-                "coperture": item.coperture_dichiarate or "Fondi ordinari di bilancio",
-                "status_verifica": item.fact_check_status or "Verificato",
-                "motivazione": item.fact_check_motivazione or item.fattibilita_finanziaria or "Valutazione oggettiva basata su parametri MEF/ISTAT.",
+                "costo": cost_final,
+                "coperture": cov_final,
+                "status_verifica": status_final,
+                "motivazione": mot_final,
                 "fonte_url": item.fonte_url,
                 "fonte_testata": item.fonte_testata or "Fonti Istituzionali / Stampa Nazionale"
             })

@@ -9,6 +9,7 @@ from app.ingestion.text_extractor import compute_content_hash, clean_html
 from app.ai.extractor import extract_proposals_from_text
 from app.ai.embeddings import get_text_embedding
 from app.ai.fact_checker import analyze_feasibility_and_factcheck
+from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
 from app.ai.policy_merger import find_matching_existing_proposal, merge_or_update_policy_proposal
 from app.ingestion.sources_config import PARTY_ALIASES, MACRO_TOPICS_KEYWORDS
 
@@ -85,18 +86,20 @@ class FiscalAuditorAgent:
     
     @staticmethod
     def audit(proposal_item: Dict[str, Any]) -> Dict[str, Any]:
-        feasibility, status, motivazione, fonte_verif = analyze_feasibility_and_factcheck(
+        fiscal_info = calculate_fiscal_impact_and_coverage(
             partito=proposal_item["party"],
             macro_argomento=proposal_item["topic"],
             sintesi=proposal_item["synthesis"],
-            costo_stimato=proposal_item["cost"],
-            coperture=proposal_item["coverage"]
+            costo_stimato=proposal_item.get("cost"),
+            coperture_dichiarate=proposal_item.get("coverage")
         )
         audited = dict(proposal_item)
-        audited["feasibility"] = feasibility
-        audited["fact_check_status"] = status
-        audited["fact_check_motivazione"] = motivazione
-        audited["fact_check_fonte"] = fonte_verif
+        audited["cost"] = fiscal_info["costo_stimato"]
+        audited["coverage"] = fiscal_info["coperture_dichiarate"]
+        audited["feasibility"] = fiscal_info["fattibilita_finanziaria"]
+        audited["fact_check_status"] = fiscal_info["fact_check_status"]
+        audited["fact_check_motivazione"] = fiscal_info["fact_check_motivazione"]
+        audited["fact_check_fonte"] = fiscal_info["fact_check_fonte"]
         return audited
 
 class ConsensusArbiterAgent:
