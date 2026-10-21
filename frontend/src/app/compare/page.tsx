@@ -14,7 +14,14 @@ import {
   ChevronRight,
   Filter,
   Sparkles,
-  Info
+  Info,
+  Download,
+  Maximize2,
+  Minimize2,
+  TrendingUp,
+  Scale,
+  FileSpreadsheet,
+  AlertCircle
 } from "lucide-react";
 import { 
   fetchComparisonMatrix, 
@@ -26,6 +33,28 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { TopicBadge } from "@/components/TopicBadge";
 
+interface HeadToHeadSynthesis {
+  party1: string;
+  party2: string;
+  topic?: string;
+  executive_summary: string;
+  convergences: string[];
+  divergences: string[];
+  cost_comparison: {
+    party1_name: string;
+    party1_total_mld: number;
+    party1_quantified_count: number;
+    party2_name: string;
+    party2_total_mld: number;
+    party2_quantified_count: number;
+    ratio_summary: string;
+    compliance_mef: string;
+  };
+  proposals_party1: string[];
+  proposals_party2: string[];
+  institutional_verdict: string;
+}
+
 export default function ComparePage() {
   const [matrixData, setMatrixData] = useState<ComparisonMatrixResponse | null>(null);
   const [parties, setParties] = useState<PoliticalParty[]>([]);
@@ -36,10 +65,13 @@ export default function ComparePage() {
   const [selectedCoalition, setSelectedCoalition] = useState<string>("Tutte");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [viewMode, setViewMode] = useState<"head-to-head" | "matrix">("head-to-head");
+  const [isCompactView, setIsCompactView] = useState<boolean>(false);
 
   // Head-to-Head selection
   const [partyA, setPartyA] = useState<string>("Fratelli d'Italia");
   const [partyB, setPartyB] = useState<string>("Partito Democratico");
+  const [synthesis, setSynthesis] = useState<HeadToHeadSynthesis | null>(null);
+  const [loadingSynthesis, setLoadingSynthesis] = useState<boolean>(false);
 
   useEffect(() => {
     async function loadData() {
@@ -59,6 +91,39 @@ export default function ComparePage() {
     }
     loadData();
   }, []);
+
+  // Fetch AI Head-to-Head synthesis whenever partyA, partyB or selectedTopic changes
+  useEffect(() => {
+    if (!partyA || !partyB || partyA === partyB) return;
+    
+    let isCancelled = false;
+    async function loadSynthesis() {
+      try {
+        setLoadingSynthesis(true);
+        const queryTopic = selectedTopic !== "Tutti" ? selectedTopic : undefined;
+        const res = await fetch("/api/comparison/head-to-head-synthesis", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            party1: partyA,
+            party2: partyB,
+            topic: queryTopic
+          })
+        });
+        if (res.ok && !isCancelled) {
+          const data = await res.json();
+          setSynthesis(data);
+        }
+      } catch (e) {
+        console.warn("Could not fetch head to head synthesis:", e);
+      } finally {
+        if (!isCancelled) setLoadingSynthesis(false);
+      }
+    }
+
+    loadSynthesis();
+    return () => { isCancelled = true; };
+  }, [partyA, partyB, selectedTopic]);
 
   const defaultMacroTopics = [
     "Tutti",
@@ -99,46 +164,98 @@ export default function ComparePage() {
     return true;
   });
 
+  // Export Matrix to CSV
+  const handleExportCSV = () => {
+    if (!matrixData) return;
+    const headers = ["Macro-Argomento", ...parties.map(p => `"${p.name}"`)];
+    const rows: string[] = [headers.join(",")];
+
+    for (const row of matrixData.matrix) {
+      const rowCols = [`"${row.macro_argomento}"`];
+      for (const p of parties) {
+        const cell = row.parties[p.name];
+        const text = cell?.proposals?.map(pr => pr.dichiarazione_sintesi).join(" | ") || "Nessun atto censito";
+        rowCols.push(`"${text.replace(/"/g, '""')}"`);
+      }
+      rows.push(rowCols.join(","));
+    }
+
+    const csvContent = "\uFEFF" + rows.join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `politilens_manifesto_comparativo_${Date.now()}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
             <Layers className="w-3.5 h-3.5" />
-            <span>Manifesto Comparativo Dinamico</span>
+            <span>Manifesto Comparativo Istituzionale</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-            Confronto Posizioni & Riforme
+            Confronto Programmi & Sintesi Strategica AI
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Confronta tutte le proposte dei partiti su ciascun tema: ogni forza politica può avere più misure e idee distinte sullo stesso macro-argomento.
+            Confronta le proposte dei partiti su ciascun tema, calcola convergenze, divergenze e saldo dei costi asseverati da MEF/UPB.
           </p>
         </div>
 
         {/* View Switcher Tabs */}
-        <div className="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl self-start sm:self-auto shrink-0">
-          <button
-            onClick={() => setViewMode("head-to-head")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
-              viewMode === "head-to-head"
-                ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-            <span>Testa a Testa (2 Partiti)</span>
-          </button>
-          <button
-            onClick={() => setViewMode("matrix")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-              viewMode === "matrix"
-                ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <span>Tutti i 18 Partiti</span>
-          </button>
+        <div className="flex items-center gap-2">
+          {viewMode === "matrix" && (
+            <>
+              <button
+                onClick={() => setIsCompactView(!isCompactView)}
+                className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
+                title="Attiva/disattiva visuale compatta"
+              >
+                {isCompactView ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{isCompactView ? "Espandi" : "Compatta"}</span>
+              </button>
+
+              <button
+                onClick={handleExportCSV}
+                className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors flex items-center gap-1.5"
+                title="Esporta matrice in CSV / Excel"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Esporta CSV</span>
+              </button>
+            </>
+          )}
+
+          <div className="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl shrink-0">
+            <button
+              onClick={() => setViewMode("head-to-head")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+                viewMode === "head-to-head"
+                  ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>Testa a Testa (2 Forze)</span>
+            </button>
+            <button
+              onClick={() => setViewMode("matrix")}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                viewMode === "matrix"
+                  ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
+                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+              }`}
+            >
+              <span>Matrice 18 Partiti</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -183,7 +300,7 @@ export default function ComparePage() {
       </div>
 
       {loading ? (
-        <div className="p-16 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="p-16 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse">
           Caricamento della matrice comparativa in corso...
         </div>
       ) : viewMode === "head-to-head" ? (
@@ -225,6 +342,90 @@ export default function ComparePage() {
                 ))}
               </select>
             </div>
+          </div>
+
+          {/* AI STRATEGIC SYNTHESIS CARD */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-linear-to-br from-white via-slate-50/50 to-blue-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20 border border-blue-200/80 dark:border-blue-900/60 shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-xl bg-blue-600 text-white shadow-xs">
+                  <Sparkles className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Sintesi Strategica AI: {partyA} vs {partyB}
+                  </h3>
+                  <p className="text-[11px] text-slate-500">
+                    Analisi autonoma di convergenze programmatiche, divergenze e rapporto economico
+                  </p>
+                </div>
+              </div>
+
+              {loadingSynthesis && (
+                <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                  <div className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
+                  <span>Elaborazione AI...</span>
+                </div>
+              )}
+            </div>
+
+            {synthesis && (
+              <div className="space-y-4 text-xs sm:text-sm">
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                  {synthesis.executive_summary}
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Convergences */}
+                  <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
+                    <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                      <span>Punti di Convergenza & Terreno Comune</span>
+                    </div>
+                    <ul className="space-y-1.5 text-xs text-emerald-950 dark:text-emerald-200">
+                      {synthesis.convergences.map((c, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="text-emerald-500 font-bold shrink-0 mt-0.5">•</span>
+                          <span>{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  {/* Divergences */}
+                  <div className="p-4 rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/60 space-y-2">
+                    <div className="flex items-center gap-1.5 font-bold text-rose-900 dark:text-rose-300">
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                      <span>Punti di Contrasto & Divergenze Primarie</span>
+                    </div>
+                    <ul className="space-y-1.5 text-xs text-rose-950 dark:text-rose-200">
+                      {synthesis.divergences.map((d, i) => (
+                        <li key={i} className="flex items-start gap-1.5">
+                          <span className="text-rose-500 font-bold shrink-0 mt-0.5">•</span>
+                          <span>{d}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Cost ratio comparison box */}
+                <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                    <div>
+                      <strong className="text-amber-950 dark:text-amber-200">Rapporto di Costo Comparato: </strong>
+                      <span className="text-amber-900 dark:text-amber-300 font-mono">
+                        {synthesis.cost_comparison.ratio_summary}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-amber-800 dark:text-amber-400 font-semibold">
+                    {synthesis.cost_comparison.compliance_mef}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Comparison Rows */}
@@ -271,7 +472,6 @@ export default function ComparePage() {
                           </span>
                         </div>
 
-                        {/* List of distinct proposals for Party A */}
                         {propsA.length === 0 ? (
                           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-400">
                             Nessuna posizione formalizzata su questo tema.
@@ -329,7 +529,6 @@ export default function ComparePage() {
                           </span>
                         </div>
 
-                        {/* List of distinct proposals for Party B */}
                         {propsB.length === 0 ? (
                           <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-400">
                             Nessuna posizione formalizzata su questo tema.
@@ -379,7 +578,6 @@ export default function ComparePage() {
       ) : (
         /* Full Party Matrix View */
         <div className="space-y-4">
-          {/* Coalition selector for matrix */}
           <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
             {["Tutte", "Centrodestra", "Centrosinistra", "Movimento 5 Stelle", "Centro / Liberaldemocratici", "Sinistra Radicale"].map((c) => (
               <button
@@ -409,7 +607,7 @@ export default function ComparePage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <div className={`grid gap-2.5 ${isCompactView ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
                   {filteredParties.map((party) => {
                     const cell = row.parties[party.name];
                     const hasProposals = cell && cell.proposals.length > 0;
@@ -418,7 +616,7 @@ export default function ComparePage() {
                     return (
                       <div
                         key={party.code}
-                        className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs flex flex-col justify-between"
+                        className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col justify-between ${isCompactView ? "space-y-1 text-[11px]" : "space-y-1.5 text-xs"}`}
                       >
                         <div>
                           <div className="flex items-center justify-between mb-1">
@@ -434,17 +632,19 @@ export default function ComparePage() {
                             </span>
                           </div>
 
-                          <div className="space-y-1.5 pt-0.5">
-                            {cell.proposals.slice(0, 2).map((p, idx) => (
-                              <div key={idx} className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-2">
-                                • {p.dichiarazione_sintesi}
-                              </div>
-                            ))}
-                          </div>
+                          {!isCompactView && (
+                            <div className="space-y-1.5 pt-0.5">
+                              {cell.proposals.slice(0, 2).map((p, idx) => (
+                                <div key={idx} className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-2">
+                                  • {p.dichiarazione_sintesi}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-500 mt-2">
-                          <span>{cell.proposals[0]?.costo_stimato || "Non quantificato"}</span>
+                          <span className="truncate mr-1">{cell.proposals[0]?.costo_stimato || "Non quantificato"}</span>
                           <StatusBadge status={cell.proposals[0]?.fact_check_status || "Verificato"} size="sm" />
                         </div>
                       </div>

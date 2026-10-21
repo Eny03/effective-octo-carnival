@@ -7,18 +7,32 @@ import {
   User, 
   Layers, 
   Coins, 
-  Calendar,
-  CheckCircle2,
-  FileText,
-  ShieldCheck,
-  Search,
-  Sparkles,
-  TrendingUp,
-  AlertCircle,
-  Clock,
-  Globe,
-  Share2
+  Calendar, 
+  CheckCircle2, 
+  FileText, 
+  ShieldCheck, 
+  Search, 
+  Sparkles, 
+  TrendingUp, 
+  AlertCircle, 
+  Clock, 
+  Globe, 
+  Share2,
+  PieChart as PieIcon,
+  Compass,
+  Vote,
+  Landmark,
+  Zap
 } from "lucide-react";
+import { 
+  ResponsiveContainer, 
+  RadarChart, 
+  PolarGrid, 
+  PolarAngleAxis, 
+  PolarRadiusAxis, 
+  Radar, 
+  Tooltip 
+} from "recharts";
 import { 
   fetchParties, 
   fetchPartyDetail, 
@@ -103,123 +117,157 @@ export default function PartiesPage() {
     return p.coalition.toLowerCase().includes(filterCoalition.toLowerCase());
   });
 
-  const displayedProposals = partyProposals.filter((p) => {
-    if (selectedTopic !== "Tutti" && !p.macro_argomento.toLowerCase().includes(selectedTopic.toLowerCase())) {
-      return false;
-    }
-    return true;
+  const filteredProposals = partyProposals.filter((p) => {
+    if (selectedTopic === "Tutti") return true;
+    return p.macro_argomento === selectedTopic;
   });
 
+  // Prepare Radar Chart data for 8 main macro-topics
+  const RADAR_TOPICS = [
+    "Fisco",
+    "Lavoro",
+    "Sanità",
+    "Pensioni",
+    "Energia",
+    "Istituzioni",
+    "Immigrazione",
+    "Istruzione"
+  ];
+
+  const radarData = RADAR_TOPICS.map((topic) => {
+    const fromDist = topicDistribution[topic];
+    const fromProps = partyProposals.filter((p) => p.macro_argomento === topic).length;
+    return {
+      topic,
+      count: fromDist !== undefined ? fromDist : fromProps
+    };
+  });
+
+  // Structured Historical Timeline (2022-2026) helper
+  const getTimelinePhases = () => {
+    const rawEvents = partyDossier?.evoluzione_storica_legislatura || [];
+    
+    // Group into 3 phases: 2022, 2023-2024, 2025-2026
+    const phase2022: { label: string; text: string }[] = [];
+    const phase2324: { label: string; text: string }[] = [];
+    const phase2526: { label: string; text: string }[] = [];
+
+    for (const ev of rawEvents) {
+      const p = ev.periodo.toLowerCase();
+      if (p.includes("2022") || p.includes("campagna") || p.includes("inizio")) {
+        phase2022.push({ label: ev.periodo, text: ev.sintesi });
+      } else if (p.includes("2025") || p.includes("2026") || p.includes("recent") || p.includes("oggi")) {
+        phase2526.push({ label: ev.periodo, text: ev.sintesi });
+      } else {
+        phase2324.push({ label: ev.periodo, text: ev.sintesi });
+      }
+    }
+
+    // Fallbacks from proposals if events are scarce
+    if (phase2022.length === 0) {
+      const p22 = partyProposals.filter(p => p.timestamp && new Date(p.timestamp).getFullYear() <= 2022);
+      if (p22.length > 0) {
+        phase2022.push({ label: "Campagna Elettorale 2022", text: p22[0].dichiarazione_sintesi });
+      } else {
+        phase2022.push({ label: "Campagna Elettorale 2022", text: "Presentazione del programma fondativo e priorità programmatiche per la XIX Legislatura." });
+      }
+    }
+
+    if (phase2324.length === 0) {
+      const p23 = partyProposals.filter(p => p.timestamp && [2023, 2024].includes(new Date(p.timestamp).getFullYear()));
+      if (p23.length > 0) {
+        phase2324.push({ label: "Atti Legislatura 2023 – 2024", text: p23[0].dichiarazione_sintesi });
+      } else {
+        phase2324.push({ label: "Atti Legislatura 2023 – 2024", text: "Attuazione delle linee di indirizzo in Parlamento tramite disegni di legge ordinari e mozioni." });
+      }
+    }
+
+    if (phase2526.length === 0) {
+      const p25 = partyProposals.filter(p => p.timestamp && new Date(p.timestamp).getFullYear() >= 2025);
+      if (p25.length > 0) {
+        phase2526.push({ label: "Posizioni Recenti 2025 – 2026", text: p25[0].dichiarazione_sintesi });
+      } else {
+        phase2526.push({ label: "Posizioni Recenti 2025 – 2026", text: "Rimodulazione degli obiettivi alla luce dei nuovi parametri del Patto di Stabilità UE e delle scadenze PNRR." });
+      }
+    }
+
+    return { phase2022, phase2324, phase2526 };
+  };
+
+  const timelinePhases = getTimelinePhases();
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6 sm:space-y-8">
-      {/* Page Header */}
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Dossier & Sondaggi Elettorali Aggiornati dall'AI</span>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
+            <Building2 className="w-3.5 h-3.5" />
+            <span>Osservatorio Permanente Forze Politiche</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Schede Partiti & Dossier Strategici AI
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            Analisi dettagliata di tutti i 18 partiti italiani: priorità tematiche, evoluzione storica continua dal 2022 in poi e sviluppi programmatici futuri.
+          </p>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
-          Dossier e Programmi dei Partiti ({parties.length} Forze Politiche)
-        </h1>
-        <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          L'intelligenza artificiale dell'app scansiona tutto il web ogni 10 minuti, confronta dichiarazioni, manifesti ed eventi e calcola la media ponderata dei sondaggi elettorali nazionali.
-        </p>
       </div>
 
-      {/* Horizontal Party Selector for Mobile & Quick Taps */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-        {filteredParties.map((p) => {
-          const isSelected = selectedParty?.id === p.id;
-          return (
-            <button
-              key={p.id}
-              onClick={() => selectParty(p)}
-              className={`shrink-0 flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
-                isSelected
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs ring-2 ring-blue-500/30"
-                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
-              }`}
-            >
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-              <span className="truncate">{p.name}</span>
-              {p.poll_percentage !== undefined && (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-blue-100/80 dark:bg-blue-900/60 text-blue-800 dark:text-blue-200 font-mono font-bold">
-                  {p.poll_percentage}%
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Main Grid: Sidebar + Detailed Dossier */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        {/* Desktop Sidebar: Detailed Party List */}
-        <div className="hidden lg:block lg:col-span-4 space-y-3">
-          <div className="flex items-center justify-between pb-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Forze Politiche ({filteredParties.length})
-            </span>
-            <select
-              value={filterCoalition}
-              onChange={(e) => setFilterCoalition(e.target.value)}
-              className="text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1 text-slate-700 dark:text-slate-300 focus:outline-hidden"
-            >
-              {coalitions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Left Column: Party Selector List */}
+        <div className="lg:col-span-4 space-y-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {coalitions.map((c) => (
+              <button
+                key={c}
+                onClick={() => setFilterCoalition(c)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shrink-0 ${
+                  filterCoalition === c
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
           </div>
 
-          <div className="space-y-1.5">
+          <div className="space-y-2 max-h-[600px] overflow-y-auto pr-1">
             {filteredParties.map((p) => {
               const isSelected = selectedParty?.id === p.id;
               return (
                 <button
                   key={p.id}
                   onClick={() => selectParty(p)}
-                  className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between ${
+                  className={`w-full text-left p-3 rounded-2xl border transition-all flex items-center justify-between ${
                     isSelected
-                      ? "bg-slate-50 dark:bg-slate-800/80 border-blue-500 shadow-xs ring-1 ring-blue-500/20"
-                      : "bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 hover:border-slate-300"
+                      ? "bg-white dark:bg-slate-900 border-blue-500 shadow-sm ring-2 ring-blue-500/20"
+                      : "bg-white/60 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-900"
                   }`}
                 >
-                  <div className="flex items-center gap-2.5">
-                    <span className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
-                    <div>
-                      <div className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0 shadow-xs"
+                      style={{ backgroundColor: p.color }}
+                    />
+                    <div className="truncate">
+                      <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
                         {p.name}
                       </div>
-                      <div className="text-[11px] text-slate-400 line-clamp-1">
-                        {p.leader || p.coalition}
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-1">
-                        <span className="text-[10px] px-1 py-0.2 rounded font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-900/40">
-                          {p.truthfulness_score}% Veridicità
-                        </span>
+                      <div className="text-[10px] text-slate-400 truncate">
+                        {p.coalition}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right shrink-0 flex flex-col items-end">
+
+                  <div className="text-right shrink-0 pl-2">
                     {p.poll_percentage !== undefined && (
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs font-black text-blue-600 dark:text-blue-400 font-mono">
-                          {p.poll_percentage}%
-                        </span>
-                        <span className={`text-[9px] font-bold ${
-                          p.poll_trend?.startsWith("+")
-                            ? "text-emerald-600 dark:text-emerald-400"
-                            : p.poll_trend?.startsWith("-")
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-slate-400"
-                        }`}>
-                          {p.poll_trend}
-                        </span>
+                      <div className="text-xs font-black text-slate-900 dark:text-white font-mono">
+                        {p.poll_percentage}%
                       </div>
                     )}
-                    <span className="text-[10px] font-semibold text-slate-400 mt-1">
+                    <span className="text-[10px] font-semibold text-slate-400">
                       {p.proposals_count} atti
                     </span>
                   </div>
@@ -229,12 +277,12 @@ export default function PartiesPage() {
           </div>
         </div>
 
-        {/* Right Column: Comprehensive AI Dossier Content */}
+        {/* Right Column: Party Dossier & Radar Chart */}
         <div className="lg:col-span-8 space-y-5">
           {selectedParty ? (
             <div className="space-y-5">
               {/* Party Profile Header Card */}
-              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs relative overflow-hidden">
+              <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-xs relative overflow-hidden">
                 <div
                   className="absolute top-0 left-0 right-0 h-1.5"
                   style={{ backgroundColor: selectedParty.color }}
@@ -252,45 +300,39 @@ export default function PartiesPage() {
                       Schieramento: <strong>{selectedParty.coalition}</strong> {selectedParty.leader && `• Leader: ${selectedParty.leader}`}
                     </p>
 
-                    {/* Live Poll & Veridicità Badges */}
                     <div className="flex flex-wrap items-center gap-2 pt-2.5">
                       {selectedParty.poll_percentage !== undefined && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                           <TrendingUp className="w-3.5 h-3.5" />
                           <span>Sondaggi: {selectedParty.poll_percentage}% ({selectedParty.poll_trend || "stabile"})</span>
                         </span>
                       )}
                       {selectedParty.truthfulness_score !== undefined && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           <span>Veridicità: {selectedParty.truthfulness_score}%</span>
                         </span>
                       )}
                       {selectedParty.financial_reliability_score !== undefined && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 whitespace-nowrap">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                           <Coins className="w-3.5 h-3.5" />
                           <span>Coperture: {selectedParty.financial_reliability_score}%</span>
                         </span>
                       )}
                     </div>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      {selectedParty.poll_sources || "Media ponderata Supermedia YouTrend/AGI, SWG, Ipsos, Tecnè, Noto"}
-                    </p>
                   </div>
 
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                    {selectedParty.official_website && (
-                      <a
-                        href={selectedParty.official_website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                      >
-                        <span>Sito Ufficiale</span>
-                        <ExternalLink className="w-3 h-3" />
-                      </a>
-                    )}
-                  </div>
+                  {selectedParty.official_website && (
+                    <a
+                      href={selectedParty.official_website}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors self-start sm:self-auto"
+                    >
+                      <span>Sito Ufficiale</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
                 </div>
 
                 {selectedParty.description && (
@@ -299,7 +341,7 @@ export default function PartiesPage() {
                   </p>
                 )}
 
-                {/* Sub-Tabs: AI Dossier, Web News, Catalog of Proposals */}
+                {/* Sub-Tabs Switcher */}
                 <div className="flex items-center gap-2 border-t border-slate-100 dark:border-slate-800 pt-3 overflow-x-auto scrollbar-none pb-1">
                   <button
                     onClick={() => setActiveTab("dossier")}
@@ -310,7 +352,7 @@ export default function PartiesPage() {
                     }`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>Dossier Strategico AI</span>
+                    <span>Dossier Strategico & Radar AI</span>
                   </button>
 
                   <button
@@ -322,7 +364,7 @@ export default function PartiesPage() {
                     }`}
                   >
                     <Globe className="w-3.5 h-3.5" />
-                    <span>Dichiarazioni & Web ({partyDossier?.dichiarazioni_recenti_web?.length || 0})</span>
+                    <span>Dichiarazioni & Fonti Web ({partyDossier?.dichiarazioni_recenti_web?.length || 0})</span>
                   </button>
 
                   <button
@@ -341,7 +383,7 @@ export default function PartiesPage() {
 
               {/* Tab 1: AI Strategic Dossier View */}
               {activeTab === "dossier" && (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {partyDossier ? (
                     <>
                       {/* Strategic Synthesis Card */}
@@ -358,137 +400,121 @@ export default function PartiesPage() {
                         <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                           {partyDossier.sintesi_strategica}
                         </p>
-
-                        {/* Quick KPI stats */}
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-100 dark:border-slate-800">
-                          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 text-center">
-                            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Atti Totali</div>
-                            <div className="text-base font-black text-slate-900 dark:text-white mt-0.5">
-                              {partyDossier.statistiche_atti.totale_atti}
-                            </div>
-                          </div>
-                          <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-center border border-emerald-100 dark:border-emerald-900/40">
-                            <div className="text-[10px] uppercase tracking-wider text-emerald-600 dark:text-emerald-400 font-semibold">Verificati</div>
-                            <div className="text-base font-black text-emerald-700 dark:text-emerald-300 mt-0.5">
-                              {partyDossier.statistiche_atti.verificati}
-                            </div>
-                          </div>
-                          <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-center border border-amber-100 dark:border-amber-900/40">
-                            <div className="text-[10px] uppercase tracking-wider text-amber-600 dark:text-amber-400 font-semibold">In Attesa Coperture</div>
-                            <div className="text-base font-black text-amber-700 dark:text-amber-300 mt-0.5">
-                              {partyDossier.statistiche_atti.in_attesa_copertura}
-                            </div>
-                          </div>
-                          <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-center border border-blue-100 dark:border-blue-900/40">
-                            <div className="text-[10px] uppercase tracking-wider text-blue-600 dark:text-blue-400 font-semibold">Fattibilità Globale</div>
-                            <div className="text-base font-black text-blue-700 dark:text-blue-300 mt-0.5">
-                              {partyDossier.score_affidabilita}
-                            </div>
-                          </div>
-                        </div>
                       </div>
 
-                      {/* AI Fact-Checking & Polling Statistics Card */}
-                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
-                          <div>
-                            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-1">
-                              <TrendingUp className="w-3 h-3" />
-                              <span>Statistiche Demoscopiche & Fact-Checking AI</span>
-                            </div>
+                      {/* RADAR CHART: PRIORITÀ TEMATICHE (RECHARTS) */}
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
+                          <div className="flex items-center gap-2">
+                            <Compass className="w-4 h-4 text-indigo-500" />
                             <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                              Analisi della Veridicità e Consenso Nazionale per {selectedParty.name}
+                              Distribuzione Tematica delle Priorità (Radar AI)
                             </h3>
                           </div>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            Dati aggregati da tutto il web 24/7
+                          <span className="text-[10px] text-slate-400">
+                            Densità degli atti per macro-tema
                           </span>
                         </div>
 
-                        {/* Visual Gauges Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                          {/* Polling Average */}
-                          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-2">
-                            <div className="flex items-center justify-between text-xs text-slate-500">
-                              <span className="font-semibold">Media Sondaggi Nazionali</span>
-                              <span className={`text-[10px] font-bold ${
-                                selectedParty.poll_trend?.startsWith("+")
-                                  ? "text-emerald-600 dark:text-emerald-400"
-                                  : selectedParty.poll_trend?.startsWith("-")
-                                  ? "text-rose-600 dark:text-rose-400"
-                                  : "text-slate-400"
-                              }`}>
-                                {selectedParty.poll_trend || "stabile"}
-                              </span>
-                            </div>
-                            <div className="text-2xl font-black text-slate-900 dark:text-white font-mono">
-                              {selectedParty.poll_percentage}%
-                            </div>
-                            <div className="w-full bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                              <div
-                                className="h-full rounded-full transition-all duration-700"
-                                style={{
-                                  width: `${Math.min(100, ((selectedParty.poll_percentage || 0) / 35) * 100)}%`,
-                                  backgroundColor: selectedParty.color
+                        <div className="h-72 w-full">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <RadarChart data={radarData} outerRadius="75%">
+                              <PolarGrid stroke="#94a3b8" strokeDasharray="3 3" opacity={0.3} />
+                              <PolarAngleAxis 
+                                dataKey="topic" 
+                                tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} 
+                              />
+                              <PolarRadiusAxis angle={30} domain={[0, 'auto']} tick={{ fontSize: 9 }} />
+                              <Radar
+                                name={selectedParty.name}
+                                dataKey="count"
+                                stroke={selectedParty.color || "#3b82f6"}
+                                fill={selectedParty.color || "#3b82f6"}
+                                fillOpacity={0.45}
+                              />
+                              <Tooltip 
+                                content={({ active, payload }) => {
+                                  if (active && payload && payload.length) {
+                                    return (
+                                      <div className="p-2 bg-slate-900 text-white rounded-lg text-xs font-semibold shadow-md">
+                                        <div>{payload[0].payload.topic}: <strong>{payload[0].value} atti</strong></div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
                                 }}
                               />
-                            </div>
-                            <p className="text-[10px] text-slate-400 leading-snug">
-                              {selectedParty.poll_sources || "Media ponderata Supermedia YouTrend/AGI, SWG, Ipsos, Tecnè, Noto"}
-                            </p>
-                          </div>
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
 
-                          {/* Truthfulness Score */}
-                          <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/40 space-y-2">
-                            <div className="flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-300">
-                              <span className="font-semibold">Indice di Veridicità AI</span>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                            </div>
-                            <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300 font-mono">
-                              {selectedParty.truthfulness_score}%
-                            </div>
-                            <div className="w-full bg-emerald-200 dark:bg-emerald-900/60 h-2 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                                style={{ width: `${selectedParty.truthfulness_score || 0}%` }}
-                              />
-                            </div>
-                            <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 leading-snug">
-                              {partyDossier.statistiche_atti.verificati} atti verificati su {partyDossier.statistiche_atti.totale_atti} con fonti istituzionali (MEF, ISTAT, UPB).
-                            </p>
-                          </div>
-
-                          {/* Financial Reliability */}
-                          <div className="p-3.5 rounded-xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/40 space-y-2">
-                            <div className="flex items-center justify-between text-xs text-amber-800 dark:text-amber-300">
-                              <span className="font-semibold">Coperture Finanziarie</span>
-                              <Coins className="w-3.5 h-3.5 text-amber-600" />
-                            </div>
-                            <div className="text-2xl font-black text-amber-700 dark:text-amber-300 font-mono">
-                              {selectedParty.financial_reliability_score}%
-                            </div>
-                            <div className="w-full bg-amber-200 dark:bg-amber-900/60 h-2 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-amber-500 rounded-full transition-all duration-700"
-                                style={{ width: `${selectedParty.financial_reliability_score || 0}%` }}
-                              />
-                            </div>
-                            <p className="text-[10px] text-amber-700/80 dark:text-amber-400/80 leading-snug">
-                              Atti con stima economica conforme ai vincoli del Patto di Stabilità UE (deficit ≤ 3%).
-                            </p>
-                          </div>
+                      {/* ENHANCED HISTORICAL TIMELINE (2022 - 2026) */}
+                      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-4">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
+                          <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-blue-500" />
+                            <span>Evoluzione della Linea Politica e Traiettoria (2022 – Presente & Sviluppi Futuri)</span>
+                          </h3>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-300">
+                            XIX Legislatura
+                          </span>
                         </div>
 
-                        {/* Breakdown Explanation */}
-                        <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-600 dark:text-slate-300 space-y-1">
-                          <div className="font-semibold text-slate-800 dark:text-slate-200">
-                            Metodologia di calcolo dell'Intelligenza Artificiale:
+                        <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
+                          {/* Phase 1: Campagna Elettorale 2022 */}
+                          <div className="relative pl-8 space-y-1.5">
+                            <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs" />
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                                🗳️ Campagna Elettorale 2022
+                              </span>
+                              <span className="text-[10px] text-slate-400">Promesse programmatiche fondative</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {timelinePhases.phase2022.map((item, idx) => (
+                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                  {item.text}
+                                </p>
+                              ))}
+                            </div>
                           </div>
-                          <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-[10px]">
-                            L'AI raccoglie costantemente informazioni da motori di ricerca, agenzie di stampa, atti della Camera/Senato e canali dei partiti.
-                            Le posizioni rimangono memorizzate nello storico persistente senza azzeramenti: se una dichiarazione viene modificata o aggiornata, l'AI aggiorna la posizione esistente.
-                            La veridicità misura la percentuale di proposte con relazioni tecniche attendibili rispetto a quelle non quantificate o esagerate.
-                          </p>
+
+                          {/* Phase 2: Primi Atti di Legislatura 2023 - 2024 */}
+                          <div className="relative pl-8 space-y-1.5">
+                            <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs" />
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
+                                🏛️ Primi Atti di Legislatura (2023 – 2024)
+                              </span>
+                              <span className="text-[10px] text-slate-400">Disegni di legge & decreti depositati</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {timelinePhases.phase2324.map((item, idx) => (
+                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                  {item.text}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Phase 3: Posizioni Recenti & Sviluppi Futuri */}
+                          <div className="relative pl-8 space-y-1.5">
+                            <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs" />
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                                ⚡ Posizioni Recenti & Sviluppi Futuri (2025 – In Corso & Futuro)
+                              </span>
+                              <span className="text-[10px] text-slate-400">Adattamento a vincoli MEF, PNRR e riforme in discussione</span>
+                            </div>
+                            <div className="space-y-1.5">
+                              {timelinePhases.phase2526.map((item, idx) => (
+                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                  {item.text}
+                                </p>
+                              ))}
+                            </div>
+                          </div>
                         </div>
                       </div>
 
@@ -527,55 +553,12 @@ export default function PartiesPage() {
                                   {pil.motivazione}
                                 </div>
                               </div>
-
-                              {pil.fonte_url && (
-                                <a
-                                  href={pil.fonte_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-mono pt-1"
-                                >
-                                  <span>Fonte: {pil.fonte_testata}</span>
-                                  <ExternalLink className="w-2.5 h-2.5 shrink-0" />
-                                </a>
-                              )}
                             </div>
                           ))}
                         </div>
                       </div>
 
-                      {/* Historical Evolution Timeline (2022 - 2026) */}
-                      {partyDossier.evoluzione_storica_legislatura && partyDossier.evoluzione_storica_legislatura.length > 0 && (
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
-                          <div className="flex items-center justify-between">
-                            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                              <Clock className="w-4 h-4 text-blue-500" />
-                              <span>Evoluzione della Linea Politica (2022 – 2026)</span>
-                            </h3>
-                            <span className="text-[10px] font-semibold text-slate-400">
-                              Traiettoria della Legislatura
-                            </span>
-                          </div>
-
-                          <div className="space-y-2.5 pt-1">
-                            {partyDossier.evoluzione_storica_legislatura.map((step, sIdx) => (
-                              <div
-                                key={sIdx}
-                                className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800"
-                              >
-                                <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900 font-mono">
-                                  {step.periodo}
-                                </span>
-                                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pt-0.5">
-                                  {step.sintesi}
-                                </p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Institutional Audit: Strengths & Vulnerabilities */}
+                      {/* Strengths & Vulnerabilities */}
                       {(partyDossier.punti_di_forza || partyDossier.criticita_osservatorio) && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                           {partyDossier.punti_di_forza && (
@@ -603,57 +586,33 @@ export default function PartiesPage() {
                           )}
                         </div>
                       )}
-
-                      {/* Financial Feasibility Audit */}
-                      <div className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3">
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div className="flex items-center gap-2">
-                            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                              Audit Finanziario & Vincoli di Bilancio
-                            </h4>
-                          </div>
-                          {partyDossier.valutazione_finanziaria.impegno_economico_stimato && (
-                            <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-900 self-start sm:self-auto">
-                              Impegno Stimato: {partyDossier.valutazione_finanziaria.impegno_economico_stimato}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-                          {partyDossier.valutazione_finanziaria.analisi_coperture}
-                        </p>
-                      </div>
                     </>
-                  ) : (
-                    <div className="p-12 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border">
-                      Dossier in elaborazione da parte dell'AI...
+                  ) : loadingDossier ? (
+                    <div className="p-12 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 animate-pulse">
+                      Caricamento del Dossier AI in corso...
                     </div>
-                  )}
+                  ) : null}
                 </div>
               )}
 
-              {/* Tab 2: Web Declarations & Live News */}
+              {/* Tab 2: Dichiarazioni Web & Citations */}
               {activeTab === "web_news" && (
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      <Globe className="w-4 h-4 text-blue-500" />
-                      <span>Dichiarazioni, Interviste & Notizie Rilevate dal Web</span>
-                    </h3>
-                  </div>
-
                   {partyDossier?.dichiarazioni_recenti_web && partyDossier.dichiarazioni_recenti_web.length > 0 ? (
-                    <div className="space-y-3">
-                      {partyDossier.dichiarazioni_recenti_web.map((quote, idx) => (
+                    <div className="grid grid-cols-1 gap-3">
+                      {partyDossier.dichiarazioni_recenti_web.map((quote, qIdx) => (
                         <div
-                          key={idx}
-                          className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2"
+                          key={qIdx}
+                          className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2"
                         >
                           <div className="flex items-center justify-between text-[11px] text-slate-400">
-                            <span className="font-semibold text-slate-700 dark:text-slate-300">{quote.fonte}</span>
-                            <span className="font-mono">{quote.data}</span>
+                            <span className="font-semibold text-blue-600 dark:text-blue-400">{quote.fonte}</span>
+                            <span>{quote.data}</span>
                           </div>
-                          <p className="text-xs font-semibold text-slate-900 dark:text-white leading-relaxed">
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                            {quote.titolo}
+                          </h4>
+                          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                             "{quote.dichiarazione}"
                           </p>
                           {quote.url && (
@@ -661,76 +620,53 @@ export default function PartiesPage() {
                               href={quote.url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1 text-[11px] text-blue-600 dark:text-blue-400 hover:underline pt-1 font-mono"
+                              className="text-[10px] text-blue-600 dark:text-blue-400 hover:underline inline-flex items-center gap-1 font-mono pt-1"
                             >
-                              <span>Leggi notizia originale</span>
-                              <ExternalLink className="w-3 h-3" />
+                              <span>Leggi l'articolo originale</span>
+                              <ExternalLink className="w-2.5 h-2.5" />
                             </a>
                           )}
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="p-8 text-center text-xs text-slate-500 bg-white dark:bg-slate-900 rounded-2xl border">
-                      Nessuna dichiarazione web recente rilevata al momento.
+                    <div className="p-8 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                      Nessuna dichiarazione recente indicizzata dal web per questa forza politica.
                     </div>
                   )}
                 </div>
               )}
 
-              {/* Tab 3: Detailed Proposals Stream */}
+              {/* Tab 3: Catalog of Formal Proposals */}
               {activeTab === "proposals" && (
                 <div className="space-y-4">
-                  {/* Topic Filter Chips */}
-                  <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">
-                      Filtra Atti per Tema:
-                    </span>
-                    <div className="flex flex-wrap gap-1.5">
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                    {["Tutti", ...RADAR_TOPICS].map((top) => (
                       <button
-                        onClick={() => setSelectedTopic("Tutti")}
-                        className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                          selectedTopic === "Tutti"
-                            ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                        key={top}
+                        onClick={() => setSelectedTopic(top)}
+                        className={`px-3 py-1 rounded-full text-xs font-semibold transition-all shrink-0 ${
+                          selectedTopic === top
+                            ? "bg-blue-600 text-white shadow-xs"
                             : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
                         }`}
                       >
-                        Tutti ({partyProposals.length})
+                        {top}
                       </button>
-                      {Object.entries(topicDistribution).map(([topic, count]) => (
-                        <button
-                          key={topic}
-                          onClick={() => setSelectedTopic(topic)}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                            selectedTopic === topic
-                              ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                              : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
-                          }`}
-                        >
-                          <span>{topic}</span>
-                          <span className="text-[10px] opacity-70">({count})</span>
-                        </button>
-                      ))}
-                    </div>
+                    ))}
                   </div>
 
-                  {displayedProposals.length === 0 ? (
-                    <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-slate-500 text-xs">
-                      Nessun atto trovato per questo tema.
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {displayedProposals.map((prop) => (
-                        <ProposalCard key={prop.id} proposal={prop} />
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                    {filteredProposals.map((prop) => (
+                      <ProposalCard key={prop.id} proposal={prop} />
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
           ) : (
-            <div className="p-16 text-center text-xs text-slate-400">
-              Seleziona un partito per visualizzarne il dossier completo.
+            <div className="p-16 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800">
+              Seleziona un partito dalla colonna di sinistra per visualizzare il dossier.
             </div>
           )}
         </div>

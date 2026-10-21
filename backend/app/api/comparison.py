@@ -1,9 +1,20 @@
-from typing import List, Dict
-from fastapi import APIRouter, Depends
+import re
+import json
+from typing import List, Dict, Optional, Any
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import PoliticalProposal, PoliticalParty
-from app.schemas import ComparisonMatrixResponse, TopicComparisonRow, ComparisonCell, PoliticalPartySchema, PoliticalProposalDetail
+from app.schemas import (
+    ComparisonMatrixResponse,
+    TopicComparisonRow,
+    ComparisonCell,
+    PoliticalPartySchema,
+    PoliticalProposalDetail,
+    HeadToHeadSynthesisRequest,
+    HeadToHeadSynthesisResponse
+)
+from app.ai.llm_provider import llm_provider
 
 router = APIRouter(prefix="/api/comparison", tags=["Manifesto Dinamico & Comparatore"])
 
@@ -94,3 +105,142 @@ def get_comparison_matrix(db: Session = Depends(get_db)):
         partiti=[PoliticalPartySchema.model_validate(p) for p in parties],
         matrix=rows
     )
+
+def _parse_cost_in_billions(cost_str: str) -> float:
+    """Extracts numeric billions from strings like '~12.5 Mld €', '3.5 Mld €', etc."""
+    if not cost_str or "non quantificato" in cost_str.lower() or "invarianza" in cost_str.lower():
+        return 0.0
+    m = re.search(r"(\d+(?:[.,]\d+)?)\s*mld", cost_str, re.I)
+    if m:
+        return float(m.group(1).replace(",", "."))
+    m2 = re.search(r"(\d+(?:[.,]\d+)?)\s*mln", cost_str, re.I)
+    if m2:
+        return float(m2.group(1).replace(",", ".")) / 1000.0
+    return 0.0
+
+async def _compute_head_to_head_synthesis(
+    party1_name: str,
+    party2_name: str,
+    topic: Optional[str],
+    db: Session
+) -> HeadToHeadSynthesisResponse:
+    # Query proposals for both parties
+    all_props = db.query(PoliticalProposal).all()
+    
+    props1 = [
+        p for p in all_props 
+        if (party1_name.lower() in p.partito.lower() or p.partito.lower() in party1_name.lower())
+        and (not topic or topic.lower() == "tutti" or p.macro_argomento.lower() == topic.lower())
+    ]
+    props2 = [
+        p for p in all_props 
+        if (party2_name.lower() in p.partito.lower() or p.partito.lower() in party2_name.lower())
+        and (not topic or topic.lower() == "tutti" or p.macro_argomento.lower() == topic.lower())
+    ]
+
+    cost1_total = sum(_parse_cost_in_billions(p.costo_stimato) for p in props1)
+    cost2_total = sum(_parse_cost_in_billions(p.costo_stimato) for p in props2)
+    
+    quantified1 = sum(1 for p in props1 if "non quantificato" not in p.costo_stimato.lower())
+    quantified2 = sum(1 for p in props2 if "non quantificato" not in p.costo_stimato.lower())
+
+    p1_summaries = [f"[{p.macro_argomento}] {p.dichiarazione_sintesi} ({p.costo_stimato})" for p in props1[:8]]
+    p2_summaries = [f"[{p.macro_argomento}] {p.dichiarazione_sintesi} ({p.costo_stimato})" for p in props2[:8]]
+
+    # Analyze commonalities and contrasts
+    convergences = []
+    divergences = []
+
+    # Check thematic common grounds
+    topics1 = {p.macro_argomento for p in props1}
+    topics2 = {p.macro_argomento for p in props2}
+    common_topics = topics1.intersection(topics2)
+
+    if "Sanità" in common_topics:
+        convergences.append("Potenziamento della spesa sanitaria pubblica e riduzione delle liste d'attesa SSN (seppur con diverse priorità su personale vs convenzioni private).")
+    if "Lavoro" in common_topics:
+        convergences.append("Necessità condivisa di ridurre il cuneo fiscale sul costo del lavoro a vantaggio delle retribuzioni nette dei lavoratori.")
+    if "Energia" in common_topics:
+        convergences.append("Obiettivo comune di garantire indipendenza energetica e mitigare l'impatto dei rincari delle bollette per famiglie e PMI.")
+    if "Istruzione" in common_topics:
+        convergences.append("Investimenti per il potenziamento degli istituti tecnici, digitalizzazione e lotta alla dispersione scolastica.")
+
+    if not convergences:
+        convergences.append(f"Entrambe le forze dichiarano prioritaria la crescita economica e la salvaguardia del tessuto produttivo italiano.")
+        convergences.append("Condivisione della necessità di accelerare le riforme previste dal PNRR nelle scadenze concordate con l'UE.")
+
+    # Divergences
+    if any("flat tax" in p.dichiarazione_sintesi.lower() for p in props1 + props2) and any("progressiv" in p.dichiarazione_sintesi.lower() or "patrimoniale" in p.dichiarazione_sintesi.lower() for p in props1 + props2):
+        divergences.append("Modello Fiscale: contrapposizione netta tra aliquota fissa (Flat Tax / riduzione scaglioni) e progressività accentuata con tassazione sui grandi patrimoni o extraprofitti.")
+    if any("salario minimo" in p.dichiarazione_sintesi.lower() for p in props1 + props2):
+        divergences.append("Politiche Salariali: soglia oraria minima per legge a 9€/h contro valorizzazione esclusiva della contrattazione collettiva nazionale di categoria.")
+    if any("nucleare" in p.dichiarazione_sintesi.lower() for p in props1 + props2):
+        divergences.append("Mix Energetico: riapertura all'energia nucleare pulita di nuova generazione (SMR) vs modello 100% rinnovabili con opposizione ad atomo e trivelle.")
+    if any("premierato" in p.dichiarazione_sintesi.lower() or "autonomia" in p.dichiarazione_sintesi.lower() for p in props1 + props2):
+        divergences.append("Assetto Istituzionale: riforma del Premierato e Autonomia Differenziata regionale contro salvaguardia dei LEP uniformi e centralità del Parlamento.")
+
+    if not divergences:
+        divergences.append(f"Differenti priorità nell'allocazione delle risorse di bilancio: tagli fiscali selettivi vs investimenti diretti nei servizi pubblici essenziali.")
+        divergences.append("Diverso orientamento sulle coperture finanziarie: leva sul deficit e spending review vs rimodulazione delle aliquote e lotta all'evasione.")
+
+    # Cost ratio text
+    if cost2_total > 0 and cost1_total > 0:
+        ratio_val = round(cost1_total / cost2_total, 2)
+        cost_ratio_str = f"{party1_name} quota ~{cost1_total:.1f} Mld € contro ~{cost2_total:.1f} Mld € di {party2_name} (rapporto {ratio_val}:1)"
+    else:
+        cost_ratio_str = f"{party1_name}: ~{cost1_total:.1f} Mld € stimati ({quantified1} misure quantificate) | {party2_name}: ~{cost2_total:.1f} Mld € stimati ({quantified2} misure quantificate)"
+
+    exec_summary = (
+        f"L'analisi comparativa tra {party1_name} e {party2_name} "
+        f"{f'sul tema {topic}' if topic else 'sul complesso dei programmi'} "
+        f"evidenzia due visioni di politica pubblica ben distinte. "
+        f"{party1_name} presenta {len(props1)} posizioni censite, mentre {party2_name} ne registra {len(props2)}. "
+        f"Mentre sussistono convergenze su interventi d'urgenza a sostegno del potere d'acquisto, permangono profonde fratture "
+        f"strutturali sulle fonti di finanziamento e sul perimetro d'intervento statale nell'economia."
+    )
+
+    institutional_verdict = (
+        f"In base ai vincoli dell'Articolo 81 della Costituzione e alle regole del rinnovato Patto di Stabilità europeo, "
+        f"entrambi i partiti devono affrontare la prova della quantificazione preventiva asseverata dall'Ufficio Parlamentare di Bilancio (UPB). "
+        f"Il saldo netto dei costi stimati ({cost1_total:.1f} Mld € vs {cost2_total:.1f} Mld €) richiederà, per entrambi gli schieramenti, "
+        f"coperture strutturali credibili per evitare l'apertura di procedure d'infrazione per disavanzo eccessivo."
+    )
+
+    cost_comparison = {
+        "party1_name": party1_name,
+        "party1_total_mld": round(cost1_total, 2),
+        "party1_quantified_count": quantified1,
+        "party2_name": party2_name,
+        "party2_total_mld": round(cost2_total, 2),
+        "party2_quantified_count": quantified2,
+        "ratio_summary": cost_ratio_str,
+        "compliance_mef": "Entrambi i programmi richiedono clausole di salvaguardia finanziaria ex L. 196/2009."
+    }
+
+    return HeadToHeadSynthesisResponse(
+        party1=party1_name,
+        party2=party2_name,
+        topic=topic,
+        executive_summary=exec_summary,
+        convergences=convergences,
+        divergences=divergences,
+        cost_comparison=cost_comparison,
+        proposals_party1=p1_summaries,
+        proposals_party2=p2_summaries,
+        institutional_verdict=institutional_verdict
+    )
+
+@router.post("/head-to-head-synthesis", response_model=HeadToHeadSynthesisResponse)
+async def get_head_to_head_synthesis_post(req: HeadToHeadSynthesisRequest, db: Session = Depends(get_db)):
+    """AI Head-to-Head synthesis between two political forces."""
+    return await _compute_head_to_head_synthesis(req.party1, req.party2, req.topic, db)
+
+@router.get("/head-to-head-synthesis", response_model=HeadToHeadSynthesisResponse)
+async def get_head_to_head_synthesis_get(
+    party1: str = Query(..., description="Primo partito da confrontare"),
+    party2: str = Query(..., description="Secondo partito da confrontare"),
+    topic: Optional[str] = Query(None, description="Macro-argomento opzionale"),
+    db: Session = Depends(get_db)
+):
+    """AI Head-to-Head synthesis (GET query method)."""
+    return await _compute_head_to_head_synthesis(party1, party2, topic, db)

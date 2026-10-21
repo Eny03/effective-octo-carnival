@@ -85,6 +85,24 @@ class ComparisonMatrixResponse(BaseModel):
     partiti: List[PoliticalPartySchema]
     matrix: List[TopicComparisonRow]
 
+# Head-to-Head AI Synthesis
+class HeadToHeadSynthesisRequest(BaseModel):
+    party1: str
+    party2: str
+    topic: Optional[str] = None
+
+class HeadToHeadSynthesisResponse(BaseModel):
+    party1: str
+    party2: str
+    topic: Optional[str] = None
+    executive_summary: str
+    convergences: List[str]
+    divergences: List[str]
+    cost_comparison: Dict[str, Any]
+    proposals_party1: List[str]
+    proposals_party2: List[str]
+    institutional_verdict: str
+
 # Chatbot RAG Schemas
 class ChatMessage(BaseModel):
     role: str # "user" | "assistant" | "system"

@@ -4,7 +4,7 @@ import datetime
 from typing import Optional, Dict, Any, List
 from app.config import settings
 from app.schemas import ProposalExtractionSchema, ImpattoEconomicoSchema, FactCheckSchema
-from app.ai.ollama_client import ollama_client
+from app.ai.llm_provider import llm_provider
 from app.ai.fact_checker import analyze_feasibility_and_factcheck
 from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
 from app.ingestion.sources_config import PARTY_ALIASES, MACRO_TOPICS_KEYWORDS
@@ -21,7 +21,7 @@ LINEE GUIDA INDEROGABILI:
 Rispondi ESCLUSIVAMENTE con un oggetto JSON valido (o un array di oggetti JSON se ci sono più proposte/partiti), oppure [] se il testo non contiene una proposta politica:
 {
   "partito": "Nome Partito",
-  "macro_argomento": "Economia | Energia | Ambiente | Diritti Civili | Esteri | Lavoro | Sanità | Istruzione",
+  "macro_argomento": "Economia | Energia | Ambiente | Diritti Civili | Esteri | Lavoro | Sanità | Istruzione | Istituzioni | Giustizia | Infrastrutture | Pensioni | Fisco",
   "dichiarazione_sintesi": "Proposta politica chiara e specifica (es: 'Disegno di legge per...', 'Moratoria su...', 'Taglio strutturale di...')",
   "tipo_azione": "Proposta di legge | Dichiarazione programmatica | Opposizione | Emendamento",
   "impatto_economico": {
@@ -62,53 +62,53 @@ POLICY_ACTION_TRANSFORMATIONS = [
     (r"(?:cuneo fiscale|taglio del cuneo|decontribuzione)",
      "Taglio strutturale del cuneo fiscale contributivo sui redditi da lavoro dipendente fino a 35.000 euro e decontribuzione per neo-assunti", "Lavoro", "Dichiarazione programmatica"),
     (r"(?:pensioni a 64|uscita a 64|nodo tfr|quota 41)",
-     "Riforma previdenziale: anticipo dell'uscita pensionistica a 64 anni con ricalcolo contributivo integrale e facoltà di conferimento del TFR a previdenza integrativa", "Lavoro", "Proposta di legge"),
+     "Riforma previdenziale: anticipo dell'uscita pensionistica a 64 anni con ricalcolo contributivo integrale e facoltà di conferimento del TFR a previdenza integrativa", "Pensioni", "Proposta di legge"),
     (r"(?:tfr.*no tax area|carta sanit|taglio irpef.*ceto medio)",
-     "Manovra fiscale per il ceto medio: riduzione del secondo scaglione IRPEF al 33%, estensione della no tax area under 30 e Carta Sanità per over 65", "Economia", "Proposta di legge"),
+     "Manovra fiscale per il ceto medio: riduzione del secondo scaglione IRPEF al 33%, estensione della no tax area under 30 e Carta Sanità per over 65", "Fisco", "Proposta di legge"),
     (r"(?:trasparenza.*prestazioni sanitarie|costi.*prestazioni sanitarie)",
      "Disegno di legge per la pubblicazione obbligatoria, comparativa e trasparente dei costi effettivi e dei tempi di attesa di tutte le prestazioni sanitarie", "Sanità", "Proposta di legge"),
     (r"(?:gioco.*tabacco|accise.*carburant)",
-     "Rimodulazione fiscale con aumento del prelievo erariale su tabacchi e giochi d'azzardo a integrale copertura della riduzione delle accise sui carburanti", "Economia", "Proposta di legge"),
+     "Rimodulazione fiscale con aumento del prelievo erariale su tabacchi e giochi d'azzardo a integrale copertura della riduzione delle accise sui carburanti", "Fisco", "Proposta di legge"),
     (r"(?:propaganda russa|interferenz|disinformazione)",
-     "Disegno di legge per l'istituzione di una commissione d'inchiesta e presidi sanzionatori contro le interferenze estere e la disinformazione geopolitica online", "Esteri", "Proposta di legge"),
+     "Disegno di legge per l'istituzione di una commissione d'inchiesta e presidi sanzionatori contro le interferenze estere e la disinformazione geopolitica online", "Politica Estera", "Proposta di legge"),
     (r"(?:costi delle proposte|scheda tecnica|upb|trasparenza dei programmi)",
      "Obbligo di legge di allegare una quantificazione finanziaria preventiva e asseverata dall'Ufficio Parlamentare di Bilancio per ciascuna proposta elettorale", "Istituzioni", "Proposta di legge"),
     (r"(?:ius scholae|cittadinanza.*scuola)",
      "Riforma della legge sulla cittadinanza con introduzione dello Ius Scholae per i minori stranieri che abbiano completato 10 anni di studi in Italia", "Diritti Civili", "Proposta di legge"),
     (r"(?:separazione delle carriere|csm|riforma.*giustizia)",
-     "Riforma costituzionale della Giustizia con netta separazione delle carriere tra magistrati requirenti e giudicanti e sdoppiamento del CSM", "Giustizia", "Proposta di legge"),
+     "Riforma costituzionale della Giustizia con netta separazione delle carriere tra magistrati requirenti e giudicanti e sdoppiamento del CSM", "Istituzioni", "Proposta di legge"),
     (r"(?:nucleare|reattori smr|iv generazione)",
      "Reintegro dell'energia nucleare pulita di nuova generazione (Small Modular Reactors SMR) nel piano energetico nazionale entro il 2035", "Energia", "Dichiarazione programmatica"),
     (r"(?:rinnovabili|parchi eolici|comunit[àa] energetic|solare)",
-     "Sblocco autorizzativo accelerato per 10 GW annui di energia rinnovabile e sostegno a 20.000 Comunità Energetiche Rinnovabili", "Ambiente", "Proposta di legge"),
+     "Sblocco autorizzativo accelerato per 10 GW annui di energia rinnovabile e sostegno a 20.000 Comunità Energetiche Rinnovabili", "Energia", "Proposta di legge"),
     (r"(?:affitti brevi|partita iva|locazioni turistiche)",
-     "Regolamentazione delle locazioni turistiche brevi con obbligo di partita IVA dal terzo immobile e codice identificativo nazionale per contrasto all'elusione", "Economia", "Proposta di legge"),
+     "Regolamentazione delle locazioni turistiche brevi con obbligo di partita IVA dal terzo immobile e codice identificativo nazionale per contrasto all'elusione", "Fisco", "Proposta di legge"),
     (r"(?:trivelle|commissario.*trivelle|idrocarburi)",
      "Normativa per la valorizzazione commissariale delle concessioni di prospezione ed estrazione di gas e idrocarburi per la sicurezza energetica nazionale", "Energia", "Dichiarazione programmatica"),
     (r"(?:aiuti a kiev|stop alle armi|forniture militari|negoziati di pace)",
-     "Mozione parlamentare per il blocco dell'invio di ulteriori armamenti e investimenti militari e mandato vincolante per una conferenza diplomatica di pace", "Esteri", "Opposizione"),
+     "Mozione parlamentare per il blocco dell'invio di ulteriori armamenti e investimenti militari e mandato vincolante per una conferenza diplomatica di pace", "Politica Estera", "Opposizione"),
     (r"(?:fondo sanitario|7\.5% del pil|7,5% del pil)",
      "Incremento strutturale del Fondo Sanitario Nazionale fino al 7.5% del PIL per l'abbattimento delle liste d'attesa e il piano assunzioni di medici e infermieri", "Sanità", "Proposta di legge"),
     (r"(?:autonomia differenziata|lep)",
      "Attuazione del regionalismo differenziato nel rispetto della determinazione preventiva e finanziamento dei Livelli Essenziali delle Prestazioni (LEP)", "Istituzioni", "Proposta di legge"),
     (r"(?:patrimoniale|grandi ricchezze|super ricchi|next generation tax)",
-     "Imposta straordinaria e progressiva sui patrimoni superiori a 5 milioni di euro destinata a sanità pubblica, scuola e transizione ecologica", "Economia", "Proposta di legge"),
+     "Imposta straordinaria e progressiva sui patrimoni superiori a 5 milioni di euro destinata a sanità pubblica, scuola e transizione ecologica", "Fisco", "Proposta di legge"),
     (r"(?:cannabis|fine vita|eutanasia legale)",
      "Disegno di legge per la legalizzazione del fine vita assistito e regolamentazione del mercato della cannabis terapeutica e ricreativa", "Diritti Civili", "Proposta di legge"),
     (r"(?:legittima difesa|caso roggero|arma da fuoco|difesa.*abitazione)",
-     "Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Giustizia", "Proposta di legge"),
+     "Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Istituzioni", "Proposta di legge"),
     (r"(?:rigenerazione urbana|confesercenti|negozi di vicinato|commercio)",
-     "Piano straordinario di rigenerazione urbana e sostegno al commercio di vicinato con fondo di riqualificazione da 600 milioni di euro", "Economia", "Proposta di legge"),
-    (r"(?:decreto bollette|tetto al costo del gas|tetto.*gas|prezzo del gas)",
-     "Misure governative straordinarie per il contenimento delle tariffe energetiche, introduzione del tetto al prezzo del gas e crediti d'imposta per famiglie e PMI", "Energia", "Dichiarazione programmatica"),
-    (r"(?:flessibilit[àa].*energia|scorporo investimenti)",
-     "Richiesta formale all'Unione Europea di scorporare gli investimenti strategici in sicurezza energetica e difesa dai vincoli del Patto di Stabilità", "Esteri", "Dichiarazione programmatica"),
-    (r"(?:putin non si fermer|crosetto.*ucraina|allarme.*crosetto)",
-     "Riaffermazione degli impegni atlantici per la difesa comune, deterrenza contro l'aggressione russa e ammodernamento dei sistemi di sicurezza della NATO", "Esteri", "Dichiarazione programmatica"),
-    (r"(?:manovra.*salari.*imprese|taglio.*irpef.*rottamazione)",
-     "Pacchetto manovra di bilancio: rifinanziamento del taglio del cuneo sui salari, incentivi fiscali per investimenti delle imprese e rottamazione cartelle esattoriali", "Economia", "Dichiarazione programmatica"),
+     "Piano nazionale di rigenerazione urbana e fiscalità di vantaggio per la riapertura dei negozi di vicinato nei centri storici", "Economia", "Proposta di legge"),
+    (r"(?:detassazione premi|fringe benefit|welfare aziendale)",
+     "Innalzamento della soglia di detassazione integrale per i fringe benefit e premi di produttività aziendale fino a 3.000 euro", "Lavoro", "Proposta di legge"),
+    (r"(?:sicurezza sul lavoro|omicidio sul lavoro|patente a crediti)",
+     "Introduzione del reato di omicidio sul lavoro e inasprimento del sistema sanzionatorio con patente a crediti per le imprese edili", "Lavoro", "Proposta di legge"),
+    (r"(?:cedolare secca|canone concordato|piano casa)",
+     "Estensione della cedolare secca al 10% per i contratti a canone concordato e piano straordinario per 50.000 nuovi alloggi di edilizia residenziale pubblica", "Infrastrutture", "Proposta di legge"),
+    (r"(?:asili nido gratis|congedo parentale|quoziente familiare)",
+     "Gratuità universale degli asili nido e incremento del congedo parentale retribuito all'80% fino al sesto mese di vita del bambino", "Istruzione", "Proposta di legge"),
     (r"(?:botta e risposta.*patrimoniale|conte.*patrimoniale|bonelli.*patrimoniale)",
-     "Contrarietà a imposte patrimoniali pure e priorità alla tassazione straordinaria al 100% degli extraprofitti finanziari ed energetici", "Economia", "Opposizione"),
+     "Contrarietà a imposte patrimoniali pure e priorità alla tassazione straordinaria al 100% degli extraprofitti finanziari ed energetici", "Fisco", "Opposizione"),
 ]
 
 def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tuple]:
@@ -120,21 +120,28 @@ def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tu
     
     ACTION_PATTERNS = [
         # DDL / Proposte di legge
-        (r"(?:presenta|deposita|approva)\s+(?:un |una |il |la |lo |l')?(?:ddl|disegno di legge|proposta di legge|emendamento|mozione)\s+(?:per|su|volto a|contro|a favore di|di)\s+([^.!?]{18,220})", "Proposta di legge"),
+        (r"(?:presenta|deposita|approva|firma)\s+(?:un |una |il |la |lo |l')?(?:ddl|disegno di legge|proposta di legge|emendamento|mozione|odg|ordine del giorno)\s+(?:per|su|volto a|contro|a favore di|di)\s+([^.!?]{18,220})", "Proposta di legge"),
         # Riforme e Piani Programmatici
-        (r"(?:propone|chiede|annuncia|lancia un piano per|punta a|intende introdurre|intende cancellare|intende ridurre|intende riformare|priorit[àa] [èe]|propone di)\s+(?:di |la |il |un |l'|lo )?([^.!?]{18,220})", "Dichiarazione programmatica"),
+        (r"(?:propone|chiede|annuncia|lancia un piano per|punta a|intende introdurre|intende cancellare|intende ridurre|intende riformare|priorit[àa] [èe]|propone di|chiede lo stanziamento di)\s+(?:di |la |il |un |l'|lo )?([^.!?]{18,220})", "Dichiarazione programmatica"),
+        # Impegno programmatico e misure
+        (r"(?:impegna il governo a|prevede l'introduzione di|chiede la riforma di|promette di finanziare|approvato il piano per)\s+([^.!?]{18,220})", "Dichiarazione programmatica"),
         # Opposizione o Contrarietà
-        (r"(?:si oppone a|voter[àa] contro|chiede lo stop a|contrariet[àa] al|boccia la proposta di|chiede di bloccare)\s+(?:la |il |lo |l'|i |le )?([^.!?]{18,220})", "Opposizione"),
+        (r"(?:si oppone a|voter[àa] contro|chiede lo stop a|contrariet[àa] al|boccia la proposta di|chiede di bloccare|no secco a)\s+(?:la |il |lo |l'|i |le )?([^.!?]{18,220})", "Opposizione"),
         # Misure e Azioni Dirette
-        (r"(?:taglio|riduzione|azzeramento|aumento|incremento|blocco|stop|moratoria|istituzione|reintroduzione)\s+(?:del(?:la|lo|l'|le|i)?|delle|degli|di|a)\s+([^.!?]{18,220})", "Dichiarazione programmatica")
+        (r"(?:taglio|riduzione|azzeramento|aumento|incremento|blocco|stop|moratoria|istituzione|reintroduzione|potenziamento|stanziamento)\s+(?:del(?:la|lo|l'|le|i)?|delle|degli|di|a|per)\s+([^.!?]{18,220})", "Dichiarazione programmatica")
+    ]
+
+    POLEMIC_KEYWORDS = [
+        "arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti", 
+        "marchese", "farsa", "ipocrisia", "vergogna", "chiacchiere", "faida", "rissa verbale"
     ]
 
     for sentence in sentences:
         s_clean = sentence.strip()
         s_lower = s_clean.lower()
         
-        # Must not be pure political gossip
-        if any(noise in s_lower for noise in ["arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti", "marchese"]):
+        # Must not be pure political gossip or attack
+        if any(noise in s_lower for noise in POLEMIC_KEYWORDS):
             continue
             
         for pattern, act_type in ACTION_PATTERNS:
@@ -218,43 +225,43 @@ def _extract_heuristically(
             return []
 
     # Extract cost if mentioned
-    cost_match = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", text, re.I)
-    cost = cost_match.group(1) if cost_match else "Non quantificato"
-    
-    # Extract declared coverage if present
-    coverage = "Non specificate"
-    cov_match = re.search(r"(?:coperture|finanziat[oa]|risorse da|tramite)\s*([^.;]{10,80})", text, re.I)
+    raw_cost = None
+    cost_match = re.search(r"(?:costo|spesa|stanziat[oi]|investimento|risorse|fondo)\s*(?:pari a|stimato in|di)?\s*(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln)?\s*€|\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln)\s*euro)", lower)
+    if cost_match:
+        raw_cost = cost_match.group(1).strip()
+
+    # Extract coverage if mentioned
+    raw_cov = None
+    cov_match = re.search(r"(?:coperture|copertur[ae]|finanziat[oa]|risorse da)\s*(?:tramite|mediante|con|da)\s*([^.,;\n]{10,80})", lower)
     if cov_match:
-        coverage = cov_match.group(1).strip()
+        raw_cov = cov_match.group(1).strip()
 
     results = []
-    for party in matched_parties[:2]: # Max 2 parties per article
-        clean_synth = sanitize_proposal_title(proposal_synthesis, party)
-        if not clean_synth:
-            continue
-
-        fiscal_info = calculate_fiscal_impact_and_coverage(
-            partito=party,
+    for party_name in matched_parties[:2]: # At most 2 explicit parties per article
+        # Sanitize proposal title and calculate institutional fiscal check
+        clean_title = sanitize_proposal_title(proposal_synthesis, chosen_topic)
+        fiscal_res = calculate_fiscal_impact_and_coverage(
+            partito=party_name,
             macro_argomento=chosen_topic,
-            sintesi=clean_synth,
-            costo_stimato=cost,
-            coperture_dichiarate=coverage
+            sintesi=clean_title,
+            costo_stimato=raw_cost,
+            coperture_dichiarate=raw_cov
         )
 
         item = ProposalExtractionSchema(
-            partito=party,
+            partito=party_name,
             macro_argomento=chosen_topic,
-            dichiarazione_sintesi=clean_synth,
+            dichiarazione_sintesi=clean_title,
             tipo_azione=action_type,
             impatto_economico=ImpattoEconomicoSchema(
-                costo_stimato=fiscal_info["costo_stimato"],
-                coperture_dichiarate=fiscal_info["coperture_dichiarate"],
-                fattibilita_finanziaria=fiscal_info["fattibilita_finanziaria"]
+                costo_stimato=fiscal_res["costo_stimato"],
+                coperture_dichiarate=fiscal_res["coperture_dichiarate"],
+                fattibilita_finanziaria=fiscal_res["fattibilita_finanziaria"]
             ),
             fact_check=FactCheckSchema(
-                status=fiscal_info["fact_check_status"],
-                motivazione_oggettiva=fiscal_info["fact_check_motivazione"],
-                fonte_verifica=fiscal_info["fact_check_fonte"]
+                status=fiscal_res["fact_check_status"],
+                motivazione_oggettiva=fiscal_res["fact_check_motivazione"],
+                fonte_verifica=fiscal_res["fact_check_fonte"]
             ),
             fonte_url=url,
             timestamp=ts
@@ -271,11 +278,13 @@ async def extract_proposals_from_text(
 ) -> List[ProposalExtractionSchema]:
     """
     Main extraction function implementing Section 4.B of the Mission Brief.
-    Extracts structured political proposals using local Ollama if available, or robust heuristic fallback.
+    Extracts structured political proposals using Multi-Provider LLM (Ollama, Groq, Gemini)
+    if available, or robust heuristic fallback.
     """
     ts = (published_at or datetime.datetime.utcnow()).isoformat()
+    provider_info = await llm_provider.get_active_provider_info()
     
-    if await ollama_client.is_available():
+    if provider_info["provider"] != "deterministic":
         user_prompt = f"""Estrai le proposte politiche dal seguente testo:
 URL Fonte: {url}
 Titolo: {title or 'N/A'}
@@ -284,27 +293,30 @@ Testo:
 {text[:3500]}
 """
         messages = [
-            {"role": "system", "content": EXTRACTION_SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt}
         ]
         
-        raw_output = await ollama_client.generate_chat(
-            messages=messages,
-            model=settings.OLLAMA_EXTRACTION_MODEL,
-            format_json=True
-        )
-        
-        if raw_output:
-            try:
-                # Clean JSON code fences if present
+        try:
+            raw_output, used_p = await llm_provider.generate_chat(
+                messages=messages,
+                system_prompt=EXTRACTION_SYSTEM_PROMPT,
+                temperature=0.1
+            )
+            
+            if raw_output:
                 clean_json_str = re.sub(r"^```json\s*", "", raw_output.strip())
                 clean_json_str = re.sub(r"\s*```$", "", clean_json_str)
-                parsed = json.loads(clean_json_str)
+                # Find outermost JSON brackets if wrapped in commentary
+                match_json = re.search(r"(\[.*\]|\{.*\})", clean_json_str, re.DOTALL)
+                if match_json:
+                    clean_json_str = match_json.group(1)
                 
+                parsed = json.loads(clean_json_str)
                 proposals = []
                 items = parsed if isinstance(parsed, list) else [parsed]
                 for it in items:
-                    # Enrich with URL & timestamp if missing
+                    if not isinstance(it, dict) or not it.get("partito") or not it.get("dichiarazione_sintesi"):
+                        continue
                     if "fonte_url" not in it or not it["fonte_url"]:
                         it["fonte_url"] = url
                     if "timestamp" not in it or not it["timestamp"]:
@@ -315,8 +327,8 @@ Testo:
                     
                 if proposals:
                     return proposals
-            except Exception as e:
-                print(f"[Extractor] Error validating Ollama JSON output: {e}. Falling back to heuristic extraction.")
+        except Exception as e:
+            print(f"[Extractor] LLM extraction warning: {e}. Falling back to institutional heuristic parser.")
 
     # Fallback to robust institutional heuristic extractor
     return _extract_heuristically(text, url, title, published_at)

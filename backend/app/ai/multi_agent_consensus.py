@@ -157,7 +157,8 @@ class ConsensusArbiterAgent:
                 partito=p_name,
                 macro_argomento=topic,
                 dichiarazione_sintesi=synthesis,
-                emb_list=emb_list
+                emb_list=emb_list,
+                new_timestamp=item.get("timestamp")
             )
 
             if matching_existing:

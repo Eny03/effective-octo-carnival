@@ -52,14 +52,16 @@ def find_matching_existing_proposal(
     partito: str,
     macro_argomento: str,
     dichiarazione_sintesi: str,
-    emb_list: Optional[List[float]] = None
+    emb_list: Optional[List[float]] = None,
+    new_timestamp: Optional[datetime.datetime] = None
 ) -> Optional[PoliticalProposal]:
     """
-    Autonomous AI Policy Deduplicator:
-    Checks if a political party already has an existing proposal or stance on the same policy topic.
-    Matches via:
-    1. Core policy cluster keywords
-    2. High-confidence semantic cosine similarity (>= 0.72) within the party and topic
+    Autonomous AI Policy Deduplicator & Chronological Evolution Tracker (2022 -> Presente & Futuro):
+    - If a matching proposal is found within the same period (<= 180 days and same calendar year),
+      returns it to update/refine details.
+    - If the matching proposal belongs to an earlier historical phase (e.g. 2022 campaign vs 2024/2026/future),
+      and the statement or costs have evolved, returns None so a NEW evolutionary proposal is inserted,
+      preserving the historical trajectory across time.
     """
     query = db.query(PoliticalProposal).filter(
         (PoliticalProposal.macro_argomento == macro_argomento)
@@ -82,6 +84,16 @@ def find_matching_existing_proposal(
             new_has_cluster = any(term in new_lower for term in cluster)
             cand_has_cluster = any(term in cand_lower for term in cluster)
             if new_has_cluster and cand_has_cluster:
+                # Check chronological distance
+                if new_timestamp and cand.timestamp:
+                    days_diff = abs((new_timestamp - cand.timestamp).days)
+                    # If same text, exact duplicate -> update
+                    if cand_lower.strip() == new_lower.strip():
+                        return cand
+                    # If from a distinct earlier legislative year (e.g. 2022 vs 2025+), do NOT overwrite:
+                    # preserve the 2022 anchor and create the new chronological evolution
+                    if days_diff > 180 or cand.timestamp.year < new_timestamp.year:
+                        continue
                 return cand
 
     # 2. Match by Vector Embedding Cosine Similarity
@@ -100,6 +112,10 @@ def find_matching_existing_proposal(
                     continue
 
         if best_candidate and best_sim >= 0.88:
+            if new_timestamp and best_candidate.timestamp:
+                days_diff = abs((new_timestamp - best_candidate.timestamp).days)
+                if days_diff > 180 or best_candidate.timestamp.year < new_timestamp.year:
+                    return None
             return best_candidate
 
     return None
@@ -118,8 +134,7 @@ def merge_or_update_policy_proposal(
 ) -> PoliticalProposal:
     """
     Autonomous AI Policy Merger & Evolver:
-    Updates an existing proposal with the latest, most up-to-date position, costs, and fact-check data.
-    Ensures that policy updates reflect the party's most recent stance without creating duplicates.
+    Updates an existing proposal within its active timeframe with the latest details, costs, and fact-check data.
     """
     dt = datetime.datetime.fromisoformat(item.timestamp) if item.timestamp else (published_at or datetime.datetime.utcnow())
 

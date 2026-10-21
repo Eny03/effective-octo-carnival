@@ -67,7 +67,8 @@ async def run_pipeline_scan():
                     partito=item.partito,
                     macro_argomento=item.macro_argomento,
                     dichiarazione_sintesi=item.dichiarazione_sintesi,
-                    emb_list=emb_list
+                    emb_list=emb_list,
+                    new_timestamp=art.get("published_at")
                 )
 
                 if matching_existing:

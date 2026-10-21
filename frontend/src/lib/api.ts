@@ -207,6 +207,7 @@ export async function fetchProposals(params?: {
   topic?: string;
   status?: string;
   action_type?: string;
+  year?: number;
   search?: string;
   limit?: number;
 }): Promise<PoliticalProposal[]> {
@@ -215,6 +216,7 @@ export async function fetchProposals(params?: {
   if (params?.topic) query.set("topic", params.topic);
   if (params?.status) query.set("status", params.status);
   if (params?.action_type) query.set("action_type", params.action_type);
+  if (params?.year) query.set("year", params.year.toString());
   if (params?.search) query.set("search", params.search);
   if (params?.limit) query.set("limit", params.limit.toString());
 

@@ -14,6 +14,7 @@ def get_proposals(
     topic: Optional[str] = Query(None, description="Filtra per macro-argomento"),
     status: Optional[str] = Query(None, description="Filtra per fact_check_status"),
     action_type: Optional[str] = Query(None, description="Filtra per tipo_azione"),
+    year: Optional[int] = Query(None, description="Filtra per anno di pubblicazione (dal 2022 in poi)"),
     search: Optional[str] = Query(None, description="Ricerca testuale nella sintesi o coperture"),
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -32,6 +33,9 @@ def get_proposals(
         query = query.filter(PoliticalProposal.fact_check_status.ilike(f"%{status}%"))
     if action_type:
         query = query.filter(PoliticalProposal.tipo_azione.ilike(f"%{action_type}%"))
+    if year:
+        from sqlalchemy import extract
+        query = query.filter(extract('year', PoliticalProposal.timestamp) == year)
     if search:
         query = query.filter(
             or_(

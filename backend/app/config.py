@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 from pydantic import BaseModel
 
 class Settings(BaseModel):
@@ -14,6 +15,13 @@ class Settings(BaseModel):
     OLLAMA_EXTRACTION_MODEL: str = os.getenv("OLLAMA_EXTRACTION_MODEL", "qwen2.5:14b")
     OLLAMA_CHAT_MODEL: str = os.getenv("OLLAMA_CHAT_MODEL", "qwen2.5:14b")
     OLLAMA_EMBED_MODEL: str = os.getenv("OLLAMA_EMBED_MODEL", "bge-m3")
+
+    # Cloud Free-Tier LLM Providers
+    GROQ_API_KEY: Optional[str] = os.getenv("GROQ_API_KEY", None)
+    GROQ_MODEL: str = os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    
+    GEMINI_API_KEY: Optional[str] = os.getenv("GEMINI_API_KEY", None)
+    GEMINI_MODEL: str = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
     
     # Ingestion & Scheduler (Scansione e aggiornamento continuo ogni 10 minuti)
     INGESTION_INTERVAL_MINUTES: int = int(os.getenv("INGESTION_INTERVAL_MINUTES", "10"))

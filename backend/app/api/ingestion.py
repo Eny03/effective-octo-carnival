@@ -3,7 +3,7 @@ import datetime
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
-from app.database import get_db
+from app.database import get_db, SessionLocal
 from app.models import IngestionLog, PoliticalProposal, PoliticalParty
 from app.schemas import IngestionLogSchema, IngestionRequest, ProposalExtractionSchema, PoliticalProposalDetail
 from app.ingestion.scheduler import run_pipeline_scan, get_scheduler_status
@@ -13,6 +13,24 @@ from app.ai.extractor import extract_proposals_from_text
 from app.ai.embeddings import get_text_embedding
 
 router = APIRouter(prefix="/api/ingestion", tags=["Pipeline di Ingestion & Fonti"])
+
+async def _background_run_pipeline_scan():
+    """Background runner for feed scan with isolated DB session."""
+    try:
+        await run_pipeline_scan()
+    except Exception as e:
+        print(f"[Ingestion Background Task] Error running pipeline scan: {e}")
+
+async def _background_run_multi_agent_consensus():
+    """Background runner for multi-agent consensus with dedicated DB session."""
+    from app.ai.multi_agent_consensus import run_multi_agent_consensus_pipeline
+    db: Session = SessionLocal()
+    try:
+        await run_multi_agent_consensus_pipeline(db)
+    except Exception as e:
+        print(f"[Consensus Background Task] Error running multi-agent consensus: {e}")
+    finally:
+        db.close()
 
 @router.get("/status")
 def get_ingestion_scheduler_status():
@@ -42,7 +60,7 @@ def get_ingestion_logs(limit: int = 20, db: Session = Depends(get_db)):
 @router.post("/trigger")
 async def trigger_ingestion_scan(background_tasks: BackgroundTasks):
     """Triggers an immediate background scanning cycle of all monitored feeds."""
-    background_tasks.add_task(run_pipeline_scan)
+    background_tasks.add_task(_background_run_pipeline_scan)
     return {"status": "TRIGGERED", "message": "Scansione asincrona dei feed avviata in background."}
 
 @router.post("/update-dossiers")
@@ -53,10 +71,9 @@ def trigger_dossiers_update(db: Session = Depends(get_db)):
     return {"status": "UPDATED", "message": "Dossier strategici e parametri finanziari dei 18 partiti aggiornati con successo."}
 
 @router.post("/consensus/trigger")
-async def trigger_multi_agent_consensus(background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
+async def trigger_multi_agent_consensus(background_tasks: BackgroundTasks):
     """Triggers an immediate multi-agent AI consensus cycle across the open web."""
-    from app.ai.multi_agent_consensus import run_multi_agent_consensus_pipeline
-    background_tasks.add_task(run_multi_agent_consensus_pipeline, db)
+    background_tasks.add_task(_background_run_multi_agent_consensus)
     return {"status": "CONSENSUS_TRIGGERED", "message": "Pipeline Multi-AI Consensus (Scout + Distiller + FiscalAuditor + Arbiter) avviata in background."}
 
 @router.post("/manual", response_model=List[PoliticalProposalDetail])
