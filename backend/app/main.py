@@ -157,13 +157,45 @@ def seed_database_if_empty():
     finally:
         db.close()
 
+async def _autonomous_self_keepalive():
+    """
+    Autonomous Keepalive: pings the public Render URL every 7 minutes.
+    Because Render monitors incoming HTTP traffic on politclens.onrender.com, this public request
+    resets Render's 15-minute idle timer, preventing the free tier container from sleeping.
+    """
+    await asyncio.sleep(45)  # Let server complete initial startup
+    external_url = os.environ.get("RENDER_EXTERNAL_URL", "https://politclens.onrender.com")
+    health_endpoint = f"{external_url.rstrip('/')}/api/health"
+    print(f"[Keepalive] Autonomous 24/7 background keepalive loop started (target: {health_endpoint}).")
+    
+    while True:
+        try:
+            import urllib.request
+            req = urllib.request.Request(
+                health_endpoint,
+                headers={"User-Agent": "PolitiLens-Autonomous-Keepalive/2.0 (+https://politclens.onrender.com)"}
+            )
+            # Run in thread pool to avoid blocking async event loop
+            loop = asyncio.get_running_loop()
+            def do_ping():
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    return resp.getcode()
+            status = await loop.run_in_executor(None, do_ping)
+            print(f"[Keepalive] Public ping status: {status} -> Render 15-min idle timer reset.")
+        except Exception as e:
+            print(f"[Keepalive] Public ping notice (will retry in 7 min): {e}")
+        # Ping every 7 minutes (420 seconds) - safely below Render's 15-minute (900 seconds) timeout
+        await asyncio.sleep(420)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("[PolitiLens] Inizializzazione piattaforma e database...")
     seed_database_if_empty()
     start_scheduler()
+    keepalive_task = asyncio.create_task(_autonomous_self_keepalive())
     yield
     print("[PolitiLens] Arresto servizi...")
+    keepalive_task.cancel()
     stop_scheduler()
 
 app = FastAPI(

@@ -549,13 +549,80 @@ export default function PartiesPage() {
                         </div>
                       </div>
 
+                      {/* Historical Evolution Timeline (2022 - 2026) */}
+                      {partyDossier.evoluzione_storica_legislatura && partyDossier.evoluzione_storica_legislatura.length > 0 && (
+                        <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-xs space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                              <Clock className="w-4 h-4 text-blue-500" />
+                              <span>Evoluzione della Linea Politica (2022 – 2026)</span>
+                            </h3>
+                            <span className="text-[10px] font-semibold text-slate-400">
+                              Traiettoria della Legislatura
+                            </span>
+                          </div>
+
+                          <div className="space-y-2.5 pt-1">
+                            {partyDossier.evoluzione_storica_legislatura.map((step, sIdx) => (
+                              <div
+                                key={sIdx}
+                                className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800"
+                              >
+                                <span className="shrink-0 px-2.5 py-1 rounded-md text-[10px] font-bold bg-blue-100 dark:bg-blue-950 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-900 font-mono">
+                                  {step.periodo}
+                                </span>
+                                <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed pt-0.5">
+                                  {step.sintesi}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Institutional Audit: Strengths & Vulnerabilities */}
+                      {(partyDossier.punti_di_forza || partyDossier.criticita_osservatorio) && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                          {partyDossier.punti_di_forza && (
+                            <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 space-y-2">
+                              <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs uppercase tracking-wider">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                <span>Punti di Forza Programmatici</span>
+                              </div>
+                              <p className="text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
+                                {partyDossier.punti_di_forza}
+                              </p>
+                            </div>
+                          )}
+
+                          {partyDossier.criticita_osservatorio && (
+                            <div className="p-4 rounded-2xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/60 dark:border-amber-900/40 space-y-2">
+                              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs uppercase tracking-wider">
+                                <AlertCircle className="w-4 h-4 text-amber-600" />
+                                <span>Criticità & Vincoli Finanziari</span>
+                              </div>
+                              <p className="text-xs text-amber-900 dark:text-amber-200 leading-relaxed">
+                                {partyDossier.criticita_osservatorio}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
                       {/* Financial Feasibility Audit */}
-                      <div className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                          <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
-                            Audit Finanziario & Vincoli di Bilancio
-                          </h4>
+                      <div className="bg-slate-50 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 space-y-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                          <div className="flex items-center gap-2">
+                            <Coins className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                              Audit Finanziario & Vincoli di Bilancio
+                            </h4>
+                          </div>
+                          {partyDossier.valutazione_finanziaria.impegno_economico_stimato && (
+                            <span className="text-xs font-mono font-bold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950 px-2.5 py-1 rounded-lg border border-blue-200 dark:border-blue-900 self-start sm:self-auto">
+                              Impegno Stimato: {partyDossier.valutazione_finanziaria.impegno_economico_stimato}
+                            </span>
+                          )}
                         </div>
                         <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
                           {partyDossier.valutazione_finanziaria.analisi_coperture}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -18,6 +18,15 @@ import {
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Client-side keepalive heartbeat: pings /api/health every 4 minutes while the app is open
+  useEffect(() => {
+    const keepalive = () => {
+      fetch("/api/health").catch(() => {});
+    };
+    const interval = setInterval(keepalive, 240000);
+    return () => clearInterval(interval);
+  }, []);
 
   const navLinks = [
     { name: "Dashboard", href: "/", icon: <Compass className="w-4 h-4" /> },

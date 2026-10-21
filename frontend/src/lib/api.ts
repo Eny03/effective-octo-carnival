@@ -44,6 +44,9 @@ export interface AIDossierData {
   coalizione: string;
   leader?: string;
   sintesi_strategica: string;
+  evoluzione_storica_legislatura?: { periodo: string; sintesi: string }[];
+  punti_di_forza?: string;
+  criticita_osservatorio?: string;
   score_affidabilita: string;
   statistiche_atti: {
     totale_atti: number;
@@ -55,6 +58,7 @@ export interface AIDossierData {
   valutazione_finanziaria: {
     score_fattibilita: string;
     atti_quantificati: string;
+    impegno_economico_stimato?: string;
     analisi_coperture: string;
   };
   dichiarazioni_recenti_web: AIDossierQuote[];

@@ -129,7 +129,9 @@ def detect_information_gaps(db: Session, max_gaps: int = 4) -> List[Dict[str, An
                 terms = TOPIC_SEARCH_TERMS.get(topic, topic)
                 queries = [
                     f"{anchor} {terms} proposta",
-                    f"{p_name} {topic} programma"
+                    f"{p_name} {topic} ddl disegno di legge",
+                    f"{p_name} {topic} programma riforma",
+                    f"{anchor} {topic} conferenza stampa dichiarazione"
                 ]
                 if party.official_website:
                     domain = urllib.parse.urlparse(party.official_website).netloc.replace("www.", "")
@@ -208,7 +210,9 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
                 if match:
                     raw_prop = match.group(1).strip()
                     raw_prop = re.sub(r"\s+", " ", raw_prop)
-                    if len(raw_prop) >= 18 and not any(noise in raw_prop.lower() for noise in ["arrestato", "indagato", "sfida", "congresso"]):
+                    raw_prop = re.sub(r"^(?:che\s+|di\s+|per\s+|a\s+|e\s+)", "", raw_prop, flags=re.I).strip()
+                    raw_prop = re.sub(r"[,;:\-–—\s]+$", "", raw_prop).strip()
+                    if len(raw_prop) >= 18 and not any(noise in raw_prop.lower() for noise in ["arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti"]):
                         act = "Proposta di legge" if any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
                         
                         cost_m = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", sentence, re.I)
