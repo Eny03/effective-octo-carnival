@@ -73,30 +73,30 @@ export default function FactCheckPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Page Header */}
-      <div className="border-b border-slate-200 dark:border-slate-800 pb-6">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 mb-2">
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-5">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 mb-2">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>Osservatorio Fattibilità Economica & Fact-Checking</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
-          Verifica della Fattibilità Finanziaria delle Proposte
+        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+          Verifica Fattibilità Finanziaria & Bilancio
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-1">
-          Analisi oggettiva di congruità contabile: confrontiamo i costi annunciati e le coperture dichiarate con i vincoli del bilancio dello Stato e i dati ISTAT e Corte dei Conti.
+          Analisi oggettiva di congruità contabile: confrontiamo i costi annunciati e le coperture dichiarate con i vincoli del bilancio dello Stato e i dati ISTAT, MEF e Corte dei Conti.
         </p>
       </div>
 
       {/* Institutional Benchmarks Reference Table */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 shadow-xs space-y-4">
+      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 shadow-2xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100 dark:border-slate-800">
           <div>
             <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
               <Scale className="w-4 h-4 text-blue-500" />
               <span>Parametri Istituzionali di Riferimento (ISTAT / MEF / Corte dei Conti)</span>
             </h3>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-500 mt-0.5">
               Indicatori economici certificati usati come benchmark di confronto per ogni stima finanziaria.
             </p>
           </div>

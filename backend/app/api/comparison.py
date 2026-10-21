@@ -59,15 +59,17 @@ def get_comparison_matrix(db: Session = Depends(get_db)):
             
             if p_list:
                 latest = p_list[0]
-                synthesis = latest.dichiarazione_sintesi
-                if latest.tipo_azione == "Opposizione":
-                    stance = "Contrario / Opposizione"
-                elif latest.tipo_azione == "Proposta di legge":
-                    stance = "Favorevole / Riformista"
-                elif "copertur" in latest.coperture_dichiarate.lower():
-                    stance = "Focalizzato su Coperture"
+                if len(p_list) == 1:
+                    synthesis = latest.dichiarazione_sintesi
                 else:
-                    stance = "Dichiarazione programmatica"
+                    synthesis = " • ".join([p.dichiarazione_sintesi for p in p_list[:3]])
+
+                if any(p.tipo_azione == "Opposizione" for p in p_list):
+                    stance = "Contrario / Opposizione"
+                elif any(p.tipo_azione == "Proposta di legge" for p in p_list):
+                    stance = f"{len(p_list)} proposte / Riforme"
+                else:
+                    stance = f"{len(p_list)} posizioni censite"
                     
             details = [PoliticalProposalDetail.model_validate(p) for p in p_list]
             for d in details:

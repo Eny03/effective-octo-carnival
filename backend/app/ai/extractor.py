@@ -110,6 +110,52 @@ POLICY_ACTION_TRANSFORMATIONS = [
      "Contrarietà a imposte patrimoniali pure e priorità alla tassazione straordinaria al 100% degli extraprofitti finanziari ed energetici", "Economia", "Opposizione"),
 ]
 
+def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tuple]:
+    """
+    Intelligently identifies concrete policy commitments across any political news or parliamentary report.
+    Extracts the policy statement, maps it to the proper macro-topic, and determines the action type.
+    """
+    sentences = re.split(r"(?<=[.!?])\s+", full_text)
+    
+    ACTION_PATTERNS = [
+        # DDL / Proposte di legge
+        (r"(?:presenta|deposita|approva)\s+(?:un |una |il |la |lo |l')?(?:ddl|disegno di legge|proposta di legge|emendamento|mozione)\s+(?:per|su|volto a|contro|a favore di|di)\s+([^.!?]{18,220})", "Proposta di legge"),
+        # Riforme e Piani Programmatici
+        (r"(?:propone|chiede|annuncia|lancia un piano per|punta a|intende introdurre|intende cancellare|intende ridurre|intende riformare|priorit[àa] [èe]|propone di)\s+(?:di |la |il |un |l'|lo )?([^.!?]{18,220})", "Dichiarazione programmatica"),
+        # Opposizione o Contrarietà
+        (r"(?:si oppone a|voter[àa] contro|chiede lo stop a|contrariet[àa] al|boccia la proposta di|chiede di bloccare)\s+(?:la |il |lo |l'|i |le )?([^.!?]{18,220})", "Opposizione"),
+        # Misure e Azioni Dirette
+        (r"(?:taglio|riduzione|azzeramento|aumento|incremento|blocco|stop|moratoria|istituzione|reintroduzione)\s+(?:del(?:la|lo|l'|le|i)?|delle|degli|di|a)\s+([^.!?]{18,220})", "Dichiarazione programmatica")
+    ]
+
+    for sentence in sentences:
+        s_clean = sentence.strip()
+        s_lower = s_clean.lower()
+        
+        # Must not be pure political gossip
+        if any(noise in s_lower for noise in ["arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti", "marchese"]):
+            continue
+            
+        for pattern, act_type in ACTION_PATTERNS:
+            m = re.search(pattern, s_clean, re.I)
+            if m:
+                extracted_clause = m.group(1).strip()
+                extracted_clause = re.sub(r"\s+", " ", extracted_clause)
+                extracted_clause = re.sub(r"^(?:che\s+|di\s+|per\s+|a\s+|e\s+)", "", extracted_clause, flags=re.I).strip()
+                extracted_clause = re.sub(r"[,;:\-–—\s]+$", "", extracted_clause).strip()
+                
+                if len(extracted_clause) >= 18:
+                    detected_topic = "Economia"
+                    for topic, kws in MACRO_TOPICS_KEYWORDS.items():
+                        if any(kw in s_lower or kw in extracted_clause.lower() for kw in kws):
+                            detected_topic = topic
+                            break
+                            
+                    formatted_synthesis = extracted_clause[0].upper() + extracted_clause[1:]
+                    return formatted_synthesis, detected_topic, act_type
+
+    return None
+
 def _extract_heuristically(
     text: str,
     url: str,
@@ -162,10 +208,13 @@ def _extract_heuristically(
             action_type = act
             break
 
-    # If no specific policy transformation matched, check if text has a strictly defined legislative measure
+    # If no specific policy transformation matched, check dynamic policy commitments across text
     if not proposal_synthesis:
-        # If it doesn't match an explicit transformation, DO NOT fallback to raw titles: EXCLUDE to keep quality 100%
-        return []
+        dynamic_res = _extract_dynamic_policy_statement(full_text, lower)
+        if dynamic_res:
+            proposal_synthesis, chosen_topic, action_type = dynamic_res
+        else:
+            return []
 
     # Extract cost if mentioned
     cost_match = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", text, re.I)

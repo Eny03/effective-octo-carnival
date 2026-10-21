@@ -264,9 +264,11 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
         party_obj = db.query(PoliticalParty).filter(PoliticalParty.name == p_name).first()
         party_id = party_obj.id if party_obj else None
 
-        gap_filled_for_this_topic = False
+        proposals_added_for_topic = 0
 
         for art in articles:
+            if proposals_added_for_topic >= 3:
+                break
             raw_text = art["raw_text"]
             content_hash = compute_content_hash(raw_text)
             
@@ -317,8 +319,8 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                     )
                     db.add(record)
                     total_added_or_updated += 1
-                    gap_filled_for_this_topic = True
-                    break
+                    proposals_added_for_topic += 1
+                    continue
 
             for item in extracted:
                 if item.partito.lower() in p_name.lower() or p_name.lower() in item.partito.lower():
@@ -375,7 +377,7 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                         )
                         db.add(new_prop)
                         total_added_or_updated += 1
-                        gap_filled_for_this_topic = True
+                        proposals_added_for_topic += 1
 
         # Update dossier for this party if a new proposal was recorded
         if party_obj:

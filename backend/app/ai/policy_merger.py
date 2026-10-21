@@ -7,36 +7,43 @@ from app.models import PoliticalProposal
 from app.schemas import ProposalExtractionSchema
 from app.ai.embeddings import cosine_similarity
 
-# Semantic & topic key phrase groups for high-confidence policy topic clustering
+# Highly specific policy sub-measure clusters: only merges if the EXACT same reform is referenced
 CORE_POLICY_TOPIC_GROUPS = [
-    ["salario minimo", "9 euro", "9€", "retribuzione minima"],
-    ["pignorament", "sovraindebitamento", "cartelle esattoriali", "esecuzioni immobiliari"],
-    ["pension", "quota 41", "uscita a 64", "tfr a previdenza", "anticipo pensionistico"],
-    ["cuneo fiscale", "decontribuzione neoassunti", "sgravi contributivi"],
+    ["salario minimo", "retribuzione minima", "salario orario"],
+    ["quota 41"],
+    ["opzione donna"],
+    ["pensioni minime", "minime a 1000", "innalzamento pensioni"],
+    ["anticipo a 64", "uscita a 64"],
+    ["conferimento del tfr", "tfr a previdenza"],
+    ["cuneo fiscale", "decontribuzione dipendenti"],
+    ["settimana corta", "32 ore", "orario di lavoro a 32"],
+    ["sicurezza sul lavoro", "omicidio sul lavoro"],
     ["flat tax", "aliquota unica 15%"],
-    ["irpef", "ceto medio", "scaglioni irpef", "no tax area"],
-    ["ius scholae", "cittadinanza minori", "10 anni di scuola"],
-    ["fondo sanitario", "liste d'attesa", "7.5% del pil", "ssn", "medici ospedalieri"],
-    ["trasparenza prestazioni sanitarie", "tariffe sanitarie", "costi prestazioni"],
-    ["nucleare", "smr", "reattori nucleari", "iv generazione"],
-    ["rinnovabili", "comunità energetiche", "solare", "eolico", "10 gw"],
-    ["patrimoniale", "grandi ricchezze", "next generation tax", "super ricchi"],
-    ["affitti brevi", "locazioni turistiche", "partita iva terzo immobile"],
-    ["separazione delle carriere", "sdoppiamento csm", "riforma giustizia"],
-    ["autonomia differenziata", "lep", "livelli essenziali delle prestazioni"],
-    ["cannabis", "eutanasia", "fine vita assistito", "testamento biologico"],
-    ["armi a kiev", "aiuti a kiev", "spese militari", "difesa europea", "eurobond"],
-    ["trivelle", "commissario trivelle", "idrocarburi nazionali", "estrazione gas"],
-    ["carceri", "sovraffollamento carcerario", "numero chiuso carceri"],
-    ["accise", "prelievo tabacchi", "giochi d'azzardo", "carburanti"],
-    ["sindaco d'italia", "premierato", "elezione diretta presidente", "bicameralismo paritario"],
-    ["disinformazione", "propaganda russa", "interferenze estere"],
-    ["certificazione costi programmi", "upb programmi elettorali", "scheda tecnica proposte"],
-    ["immigrazione", "residenza 15 anni", "test di integrazione", "tutela identità"],
-    ["spending review", "taglio selettivo spesa", "contrattazione aziendale", "opt-out"],
-    ["scala mobile", "indicizzazione salari", "nazionalizzazione energia", "esproprio alloggi"],
-    ["sovranità monetaria", "uscita euro", "neutralità permanente", "uscita nato"],
-    ["competenze statutarie alto adige", "autonomia bolzano", "intermodalità brennero"]
+    ["irpef a tre aliquote", "scaglioni irpef", "taglio seconda aliquota"],
+    ["concordato preventivo biennale"],
+    ["reddito di cittadinanza", "reddito di dignità", "indennità universale"],
+    ["fondo sanitario al 7.5%", "7,5% del pil sanità", "rifinanziamento ssn"],
+    ["liste d'attesa", "abbattimento liste attesa", "cup unico"],
+    ["assunzioni medici", "tetto assunzioni sanità", "personale sanitario"],
+    ["premierato", "elezione diretta presidente del consiglio", "ddl casellati"],
+    ["autonomia differenziata", "legge calderoli"],
+    ["separazione delle carriere", "sdoppiamento csm", "carriere magistrati"],
+    ["ponte sullo stretto", "stretto di messina"],
+    ["piano mattei"],
+    ["protocollo albania", "accordo albania", "centri albania"],
+    ["nucleare", "reattori smr", "iv generazione nucleare"],
+    ["comunità energetiche", "10 gw rinnovabili", "parchi eolici"],
+    ["patrimoniale", "imposta sui grandi patrimoni", "next generation tax"],
+    ["extraprofitti banche", "tassazione extraprofitti", "prelievo su banche"],
+    ["fine vita", "suicidio assistito", "eutanasia legale"],
+    ["cannabis legale", "legalizzazione cannabis"],
+    ["ius scholae", "ius soli", "cittadinanza studenti"],
+    ["stipendi docenti", "tempo pieno scuola", "asili nido gratuiti"],
+    ["spese militari", "armi a kiev", "2% pil difesa"],
+    ["concessioni balneari", "licenze taxi", "gare balneari"],
+    ["scala mobile", "indicizzazione salari all'inflazione"],
+    ["sovranità monetaria", "uscita euro", "uscita nato"],
+    ["statuto speciale alto adige", "competenze bolzano", "autonomia bilinguismo"]
 ]
 
 def find_matching_existing_proposal(
@@ -92,7 +99,7 @@ def find_matching_existing_proposal(
                 except Exception:
                     continue
 
-        if best_candidate and best_sim >= 0.72:
+        if best_candidate and best_sim >= 0.88:
             return best_candidate
 
     return None

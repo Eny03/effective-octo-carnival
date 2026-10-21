@@ -387,26 +387,25 @@ def generate_party_dossier(party: PoliticalParty, db: Session) -> Dict[str, Any]
         punti_forza = "Continuità nelle prese di posizione sul territorio."
         criticita_osservatorio = "Necessità di quantificazione finanziaria formale nei disegni di legge."
 
-    # 2. Key Pillars Synthesis with Clear, Reformulated Prose
+    # 2. Key Pillars Synthesis with Clear, Reformulated Prose (All distinct proposals per topic)
     pillars = []
     for topic, props in topic_groups.items():
-        sample = props[0]
-        # Clean formulation
-        sintesi_chiara = sample.dichiarazione_sintesi
-        if len(sintesi_chiara) > 0 and sintesi_chiara[0].islower():
-            sintesi_chiara = sintesi_chiara[0].upper() + sintesi_chiara[1:]
+        for item in props[:4]:
+            sintesi_chiara = item.dichiarazione_sintesi
+            if len(sintesi_chiara) > 0 and sintesi_chiara[0].islower():
+                sintesi_chiara = sintesi_chiara[0].upper() + sintesi_chiara[1:]
 
-        pillars.append({
-            "tema": topic,
-            "proposta_chiave": sintesi_chiara,
-            "tipo_azione": sample.tipo_azione or "Dichiarazione programmatica",
-            "costo": sample.costo_stimato or "Non quantificato",
-            "coperture": sample.coperture_dichiarate or "Fondi ordinari di bilancio",
-            "status_verifica": sample.fact_check_status or "Verificato",
-            "motivazione": sample.fact_check_motivazione or sample.fattibilita_finanziaria or "Valutazione oggettiva basata su parametri MEF/ISTAT.",
-            "fonte_url": sample.fonte_url,
-            "fonte_testata": sample.fonte_testata or "Fonti Istituzionali / Stampa Nazionale"
-        })
+            pillars.append({
+                "tema": topic,
+                "proposta_chiave": sintesi_chiara,
+                "tipo_azione": item.tipo_azione or "Dichiarazione programmatica",
+                "costo": item.costo_stimato or "Non quantificato",
+                "coperture": item.coperture_dichiarate or "Fondi ordinari di bilancio",
+                "status_verifica": item.fact_check_status or "Verificato",
+                "motivazione": item.fact_check_motivazione or item.fattibilita_finanziaria or "Valutazione oggettiva basata su parametri MEF/ISTAT.",
+                "fonte_url": item.fonte_url,
+                "fonte_testata": item.fonte_testata or "Fonti Istituzionali / Stampa Nazionale"
+            })
 
     # 3. Macroeconomic Cost Computation and Financial Audit
     quantified_costs_numeric = []

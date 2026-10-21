@@ -1,19 +1,27 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Link from "next/link";
 import { 
   Layers, 
   ArrowLeftRight, 
   Search, 
   ExternalLink,
   Building2,
-  Calendar
+  Calendar,
+  CheckCircle2,
+  Coins,
+  ChevronRight,
+  Filter,
+  Sparkles,
+  Info
 } from "lucide-react";
 import { 
   fetchComparisonMatrix, 
   fetchParties, 
   ComparisonMatrixResponse, 
-  PoliticalParty 
+  PoliticalParty,
+  PoliticalProposal
 } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TopicBadge } from "@/components/TopicBadge";
@@ -27,7 +35,7 @@ export default function ComparePage() {
   const [selectedTopic, setSelectedTopic] = useState<string>("Tutti");
   const [selectedCoalition, setSelectedCoalition] = useState<string>("Tutte");
   const [searchQuery, setSearchQuery] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"matrix" | "head-to-head">("head-to-head");
+  const [viewMode, setViewMode] = useState<"head-to-head" | "matrix">("head-to-head");
 
   // Head-to-Head selection
   const [partyA, setPartyA] = useState<string>("Fratelli d'Italia");
@@ -61,25 +69,12 @@ export default function ComparePage() {
     "Energia",
     "Istituzioni",
     "Immigrazione",
-    "Cittadinanza",
     "Istruzione",
     "Infrastrutture",
     "Politica Estera",
     "Diritti Civili"
   ];
   const macroTopics = matrixData?.macro_argomenti?.length ? ["Tutti", ...matrixData.macro_argomenti] : defaultMacroTopics;
-  const coalitions = [
-    "Tutte",
-    "Centrodestra",
-    "Centrosinistra",
-    "Movimento 5 Stelle",
-    "Centro / Liberaldemocratici",
-    "Destra Identitaria / Sovranismo",
-    "Sinistra Radicale",
-    "Sovranismo Popolare",
-    "Autonomie Regionali",
-    "Civici & Nuove Forze"
-  ];
 
   // Filter parties by coalition
   const filteredParties = parties.filter((p) => {
@@ -96,7 +91,8 @@ export default function ComparePage() {
       const q = searchQuery.toLowerCase();
       const topicMatches = row.macro_argomento.toLowerCase().includes(q);
       const contentMatches = Object.values(row.parties).some((c) =>
-        c.sintesi_posizione.toLowerCase().includes(q)
+        c.sintesi_posizione.toLowerCase().includes(q) ||
+        c.proposals?.some(p => p.dichiarazione_sintesi.toLowerCase().includes(q))
       );
       return topicMatches || contentMatches;
     }
@@ -104,46 +100,50 @@ export default function ComparePage() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Confronto Posizioni
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
+            <Layers className="w-3.5 h-3.5" />
+            <span>Manifesto Comparativo Dinamico</span>
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+            Confronto Posizioni & Riforme
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Mappa e confronta le visioni dei partiti italiani su ciascun macro-tema.
+            Confronta tutte le proposte dei partiti su ciascun tema: ogni forza politica può avere più misure e idee distinte sullo stesso macro-argomento.
           </p>
         </div>
 
-        {/* View Switcher */}
-        <div className="inline-flex items-center p-1 bg-slate-100 dark:bg-slate-800 rounded-xl self-start sm:self-auto">
+        {/* View Switcher Tabs */}
+        <div className="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl self-start sm:self-auto shrink-0">
           <button
             onClick={() => setViewMode("head-to-head")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
               viewMode === "head-to-head"
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            <ArrowLeftRight className="w-3.5 h-3.5" />
-            <span>Testa a Testa</span>
+            <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>Testa a Testa (2 Partiti)</span>
           </button>
           <button
             onClick={() => setViewMode("matrix")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               viewMode === "matrix"
-                ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
-            Tutti i Partiti
+            <span>Tutti i 18 Partiti</span>
           </button>
         </div>
       </div>
 
-      {/* Quick Topic Chips (Mobile First Scrollable) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
+      {/* Quick Macro-Topic Pills */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
         {macroTopics.map((topic) => {
           const isSelected = selectedTopic === topic;
           return (
@@ -152,8 +152,8 @@ export default function ComparePage() {
               onClick={() => setSelectedTopic(topic)}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
                 isSelected
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
-                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-bold"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800"
               }`}
             >
               {topic}
@@ -162,35 +162,44 @@ export default function ComparePage() {
         })}
       </div>
 
-      {/* Search Bar */}
+      {/* Search Input */}
       <div className="relative">
         <input
           type="text"
-          placeholder="Cerca un argomento o parola chiave (es. salario minimo, flat tax, nucleare)..."
+          placeholder="Cerca un argomento o parola chiave (es. salario minimo, flat tax, nucleare, sanità, premierato)..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500 shadow-xs"
+          className="w-full text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl pl-9 pr-4 py-2.5 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 shadow-2xs"
         />
         <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+        {searchQuery && (
+          <button
+            onClick={() => setSearchQuery("")}
+            className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-semibold"
+          >
+            Cancella
+          </button>
+        )}
       </div>
 
       {loading ? (
-        <div className="p-16 text-center text-xs text-slate-400">
-          Caricamento della matrice comparativa...
+        <div className="p-16 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+          Caricamento della matrice comparativa in corso...
         </div>
       ) : viewMode === "head-to-head" ? (
         /* Head-to-Head Comparison View */
-        <div className="space-y-6">
-          {/* Party Pickers */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="space-y-5">
+          {/* Party Pickers Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Primo Partito
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: parties.find(p => p.name === partyA)?.color || "#3b82f6" }} />
+                <span>Primo Partito:</span>
               </label>
               <select
                 value={partyA}
                 onChange={(e) => setPartyA(e.target.value)}
-                className="w-full text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden"
+                className="w-full text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden"
               >
                 {parties.map((p) => (
                   <option key={p.name} value={p.name}>
@@ -200,13 +209,14 @@ export default function ComparePage() {
               </select>
             </div>
             <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                Secondo Partito
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: parties.find(p => p.name === partyB)?.color || "#ef4444" }} />
+                <span>Secondo Partito:</span>
               </label>
               <select
                 value={partyB}
                 onChange={(e) => setPartyB(e.target.value)}
-                className="w-full text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden"
+                className="w-full text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden"
               >
                 {parties.map((p) => (
                   <option key={p.name} value={p.name}>
@@ -217,7 +227,7 @@ export default function ComparePage() {
             </div>
           </div>
 
-          {/* Comparison Cards */}
+          {/* Comparison Rows */}
           <div className="space-y-4">
             {filteredRows?.length === 0 ? (
               <div className="p-8 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
@@ -227,22 +237,26 @@ export default function ComparePage() {
               filteredRows?.map((row) => {
                 const cellA = row.parties[partyA];
                 const cellB = row.parties[partyB];
+                const propsA = cellA?.proposals || [];
+                const propsB = cellB?.proposals || [];
+
                 return (
                   <div
                     key={row.macro_argomento}
-                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xs"
+                    className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xs space-y-0"
                   >
+                    {/* Topic Header Strip */}
                     <div className="bg-slate-50 dark:bg-slate-800/60 px-4 sm:px-6 py-2.5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
                       <TopicBadge topic={row.macro_argomento} />
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {row.argomento_dettaglio}
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        {propsA.length} vs {propsB.length} misure censite
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800 p-4 sm:p-6 gap-4 sm:gap-6">
-                      {/* Party A */}
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 dark:divide-slate-800 p-4 sm:p-5 gap-4 sm:gap-6">
+                      {/* Party A Column */}
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between pb-1">
                           <div className="flex items-center gap-2">
                             <span
                               className="w-2.5 h-2.5 rounded-full"
@@ -252,44 +266,106 @@ export default function ComparePage() {
                               {partyA}
                             </h4>
                           </div>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                             {cellA?.stance_type}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                          {cellA?.sintesi_posizione}
-                        </p>
-                        {cellA?.proposals?.[0] && (
-                          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-                            <span>Costo: <strong className="text-slate-700 dark:text-slate-300">{cellA.proposals[0].costo_stimato}</strong></span>
-                            <StatusBadge status={cellA.proposals[0].fact_check_status} size="sm" />
+
+                        {/* List of distinct proposals for Party A */}
+                        {propsA.length === 0 ? (
+                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-400">
+                            Nessuna posizione formalizzata su questo tema.
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {propsA.map((prop, pIdx) => (
+                              <div
+                                key={prop.id || pIdx}
+                                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-2"
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    {prop.tipo_azione || "Proposta"}
+                                  </span>
+                                  <StatusBadge status={prop.fact_check_status} size="sm" />
+                                </div>
+                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">
+                                  {prop.dichiarazione_sintesi}
+                                </p>
+                                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] text-slate-500">
+                                  <span>Costo: <strong className="text-slate-800 dark:text-slate-200">{prop.costo_stimato}</strong></span>
+                                  {prop.fonte_url && (
+                                    <a
+                                      href={prop.fonte_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                                    >
+                                      <span>Fonte</span>
+                                      <ExternalLink className="w-2.5 h-2.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
 
-                      {/* Party B */}
-                      <div className="space-y-2.5 pt-4 md:pt-0">
-                        <div className="flex items-center justify-between">
+                      {/* Party B Column */}
+                      <div className="space-y-3 pt-4 md:pt-0">
+                        <div className="flex items-center justify-between pb-1">
                           <div className="flex items-center gap-2">
                             <span
                               className="w-2.5 h-2.5 rounded-full"
-                              style={{ backgroundColor: cellB?.party_color || "#3b82f6" }}
+                              style={{ backgroundColor: cellB?.party_color || "#ef4444" }}
                             />
                             <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white">
                               {partyB}
                             </h4>
                           </div>
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
                             {cellB?.stance_type}
                           </span>
                         </div>
-                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                          {cellB?.sintesi_posizione}
-                        </p>
-                        {cellB?.proposals?.[0] && (
-                          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-                            <span>Costo: <strong className="text-slate-700 dark:text-slate-300">{cellB.proposals[0].costo_stimato}</strong></span>
-                            <StatusBadge status={cellB.proposals[0].fact_check_status} size="sm" />
+
+                        {/* List of distinct proposals for Party B */}
+                        {propsB.length === 0 ? (
+                          <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-400">
+                            Nessuna posizione formalizzata su questo tema.
+                          </div>
+                        ) : (
+                          <div className="space-y-2.5">
+                            {propsB.map((prop, pIdx) => (
+                              <div
+                                key={prop.id || pIdx}
+                                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-2"
+                              >
+                                <div className="flex items-center justify-between gap-1">
+                                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                    {prop.tipo_azione || "Proposta"}
+                                  </span>
+                                  <StatusBadge status={prop.fact_check_status} size="sm" />
+                                </div>
+                                <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">
+                                  {prop.dichiarazione_sintesi}
+                                </p>
+                                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] text-slate-500">
+                                  <span>Costo: <strong className="text-slate-800 dark:text-slate-200">{prop.costo_stimato}</strong></span>
+                                  {prop.fonte_url && (
+                                    <a
+                                      href={prop.fonte_url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                                    >
+                                      <span>Fonte</span>
+                                      <ExternalLink className="w-2.5 h-2.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         )}
                       </div>
@@ -303,19 +379,37 @@ export default function ComparePage() {
       ) : (
         /* Full Party Matrix View */
         <div className="space-y-4">
-          {/* Mobile view */}
-          <div className="block md:hidden space-y-4">
+          {/* Coalition selector for matrix */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {["Tutte", "Centrodestra", "Centrosinistra", "Movimento 5 Stelle", "Centro / Liberaldemocratici", "Sinistra Radicale"].map((c) => (
+              <button
+                key={c}
+                onClick={() => setSelectedCoalition(c)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  selectedCoalition === c
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                }`}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-4">
             {filteredRows?.map((row) => (
               <div
                 key={row.macro_argomento}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 shadow-xs space-y-3"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-2xs space-y-3"
               >
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                   <TopicBadge topic={row.macro_argomento} />
-                  <span className="text-[11px] text-slate-400">Tutti i partiti</span>
+                  <span className="text-[11px] text-slate-500">
+                    Confronto esteso forze politiche
+                  </span>
                 </div>
 
-                <div className="space-y-2.5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                   {filteredParties.map((party) => {
                     const cell = row.parties[party.name];
                     const hasProposals = cell && cell.proposals.length > 0;
@@ -324,115 +418,41 @@ export default function ComparePage() {
                     return (
                       <div
                         key={party.code}
-                        className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs"
+                        className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 space-y-1.5 text-xs flex flex-col justify-between"
                       >
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
-                            <span
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: party.color }}
-                            />
-                            <span>{party.name}</span>
+                        <div>
+                          <div className="flex items-center justify-between mb-1">
+                            <div className="flex items-center gap-1.5 font-bold text-slate-900 dark:text-white">
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: party.color }}
+                              />
+                              <span className="truncate">{party.name}</span>
+                            </div>
+                            <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 shrink-0">
+                              {cell.proposals.length} {cell.proposals.length === 1 ? "atto" : "atti"}
+                            </span>
                           </div>
-                          {cell.proposals[0] && (
-                            <StatusBadge
-                              status={cell.proposals[0].fact_check_status}
-                              size="sm"
-                            />
-                          )}
+
+                          <div className="space-y-1.5 pt-0.5">
+                            {cell.proposals.slice(0, 2).map((p, idx) => (
+                              <div key={idx} className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-2">
+                                • {p.dichiarazione_sintesi}
+                              </div>
+                            ))}
+                          </div>
                         </div>
 
-                        <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed">
-                          {cell.sintesi_posizione}
-                        </p>
-
-                        {cell.proposals[0] && (
-                          <div className="flex items-center justify-between pt-1 border-t border-slate-200/50 dark:border-slate-700/50 text-[10px] text-slate-500">
-                            <span>Costo: <strong>{cell.proposals[0].costo_stimato}</strong></span>
-                            <a
-                              href={cell.proposals[0].fonte_url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 dark:text-blue-400 font-medium hover:underline flex items-center gap-0.5"
-                            >
-                              Fonte <ExternalLink className="w-2.5 h-2.5" />
-                            </a>
-                          </div>
-                        )}
+                        <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-500 mt-2">
+                          <span>{cell.proposals[0]?.costo_stimato || "Non quantificato"}</span>
+                          <StatusBadge status={cell.proposals[0]?.fact_check_status || "Verificato"} size="sm" />
+                        </div>
                       </div>
                     );
                   })}
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* Desktop Table View */}
-          <div className="hidden md:block bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">
-                    <th className="p-4 text-xs font-bold uppercase tracking-wider text-slate-500 sticky left-0 bg-slate-50 dark:bg-slate-800 z-10 w-44">
-                      Tema
-                    </th>
-                    {filteredParties.map((party) => (
-                      <th
-                        key={party.code}
-                        className="p-4 text-xs font-bold text-slate-900 dark:text-white min-w-[240px] border-l border-slate-100 dark:border-slate-800"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className="w-2.5 h-2.5 rounded-full"
-                            style={{ backgroundColor: party.color }}
-                          />
-                          <span>{party.name}</span>
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
-                  {filteredRows?.map((row) => (
-                    <tr key={row.macro_argomento} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
-                      <td className="p-4 font-semibold text-slate-900 dark:text-white sticky left-0 bg-white dark:bg-slate-900">
-                        <TopicBadge topic={row.macro_argomento} />
-                      </td>
-                      {filteredParties.map((party) => {
-                        const cell = row.parties[party.name];
-                        const hasProposals = cell && cell.proposals.length > 0;
-                        return (
-                          <td key={party.code} className="p-4 align-top border-l border-slate-100 dark:border-slate-800 space-y-1.5">
-                            {hasProposals ? (
-                              <div className="space-y-1.5">
-                                <div className="flex items-center justify-between gap-1">
-                                  <span className="font-semibold text-[11px] text-slate-800 dark:text-slate-200">
-                                    {cell.stance_type}
-                                  </span>
-                                  {cell.proposals[0] && (
-                                    <StatusBadge status={cell.proposals[0].fact_check_status} size="sm" />
-                                  )}
-                                </div>
-                                <p className="text-slate-600 dark:text-slate-300 text-[11px] leading-relaxed line-clamp-3">
-                                  {cell.sintesi_posizione}
-                                </p>
-                                {cell.proposals[0] && (
-                                  <div className="text-[10px] text-slate-500 pt-1">
-                                    Costo: <strong>{cell.proposals[0].costo_stimato}</strong>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <div className="text-slate-400 italic text-[11px]">Nessun dato</div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </div>
         </div>
       )}
