@@ -29,34 +29,34 @@ interface Message {
 
 const STARTER_PROMPTS = [
   {
-    title: "Salario Minimo",
-    query: "Quali sono le proposte sul salario minimo a confronto?",
+    title: "Evoluzione Salario Minimo",
+    query: "Come è cambiata la posizione del PD sul salario minimo dal 2023 ad oggi?",
     mode: "comparativo",
   },
   {
-    title: "Cuneo & Flat Tax",
+    title: "Lega & Quota 41 nel tempo",
+    query: "Come si è evoluta la proposta di Quota 41 della Lega dal 2022 al presente?",
+    mode: "comparativo",
+  },
+  {
+    title: "Cuneo & Flat Tax (2022-2026)",
     query: "Quali sono le differenze tra Fratelli d'Italia e il PD su cuneo fiscale e Flat Tax?",
     mode: "confronto_diretto",
   },
   {
-    title: "Pensioni Minime",
-    query: "L'aumento delle pensioni minime ha coperture finanziarie realistiche secondo il MEF?",
-    mode: "fact_check",
-  },
-  {
-    title: "Nucleare vs Rinnovabili",
-    query: "Cosa propongono i partiti sulla transizione energetica e il ritorno al nucleare?",
-    mode: "comparativo",
-  },
-  {
     title: "Futuro Nazionale vs ORA!",
-    query: "Quali sono le posizioni di Futuro Nazionale rispetto a ORA! su fisco e liberalizzazioni?",
+    query: "Quali sono le posizioni distinte di Futuro Nazionale rispetto a ORA! su fisco e liberalizzazioni?",
     mode: "confronto_diretto",
   },
   {
-    title: "Fondo Sanitario",
-    query: "Quali sono le proposte dei partiti sulla spesa sanitaria e il taglio delle liste d'attesa?",
+    title: "Sanità & Liste d'Attesa",
+    query: "Quali sono le proposte dei partiti sul Fondo Sanitario Nazionale e il taglio delle liste d'attesa?",
     mode: "comparativo",
+  },
+  {
+    title: "Verifica Coperture MEF",
+    query: "L'aumento delle pensioni minime ha coperture finanziarie certificate dalla Ragioneria Generale dello Stato?",
+    mode: "fact_check",
   },
 ];
 

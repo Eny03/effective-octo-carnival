@@ -3,14 +3,22 @@
 @tailwind utilities;
 
 :root {
-  --background: #ffffff;
+  --background: #f8fafc;
   --foreground: #0f172a;
+  --gov-navy: #0B2545;
+  --gov-blue: #133E87;
+  --gov-light-blue: #EEF4FF;
+  --gov-gold: #B45309;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #090d16;
     --foreground: #f8fafc;
+    --gov-navy: #0f172a;
+    --gov-blue: #3b82f6;
+    --gov-light-blue: #1e293b;
+    --gov-gold: #f59e0b;
   }
 }
 
@@ -48,6 +56,10 @@ body {
   .scrollbar-none {
     -ms-overflow-style: none;  /* IE and Edge */
     scrollbar-width: none;  /* Firefox */
+  }
+
+  .it-tricolor-line {
+    background: linear-gradient(90deg, #009246 0%, #009246 33.33%, #ffffff 33.33%, #ffffff 66.66%, #ce2b37 66.66%, #ce2b37 100%);
   }
 }
 

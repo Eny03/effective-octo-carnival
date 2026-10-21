@@ -51,6 +51,15 @@ const MACRO_TOPICS = [
   "Diritti Civili"
 ];
 
+const HISTORICAL_YEARS = [
+  "Tutti gli Anni",
+  "2026 (Attuale)",
+  "2025",
+  "2024",
+  "2023",
+  "2022 (Campagna)"
+];
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<StatsOverview | null>(null);
   const [proposals, setProposals] = useState<PoliticalProposal[]>([]);
@@ -64,6 +73,7 @@ export default function DashboardPage() {
   // Home Filters
   const [selectedTopic, setSelectedTopic] = useState<string>("Tutti");
   const [selectedParty, setSelectedParty] = useState<string>("Tutti");
+  const [selectedYear, setSelectedYear] = useState<string>("Tutti gli Anni");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [visibleCount, setVisibleCount] = useState<number>(12);
 
@@ -174,6 +184,11 @@ export default function DashboardPage() {
     if (selectedParty !== "Tutti" && !p.partito.toLowerCase().includes(selectedParty.toLowerCase())) {
       return false;
     }
+    if (selectedYear !== "Tutti gli Anni") {
+      const yearOnly = selectedYear.split(" ")[0];
+      const pYear = p.timestamp ? new Date(p.timestamp).getFullYear().toString() : "";
+      if (pYear !== yearOnly) return false;
+    }
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       const matchText = p.dichiarazione_sintesi.toLowerCase().includes(q);
@@ -187,20 +202,20 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-6 sm:p-10 border border-slate-800 shadow-xl">
+      {/* Institutional Hero Section */}
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-6 sm:p-10 border border-slate-800 shadow-2xl">
         <div className="relative z-10 max-w-3xl space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white/10 text-slate-200 border border-white/10 backdrop-blur-xs">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-200 border border-white/10 backdrop-blur-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Osservatorio Politico Autonomo 100% Neutrale</span>
+            <span>Repubblica Italiana • Osservatorio Indipendente Politiche Pubbliche</span>
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
             PolitiLens
           </h1>
-          <p className="text-sm sm:text-base text-slate-300 font-light leading-relaxed">
-            Monitora in tempo reale programmi, eventi, dichiarazioni e social di tutti i partiti italiani.
-            Confronta le posizioni su ciascun tema e verifica la fattibilità economica con i dati ufficiali di bilancio (MEF, ISTAT, Corte dei Conti).
+          <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
+            Archivio storico 2022–2026 e monitoraggio permanente di tutte le 18 forze politiche italiane.
+            Confronta le posizioni su ciascun tema, segui l'evoluzione delle proposte nel corso della legislatura e verifica la sostenibilità economica con i parametri ufficiali MEF, ISTAT e Corte dei Conti.
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5 pt-2">
@@ -217,7 +232,7 @@ export default function DashboardPage() {
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all active:scale-95"
             >
               <Bot className="w-4 h-4 text-emerald-400" />
-              <span>Interroga AI</span>
+              <span>Interroga AI (Evoluzione Storica)</span>
             </Link>
             <Link
               href="/fact-check"
@@ -622,6 +637,30 @@ export default function DashboardPage() {
               Cancella
             </button>
           )}
+        </div>
+
+        {/* Year Filter Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5 text-blue-500" />
+            <span>Legislatura:</span>
+          </span>
+          {HISTORICAL_YEARS.map((yr) => {
+            const isSelected = selectedYear === yr;
+            return (
+              <button
+                key={yr}
+                onClick={() => setSelectedYear(yr)}
+                className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  isSelected
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                }`}
+              >
+                {yr}
+              </button>
+            );
+          })}
         </div>
 
         {/* Scrollable Macro Topic Filter Pills */}

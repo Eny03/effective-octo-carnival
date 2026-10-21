@@ -97,3 +97,43 @@ def search_duckduckgo_open_web(query: str, max_results: int = 10) -> List[Dict[s
         pass
 
     return results
+
+def search_historical_political_news(query: str, year: int = 2023, max_results: int = 10) -> List[Dict[str, Any]]:
+    """
+    Searches historical news archives via Google News RSS with strict yearly range filters.
+    Enables autonomous ingestion of past legislative debates and program evolutions (2022-2025).
+    """
+    date_filtered_query = f"{query} after:{year}-01-01 before:{year+1}-01-01"
+    encoded_query = urllib.parse.quote(date_filtered_query)
+    feed_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=it&gl=IT&ceid=IT:it"
+    results = []
+
+    try:
+        parsed = feedparser.parse(feed_url)
+        for entry in parsed.entries[:max_results]:
+            title = entry.title if hasattr(entry, "title") else ""
+            link = entry.link if hasattr(entry, "link") else ""
+            summary = entry.summary if hasattr(entry, "summary") else ""
+            clean_summary = clean_html(summary) if summary else ""
+            
+            source_title = f"Archivio Web {year}"
+            if hasattr(entry, "source") and hasattr(entry.source, "title"):
+                source_title = f"{entry.source.title} ({year})"
+
+            combined_text = f"{title}. {clean_summary}"
+            parties, topics = detect_entities(combined_text)
+
+            results.append({
+                "title": title,
+                "url": link,
+                "summary": clean_summary,
+                "source_name": source_title,
+                "published_at": datetime.datetime(year, 6, 15),
+                "detected_parties": parties,
+                "detected_topics": topics,
+                "raw_text": combined_text
+            })
+    except Exception as e:
+        print(f"[UniversalWebSearch] Error in historical query '{query}' for year {year}: {e}")
+
+    return results

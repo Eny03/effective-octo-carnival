@@ -1,6 +1,7 @@
 import json
 import re
 import urllib.request
+import datetime
 from typing import List, Dict, Any, Optional, Tuple
 from sqlalchemy.orm import Session
 from app.config import settings
@@ -27,7 +28,7 @@ PARTY_KEYWORDS = {
     "Partito Liberal Democratico": ["partito liberal democratico", "pld", "libdem", "marattin", "luigi marattin"],
     "Noi Moderati": ["noi moderati", "lupi", "maurizio lupi"],
     "Futuro Nazionale": ["futuro nazionale", "fnv", "vannacci", "roberto vannacci"],
-    "ORA!": ["ora!", "movimento ora", "ora", "forchielli", "boldrin", "drin drin"],
+    "ORA!": ["movimento ora", "partito ora", "forchielli", "boldrin", "drin drin", "ora!"],
     "Democrazia Sovrana Popolare": ["democrazia sovrana popolare", "dsp", "rizzo", "marco rizzo"],
     "Rifondazione Comunista": ["rifondazione comunista", "prc", "acerbo", "maurizio acerbo"],
     "Potere al Popolo": ["potere al popolo", "pap", "granato", "collot"],
@@ -52,33 +53,47 @@ def detect_entities_and_topics(query: str) -> Tuple[List[str], List[str]]:
     q_low = query.lower()
     matched_parties = []
     for party, keys in PARTY_KEYWORDS.items():
-        if any(k in q_low for k in keys):
-            matched_parties.append(party)
+        for k in keys:
+            pattern = r"(?:\b|^)" + re.escape(k) + r"(?:\b|$)"
+            if re.search(pattern, q_low):
+                matched_parties.append(party)
+                break
             
     matched_topics = []
     for topic, keys in TOPIC_KEYWORDS.items():
-        if any(k in q_low for k in keys):
-            matched_topics.append(topic)
+        for k in keys:
+            pattern = r"(?:\b|^)" + re.escape(k) + r"(?:\b|$)"
+            if re.search(pattern, q_low):
+                matched_topics.append(topic)
+                break
             
     return matched_parties, matched_topics
 
 async def answer_rag_query(req: ChatQueryRequest, db: Session) -> ChatQueryResponse:
     """
-    Intelligent Hybrid RAG political answer engine:
-    1. Detects entities (parties/leaders) and topics.
-    2. Performs hybrid semantic + lexical scoring on all proposals.
-    3. Builds balanced evidence set across political coalitions.
-    4. Generates an articulate, natural language comparative synthesis with institutional fact-checking.
+    Intelligent Hybrid RAG political answer engine with Temporal Trajectory Tracking:
+    1. Detects entities (parties/leaders), topics, and temporal intentions (2022-2026).
+    2. Performs hybrid semantic + lexical + temporal scoring across historical proposals.
+    3. Traces policy evolutions over time (campaigns, parliamentary acts, revisions).
+    4. Generates an institutional comparative synthesis with public finance verification.
     """
     matched_parties, matched_topics = detect_entities_and_topics(req.question)
     query_vec = await get_text_embedding(req.question)
+    
+    q_low = req.question.lower()
+    now = datetime.datetime.utcnow()
+    years_in_query = re.findall(r"\b(202[2-6])\b", req.question)
+    wants_evolution = any(w in q_low for w in [
+        "cambiat", "evoluzione", "storia", "storico", "passat", "ieri", "prima", "tempo", 
+        "anni", "sviluppo", "precedent", "mutat", "archivio", "2022", "2023", "2024", "2025", "nel tempo", "storica"
+    ])
     
     # Query database
     all_proposals = db.query(PoliticalProposal).all()
     all_parties = {p.name: p for p in db.query(PoliticalParty).all()}
     benchmarks = {b.indicatore: b for b in db.query(InstitutionalBenchmark).all()}
     
-    q_words = [w for w in re.findall(r"\w+", req.question.lower()) if len(w) > 2]
+    q_words = [w for w in re.findall(r"\w+", q_low) if len(w) > 2]
     
     scored_proposals: List[Tuple[float, PoliticalProposal]] = []
     for prop in all_proposals:
@@ -110,29 +125,62 @@ async def answer_rag_query(req: ChatQueryRequest, db: Session) -> ChatQueryRespo
                     score += sim * 2.5
             except Exception:
                 pass
+
+        # 5. Temporal Scoring & Historical Weighting
+        if prop.timestamp:
+            p_year = str(prop.timestamp.year)
+            if years_in_query:
+                if p_year in years_in_query:
+                    score += 5.0
+                else:
+                    score -= 1.0
+            elif wants_evolution:
+                # Value full historical spectrum (2022-2026) evenly to enable trajectory analysis
+                score += 2.0
+            else:
+                # Slight recency bonus for modern queries
+                age_days = (now - prop.timestamp).days
+                if age_days <= 120:
+                    score += 2.2
+                elif age_days <= 365:
+                    score += 1.4
+                elif age_days <= 730:
+                    score += 0.7
                 
         scored_proposals.append((score, prop))
         
     scored_proposals.sort(key=lambda x: x[0], reverse=True)
     
-    # Select top candidates ensuring pluralism
+    # Select top candidates ensuring pluralism & historical depth
     top_candidates: List[PoliticalProposal] = []
     seen_parties = set()
     
-    # If a specific party was asked, prioritize that party's proposals
     if matched_parties and len(matched_parties) == 1:
         target_party = matched_parties[0]
-        for s, p in scored_proposals:
-            if p.partito == target_party and p not in top_candidates:
-                top_candidates.append(p)
-                if len(top_candidates) >= 4:
-                    break
-        # Fill remaining with related context
-        for s, p in scored_proposals:
-            if p not in top_candidates and len(top_candidates) < 6:
-                top_candidates.append(p)
+        party_proposals = [p for s, p in scored_proposals if p.partito == target_party]
+        
+        if wants_evolution and len(party_proposals) > 1:
+            # Spread across distinct years to illustrate historical evolution
+            by_year = {}
+            for p in party_proposals:
+                yr = p.timestamp.year if p.timestamp else 2025
+                if yr not in by_year:
+                    by_year[yr] = p
+            top_candidates = list(by_year.values())[:5]
+            for s, p in scored_proposals:
+                if p not in top_candidates and len(top_candidates) < 6:
+                    top_candidates.append(p)
+        else:
+            for s, p in scored_proposals:
+                if p.partito == target_party and p not in top_candidates:
+                    top_candidates.append(p)
+                    if len(top_candidates) >= 4:
+                        break
+            for s, p in scored_proposals:
+                if p not in top_candidates and len(top_candidates) < 6:
+                    top_candidates.append(p)
     else:
-        # Multi-party topical comparison: pick best per party to ensure diverse voices
+        # Multi-party topical comparison: pick best per party
         for s, p in scored_proposals:
             if s > 1.0:
                 if p.partito not in seen_parties:
@@ -141,7 +189,6 @@ async def answer_rag_query(req: ChatQueryRequest, db: Session) -> ChatQueryRespo
                 if len(top_candidates) >= 6:
                     break
                     
-        # If fewer than 4 candidates, add remaining top scored
         if len(top_candidates) < 4:
             for s, p in scored_proposals:
                 if p not in top_candidates and len(top_candidates) < 6:
@@ -162,20 +209,22 @@ async def answer_rag_query(req: ChatQueryRequest, db: Session) -> ChatQueryRespo
         ))
 
     answer_text = ""
-    disclaimer = "PolitiLens opera secondo rigorosa neutralità algoritmica. Le sintesi e le verifiche di bilancio sono elaborate autonomamente dall'AI confrontando tutte le informazioni disponibili sul web con i parametri ufficiali MEF, ISTAT e Corte dei Conti."
+    disclaimer = "PolitiLens opera secondo rigorosa neutralità algoritmica. Le sintesi, la cronistoria e le verifiche di bilancio sono elaborate autonomamente dall'AI analizzando atti parlamentari, programmi elettorali 2022-2026 e parametri ufficiali MEF, ISTAT e Corte dei Conti."
 
     # Try local Ollama if available
     if await ollama_client.is_available() and top_candidates:
         evidence_lines = []
         for p in top_candidates:
-            evidence_lines.append(f"- {p.partito} ({p.macro_argomento}): {p.dichiarazione_sintesi} [Costo: {p.costo_stimato}, Coperture: {p.coperture_dichiarate}, Verifica: {p.fact_check_status}]")
+            ts_str = p.timestamp.strftime("%m/%Y") if p.timestamp else "N/D"
+            evidence_lines.append(f"- [{ts_str}] {p.partito} ({p.macro_argomento}): {p.dichiarazione_sintesi} [Costo: {p.costo_stimato}, Coperture: {p.coperture_dichiarate}, Verifica: {p.fact_check_status}]")
         evidence_text = "\n".join(evidence_lines)
         
         user_prompt = f"""DOMANDA UTENTE: "{req.question}"
-DATI VERIFICATI NEL DATABASE POLITILENS:
+DATI STORICI E RECENTI DAL DATABASE POLITILENS (ARCHIVIO 2022-2026):
 {evidence_text}
 
-Fornisci una risposta analitica, neutrale, fluida e ben strutturata in lingua italiana.
+Fornisci una risposta istituzionale, neutrale, analitica e ben strutturata in lingua italiana.
+Se la domanda chiede come è cambiata una posizione o cita anni passati, evidenzia chiaramente l'evoluzione temporale dal 2022 ad oggi.
 Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre forze) e valuta la sostenibilità economica dei costi indicati. Non prendere parti."""
         
         generated = await ollama_client.generate_chat(
@@ -204,7 +253,7 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
             topic_str = matched_topics[0] if matched_topics else (top_candidates[0].macro_argomento if top_candidates else "Politica Nazionale")
             
             # 1. Executive Introduction
-            answer_text += f"### 📊 Sintesi Comparativa: {req.question.strip().rstrip('?')}\n\n"
+            answer_text += f"### 📊 Sintesi Comparativa Istituzionale: {req.question.strip().rstrip('?')}\n\n"
             
             if matched_parties and len(matched_parties) == 1:
                 p_name = matched_parties[0]
@@ -213,20 +262,54 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
                 p_ver = f"{p_obj.truthfulness_score}%" if p_obj else "85%"
                 answer_text += (
                     f"Riguardo alle posizioni formalizzate da **{p_name}** (accreditato al **{p_poll}** nei sondaggi nazionali, "
-                    f"con un indice di veridicità calcolato dall'AI pari al **{p_ver}**), dall'analisi degli atti parlamentari, "
-                    f"dichiarazioni e manifesti ufficiali emergono le seguenti priorità strutturali:\n\n"
+                    f"con un indice medio di veridicità calcolato dall'AI pari al **{p_ver}**), dall'analisi degli atti parlamentari, "
+                    f"disegni di legge e archivio storico delle prese di posizione (2022-2026) emergono i seguenti riscontri:\n\n"
                 )
             else:
                 answer_text += (
-                    f"Sul tema **{topic_str}**, l'analisi autonoma delle dichiarazioni e degli atti ufficiali evidenzia "
-                    f"un dibattito articolato e polarizzato tra le diverse forze dell'arco parlamentare:\n\n"
+                    f"Sul tema **{topic_str}**, l'analisi autonoma delle dichiarazioni, degli atti parlamentari e dei programmi "
+                    f"censiti nell'archivio storico evidenzia un confronto articolato tra le diverse forze dell'arco parlamentare:\n\n"
                 )
+
+            # Historical Evolution Detection & Trajectory Builder
+            historical_trajectories = []
+            relevant_parties = matched_parties if matched_parties else list(set(p.partito for p in top_candidates))
+            
+            for party_name in relevant_parties:
+                # Find all proposals for this party on the relevant topic(s)
+                related_props = [
+                    p for p in all_proposals 
+                    if p.partito == party_name and (not matched_topics or p.macro_argomento in matched_topics)
+                ]
+                if not related_props:
+                    related_props = [p for p in all_proposals if p.partito == party_name]
+                    
+                related_props_sorted = sorted(related_props, key=lambda x: x.timestamp or datetime.datetime.min)
                 
+                # Check if multiple distinct timestamps exist across years or dates
+                years = {p.timestamp.year for p in related_props_sorted if p.timestamp}
+                if len(related_props_sorted) >= 2 and (len(years) >= 2 or wants_evolution):
+                    traj_lines = [f"**{party_name}** ({related_props_sorted[0].macro_argomento}):"]
+                    for ep in related_props_sorted[-4:]:
+                        dt_label = ep.timestamp.strftime("%m/%Y") if ep.timestamp else "Archivio"
+                        traj_lines.append(f"  - **{dt_label}** [{ep.tipo_azione}]: {ep.dichiarazione_sintesi} *(Stato: {ep.fact_check_status})*")
+                    historical_trajectories.append("\n".join(traj_lines))
+
+            # If user asked about evolution or history, put the Timeline front and center
+            if wants_evolution and historical_trajectories:
+                answer_text += "#### ⏱️ Evoluzione Temporale & Storico delle Posizioni (2022 – 2026)\n"
+                answer_text += (
+                    "L'analisi longitudinale dell'archivio PolitiLens evidenzia la seguente traiettoria politica nel corso della legislatura:\n\n"
+                )
+                for traj in historical_trajectories:
+                    answer_text += f"{traj}\n\n"
+
             # 2. Section: Maggioranza di Centrodestra
             if maggioranza:
                 answer_text += "#### 🔵 Maggioranza di Centrodestra\n"
                 for p in maggioranza:
-                    answer_text += f"- **{p.partito}:** {p.dichiarazione_sintesi}\n"
+                    dt_str = f" ({p.timestamp.strftime('%Y')})" if p.timestamp else ""
+                    answer_text += f"- **{p.partito}{dt_str}:** {p.dichiarazione_sintesi}\n"
                     answer_text += f"  - *Quadro economico:* costo `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
                     answer_text += f"  - *Verifica istituzionale:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
                 answer_text += "\n"
@@ -235,7 +318,8 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
             if opposizione:
                 answer_text += "#### 🔴 Opposizione & Campo Progressista\n"
                 for p in opposizione:
-                    answer_text += f"- **{p.partito}:** {p.dichiarazione_sintesi}\n"
+                    dt_str = f" ({p.timestamp.strftime('%Y')})" if p.timestamp else ""
+                    answer_text += f"- **{p.partito}{dt_str}:** {p.dichiarazione_sintesi}\n"
                     answer_text += f"  - *Quadro economico:* costo `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
                     answer_text += f"  - *Verifica istituzionale:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
                 answer_text += "\n"
@@ -244,20 +328,35 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
             if liberali_altri:
                 answer_text += "#### 🟡 Area Riformista, Civica & Altre Forze\n"
                 for p in liberali_altri:
-                    answer_text += f"- **{p.partito}:** {p.dichiarazione_sintesi}\n"
+                    dt_str = f" ({p.timestamp.strftime('%Y')})" if p.timestamp else ""
+                    answer_text += f"- **{p.partito}{dt_str}:** {p.dichiarazione_sintesi}\n"
                     answer_text += f"  - *Quadro economico:* costo `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
                     answer_text += f"  - *Verifica istituzionale:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
                 answer_text += "\n"
 
+            # If not already shown above and trajectories exist, append historical timeline
+            if not wants_evolution and historical_trajectories:
+                answer_text += "#### ⏱️ Cronologia Storica (2022 – 2026)\n"
+                answer_text += "Confronto con le posizioni depositate nelle fasi precedenti della legislatura:\n\n"
+                for traj in historical_trajectories[:2]:
+                    answer_text += f"{traj}\n\n"
+
             # 5. Institutional Reality Check (Macroeconomic parameters)
-            answer_text += "#### ⚖️ Valutazione di Sostenibilità Finanziaria (Dati MEF / ISTAT)\n"
+            answer_text += "#### ⚖️ Valutazione di Sostenibilità Finanziaria (Dati MEF / ISTAT / Corte dei Conti)\n"
             answer_text += (
                 "Ogni proposta viene parametrata rispetto ai vincoli macroeconomici dello Stato italiano: "
                 "il **PIL nominale** ammonta a circa 2.120 Miliardi €, il **Debito Pubblico** si attesta al 137.3% del PIL "
                 "e la spesa sanitaria del **FSN** è fissata a 136.5 Miliardi €. "
                 "Le misure che non prevedono coperture tributarie o tagli di spesa certificati rimangono classificate dall'AI "
-                "come *'In attesa di copertura'* o *'Esagerate'* per tutelare la trasparenza verso i cittadini."
+                "come *'In attesa di copertura'* o *'Esagerate'* per garantire piena trasparenza democratica."
             )
+
+    return ChatQueryResponse(
+        answer=answer_text,
+        neutrality_disclaimer=disclaimer,
+        mode=req.mode or "comparativo",
+        citations=citations
+    )
 
     return ChatQueryResponse(
         answer=answer_text,

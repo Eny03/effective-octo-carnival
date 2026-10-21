@@ -14,6 +14,8 @@ from app.database import engine, Base, SessionLocal
 from app.models import PoliticalParty, PoliticalProposal, InstitutionalBenchmark
 from app.data.benchmark_data import BENCHMARKS_SEED
 from app.data.seed_data import PARTIES_SEED, PROPOSALS_SEED
+from app.data.historical_proposals import HISTORICAL_PROPOSALS_SEED
+from app.ingestion.text_extractor import compute_content_hash
 from app.ai.embeddings import get_text_embedding
 from app.ai.ollama_client import ollama_client
 from app.ingestion.scheduler import start_scheduler, stop_scheduler
@@ -81,14 +83,24 @@ def seed_database_if_empty():
                 db.add(benchmark)
             db.commit()
 
-        # Non-destructive Proposal Persistence (Preserve full historical record)
+        # Non-destructive Proposal Persistence (Preserve full historical record 2022-2026)
         parties_map = {p.name: p.id for p in db.query(PoliticalParty).all()}
         from app.ai.embeddings import _local_deterministic_embedding
 
-        existing_count = db.query(PoliticalProposal).count()
-        if existing_count == 0:
-            print(f"[Database] Initializing proposals with clean concise seed data ({len(PROPOSALS_SEED)} items)...")
-            for prop in PROPOSALS_SEED:
+        all_seeds = PROPOSALS_SEED + HISTORICAL_PROPOSALS_SEED
+        existing_proposals = db.query(PoliticalProposal).all()
+        existing_signatures = {
+            (p.partito.strip(), p.macro_argomento.strip(), p.dichiarazione_sintesi.strip().lower()[:40])
+            for p in existing_proposals
+        }
+        existing_hashes = {p.content_hash for p in existing_proposals if p.content_hash}
+
+        added_count = 0
+        for prop in all_seeds:
+            sig = (prop["partito"].strip(), prop["macro_argomento"].strip(), prop["dichiarazione_sintesi"].strip().lower()[:40])
+            hash_key = compute_content_hash(f"{prop['partito']}_{prop['macro_argomento']}_{prop['dichiarazione_sintesi']}")
+            
+            if sig not in existing_signatures and hash_key not in existing_hashes:
                 party_id = parties_map.get(prop["partito"])
                 emb_list = _local_deterministic_embedding(f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}")
                 
@@ -106,70 +118,31 @@ def seed_database_if_empty():
                     partito=prop["partito"],
                     macro_argomento=prop["macro_argomento"],
                     dichiarazione_sintesi=prop["dichiarazione_sintesi"],
-                    tipo_azione=prop["tipo_azione"],
-                    costo_stimato=prop["costo_stimato"],
-                    coperture_dichiarate=prop["coperture_dichiarate"],
-                    fattibilita_finanziaria=prop["fattibilita_finanziaria"],
-                    fact_check_status=prop["fact_check_status"],
-                    fact_check_motivazione=prop["fact_check_motivazione"],
-                    fact_check_fonte=prop["fact_check_fonte"],
-                    fonte_url=prop["fonte_url"],
-                    fonte_titolo=prop["fonte_titolo"],
-                    fonte_testata=prop["fonte_testata"],
+                    tipo_azione=prop.get("tipo_azione", "Dichiarazione programmatica"),
+                    costo_stimato=prop.get("costo_stimato", "Non quantificato"),
+                    coperture_dichiarate=prop.get("coperture_dichiarate", "Non specificate"),
+                    fattibilita_finanziaria=prop.get("fattibilita_finanziaria"),
+                    fact_check_status=prop.get("fact_check_status", "In attesa di copertura"),
+                    fact_check_motivazione=prop.get("fact_check_motivazione"),
+                    fact_check_fonte=prop.get("fact_check_fonte"),
+                    fonte_url=prop.get("fonte_url", ""),
+                    fonte_titolo=prop.get("fonte_titolo"),
+                    fonte_testata=prop.get("fonte_testata"),
                     raw_text=prop.get("raw_text") or f"{prop['dichiarazione_sintesi']}. Posizione politica formalizzata da {prop['partito']} in materia di {prop['macro_argomento']}.",
-                    embedding=json.dumps(emb_list),
+                    content_hash=hash_key,
+                    embedding=json.dumps(emb_list) if emb_list else None,
                     timestamp=ts_val
                 )
                 db.add(record)
-            db.commit()
-            print(f"[Database] Successfully initialized {len(PROPOSALS_SEED)} concise political proposals.")
-        else:
-            print(f"[Database] Preserving {existing_count} proposals in historical memory. Verifying presence of core policies...")
-            existing_signatures = {
-                (p.partito.strip(), p.macro_argomento.strip(), p.dichiarazione_sintesi.strip().lower()[:40])
-                for p in db.query(PoliticalProposal).all()
-            }
-            added_count = 0
-            for prop in PROPOSALS_SEED:
-                sig = (prop["partito"].strip(), prop["macro_argomento"].strip(), prop["dichiarazione_sintesi"].strip().lower()[:40])
-                if sig not in existing_signatures:
-                    party_id = parties_map.get(prop["partito"])
-                    emb_list = _local_deterministic_embedding(f"{prop['partito']} {prop['macro_argomento']} {prop['dichiarazione_sintesi']}")
-                    ts_val = prop.get("timestamp")
-                    if isinstance(ts_val, str):
-                        try:
-                            ts_val = datetime.datetime.fromisoformat(ts_val)
-                        except Exception:
-                            ts_val = datetime.datetime.utcnow()
-                    elif not isinstance(ts_val, datetime.datetime):
-                        ts_val = datetime.datetime.utcnow()
+                existing_signatures.add(sig)
+                existing_hashes.add(hash_key)
+                added_count += 1
 
-                    record = PoliticalProposal(
-                        party_id=party_id,
-                        partito=prop["partito"],
-                        macro_argomento=prop["macro_argomento"],
-                        dichiarazione_sintesi=prop["dichiarazione_sintesi"],
-                        tipo_azione=prop["tipo_azione"],
-                        costo_stimato=prop["costo_stimato"],
-                        coperture_dichiarate=prop["coperture_dichiarate"],
-                        fattibilita_finanziaria=prop["fattibilita_finanziaria"],
-                        fact_check_status=prop["fact_check_status"],
-                        fact_check_motivazione=prop["fact_check_motivazione"],
-                        fact_check_fonte=prop["fact_check_fonte"],
-                        fonte_url=prop["fonte_url"],
-                        fonte_titolo=prop["fonte_titolo"],
-                        fonte_testata=prop["fonte_testata"],
-                        raw_text=prop.get("raw_text") or f"{prop['dichiarazione_sintesi']}. Posizione politica formalizzata da {prop['partito']} in materia di {prop['macro_argomento']}.",
-                        embedding=json.dumps(emb_list),
-                        timestamp=ts_val
-                    )
-                    db.add(record)
-                    added_count += 1
-            if added_count > 0:
-                db.commit()
-                print(f"[Database] Added {added_count} missing core policy proposals into permanent history.")
-            else:
-                print(f"[Database] All proposals are up to date and preserved in history ({existing_count} total).")
+        if added_count > 0:
+            db.commit()
+            print(f"[Database] Successfully seeded/updated {added_count} policy proposals (including historical 2022-2026 archive). Total proposals: {db.query(PoliticalProposal).count()}")
+        else:
+            print(f"[Database] All proposals are up to date and preserved in history ({len(existing_proposals)} total).")
 
         # Update all party dossiers on startup
         try:

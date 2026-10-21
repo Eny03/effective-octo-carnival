@@ -1,24 +1,31 @@
-name: Trigger Scansione Web Continuo (24/7)
+name: Keepalive & Trigger Scansione PolitiLens (24/7)
 
 on:
   schedule:
-    # Esegue un ping di keepalive e trigger scansione ogni 30 minuti
-    - cron: '*/30 * * * *'
-  workflow_dispatch: # Permette anche l'avvio manuale su richiesta da GitHub
+    # Ping ogni 5 minuti per prevenire lo spin-down di Render (free tier)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
 
 jobs:
-  trigger_scan:
-    name: Ping e Trigger Scansione PolitiLens
+  keepalive_and_scan:
+    name: Keepalive + Trigger Scansione
     runs-on: ubuntu-latest
     steps:
-      - name: Esegui ping keepalive e trigger scansione su Render
+      - name: Ping keepalive (GET health)
         run: |
-          echo "Pinging PolitiLens production server..."
-          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 -X POST https://politclens.onrender.com/api/ingestion/trigger || echo "000")
-          echo "Response status: $STATUS"
-          if [ "$STATUS" -ge 200 ] && [ "$STATUS" -lt 400 ]; then
-            echo "Scansione avviata con successo sul server live!"
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 20 https://politclens.onrender.com/api/health || echo "000")
+          echo "Health ping: $STATUS"
+          exit 0
+
+      - name: Trigger scansione web (POST ingestion) ogni 30 min
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && contains(github.run_id, '0')) }}
+        run: |
+          # Trigger ogni 6 ping (≈30 min) per non sovraccaricare
+          MINUTE=$(date +%M)
+          if [ $((10#$MINUTE % 30)) -lt 5 ]; then
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" -m 30 -X POST https://politclens.onrender.com/api/ingestion/trigger || echo "000")
+            echo "Ingestion trigger: $STATUS"
           else
-            echo "Server in fase di risveglio o risposta differita (status $STATUS). Non bloccante."
+            echo "Keepalive only this cycle (minute: $MINUTE)"
           fi
           exit 0
