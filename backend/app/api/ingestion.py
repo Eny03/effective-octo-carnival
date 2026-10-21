@@ -24,6 +24,16 @@ def get_monitored_sources():
     """Returns the list of monitored RSS feeds and news outlets."""
     return MONITORED_FEEDS
 
+@router.get("/gaps")
+def get_detected_information_gaps(limit: int = 6, db: Session = Depends(get_db)):
+    """
+    Returns the political information voids currently detected by the AI.
+    The autonomous ingestion crawler targets these specific parties and topics
+    during each scheduled scanning pass to fill missing policy statements.
+    """
+    from app.ingestion.gap_detector import detect_information_gaps
+    return detect_information_gaps(db, max_gaps=limit)
+
 @router.get("/logs", response_model=List[IngestionLogSchema])
 def get_ingestion_logs(limit: int = 20, db: Session = Depends(get_db)):
     """Returns recent ingestion run logs for full auditability."""

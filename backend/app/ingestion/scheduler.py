@@ -110,7 +110,21 @@ async def run_pipeline_scan():
                     db.add(proposal_record)
                     total_proposals += 1
                 
-        # Autonomously synthesize and update AI Dossiers for all political parties
+        # Step 2: Autonomous Targeted Gap Search (Active Learning for Missing Parties & Topics)
+        gap_info_msg = ""
+        try:
+            from app.ingestion.gap_detector import autonomous_targeted_gap_search
+            print("[Scheduler] Rilevamento lacune informative in corso...")
+            gap_res = await autonomous_targeted_gap_search(db, max_gaps=3)
+            if gap_res:
+                gap_added = gap_res.get("proposals_added_or_updated", 0)
+                total_proposals += gap_added
+                gap_info_msg = f" • {gap_res.get('message', '')}"
+                print(f"[Scheduler] Gap search: {gap_res.get('message')}")
+        except Exception as ge:
+            print(f"[Scheduler] Targeted gap search notice: {ge}")
+
+        # Step 3: Autonomously synthesize and update AI Dossiers for all political parties
         try:
             from app.ingestion.dossier_generator import update_all_party_dossiers
             update_all_party_dossiers(db)
@@ -120,15 +134,15 @@ async def run_pipeline_scan():
         # Record Ingestion Log
         log_entry = IngestionLog(
             source_name="AI Universal Web Crawler & Monitor",
-            source_url="Scansione Web Nazionale & Feed Istituzionali (ANSA, Sole 24 Ore, Rai, Quotidiani, Partiti)",
+            source_url="Scansione Web Nazionale & Ricerca Mirata Lacune",
             articles_found=total_articles,
             proposals_extracted=total_proposals,
             status="SUCCESS",
-            log_message=f"Scansione completata: {total_articles} articoli analizzati dal web, {total_proposals} nuove posizioni politiche estratte e dossier AI aggiornati."
+            log_message=f"Scansione completata: {total_articles} articoli analizzati dal web, {total_proposals} posizioni formalizzate censite/aggiornate{gap_info_msg}."
         )
         db.add(log_entry)
         db.commit()
-        print(f"[Scheduler] Pipeline completed: {total_articles} articles, {total_proposals} proposals extracted, dossiers updated.")
+        print(f"[Scheduler] Pipeline completed: {total_articles} articles, {total_proposals} proposals processed{gap_info_msg}.")
     except Exception as e:
         db.rollback()
         print(f"[Scheduler] Ingestion error: {e}")

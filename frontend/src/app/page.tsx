@@ -20,17 +20,20 @@ import {
   Filter,
   BarChart3,
   Flame,
-  ChevronRight
+  ChevronRight,
+  Target
 } from "lucide-react";
 import { 
   fetchStatsOverview, 
   fetchProposals, 
   fetchSchedulerStatus, 
   fetchParties,
+  fetchDetectedGaps,
   triggerFeedScan,
   StatsOverview, 
   PoliticalProposal,
-  PoliticalParty 
+  PoliticalParty,
+  InformationGap
 } from "@/lib/api";
 import { ProposalCard } from "@/components/ProposalCard";
 import { StatusBadge } from "@/components/StatusBadge";
@@ -69,6 +72,7 @@ export default function DashboardPage() {
   const [schedulerStatus, setSchedulerStatus] = useState<any>(null);
   const [scanPhase, setScanPhase] = useState<"idle" | "searching" | "updating" | "done">("idle");
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
+  const [detectedGaps, setDetectedGaps] = useState<InformationGap[]>([]);
 
   // Home Filters
   const [selectedTopic, setSelectedTopic] = useState<string>("Tutti");
@@ -81,16 +85,18 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
-      const [statsData, propsData, schedData, partiesData] = await Promise.all([
+      const [statsData, propsData, schedData, partiesData, gapsData] = await Promise.all([
         fetchStatsOverview(),
         fetchProposals({ limit: 100 }),
         fetchSchedulerStatus().catch(() => null),
-        fetchParties().catch(() => [])
+        fetchParties().catch(() => []),
+        fetchDetectedGaps(6).catch(() => [])
       ]);
       setStats(statsData);
       setProposals(propsData);
       setSchedulerStatus(schedData);
       setParties(partiesData);
+      setDetectedGaps(gapsData);
     } catch (err: any) {
       console.error(err);
       setError("Impossibile contattare il server. Riprova tra qualche istante.");
@@ -286,49 +292,49 @@ export default function DashboardPage() {
               {scanPhase === "searching" ? (
                 <div>
                   <div className="font-extrabold text-sm text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                    <span>Sto cercando su tutto il web...</span>
+                    <span>Ricerca mirata delle informazioni mancanti sul web...</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-100 animate-pulse">
-                      In corso
+                      Caccia alle Lacune
                     </span>
                   </div>
                   <p className="text-xs text-amber-800 dark:text-amber-300/80 mt-0.5">
-                    Scansione autonoma di motori di ricerca, agenzie di stampa (ANSA, Sole 24 Ore, Rai, Quotidiani), comunicati, social e atti di ogni partito.
+                    L'AI individua le aree con meno dati ({detectedGaps.slice(0, 3).map(g => `${g.party_name} su ${g.topic}`).join(", ") || "temi non ancora censiti"}) e scandaglia miratamente motori, atti e siti ufficiali per colmarli.
                   </p>
                 </div>
               ) : scanPhase === "updating" ? (
                 <div>
                   <div className="font-extrabold text-sm text-blue-900 dark:text-blue-200 flex items-center gap-2">
-                    <span>Sto confrontando tutte le informazioni con l'AI...</span>
+                    <span>Integrazione posizioni e verifica di bilancio MEF...</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-200 dark:bg-blue-900/80 text-blue-900 dark:text-blue-100 animate-pulse">
                       Elaborazione AI
                     </span>
                   </div>
                   <p className="text-xs text-blue-800 dark:text-blue-300/80 mt-0.5">
-                    Sintesi neutrale dei dossier, verifica delle dichiarazioni e controllo di fattibilità con i dati ufficiali di bilancio (MEF, ISTAT, Corte dei Conti).
+                    Estrazione delle proposte politiche, verifica di sostenibilità finanziaria con parametri MEF/ISTAT e rigenerazione dei dossier dei partiti.
                   </p>
                 </div>
               ) : scanPhase === "done" ? (
                 <div>
                   <div className="font-extrabold text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
-                    <span>Dossier e informazioni aggiornati con successo!</span>
+                    <span>Dossier e informazioni aggiornate: lacune colmate!</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-200 dark:bg-emerald-900/80 text-emerald-900 dark:text-emerald-100">
-                      Completato
+                      Nuovi Dati Integrati
                     </span>
                   </div>
                   <p className="text-xs text-emerald-800 dark:text-emerald-300/80 mt-0.5">
-                    Tutti i dati e i dossier dei partiti sono riallineati con le ultime notizie dal web. Il timer continuo 24/7 riprende adesso.
+                    Le informazioni mancanti individuate dall'AI sono state integrate nello storico permanente. Il countdown 24/7 riprende adesso.
                   </p>
                 </div>
               ) : (
                 <div>
                   <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>Scansione e Aggiornamento Continuo 24/7 (Ogni 10 Minuti)</span>
+                    <span>Scansione e Aggiornamento Continuo 24/7 con Ricerca Mirata</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
                       24/7 Attivo
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    L'AI scansiona costantemente tutto il web ogni 10 min (ai minuti :00, :10, :20, :30, :40, :50) creando e aggiornando i dossier.
+                    L'AI scansiona costantemente il web ogni 10 min: rileva cosa manca nei dossier dei partiti e cerca esattamente quelle informazioni per arricchire l'archivio.
                   </p>
                 </div>
               )}
@@ -366,6 +372,51 @@ export default function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* Active Gap Hunter Section */}
+      {detectedGaps.length > 0 && (
+        <section className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">
+                <Target className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Ricerca Mirata delle Lacune Informative</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                    Active Hunter
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-500">
+                  Ad ogni ciclo, l'AI rileva quali partiti hanno meno posizioni su determinati temi e cerca miratamente sul web per colmarli.
+                </p>
+              </div>
+            </div>
+            <span className="text-[11px] font-semibold text-slate-400 self-start sm:self-auto">
+              Obiettivi prioritari attivi:
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
+            {detectedGaps.slice(0, 6).map((gap, idx) => (
+              <div key={idx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
+                <div className="min-w-0 pr-2">
+                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
+                    {gap.party_name}
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate">
+                    Tema nel mirino: <span className="font-semibold text-blue-600 dark:text-blue-400">{gap.topic}</span>
+                  </div>
+                </div>
+                <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100/80 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
+                  Da colmare
+                </span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {scanFeedback && (
         <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-medium text-blue-800 dark:text-blue-300 flex items-center gap-2">

@@ -12,15 +12,18 @@ import {
   Send,
   Shield,
   Layers,
-  Database
+  Database,
+  Target
 } from "lucide-react";
 import { 
   fetchMonitoredSources, 
   fetchIngestionLogs, 
+  fetchDetectedGaps,
   triggerFeedScan, 
   submitManualIngest,
   IngestionLog,
-  PoliticalProposal
+  PoliticalProposal,
+  InformationGap
 } from "@/lib/api";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProposalCard } from "@/components/ProposalCard";
@@ -28,6 +31,7 @@ import { ProposalCard } from "@/components/ProposalCard";
 export default function SourcesPage() {
   const [sources, setSources] = useState<any[]>([]);
   const [logs, setLogs] = useState<IngestionLog[]>([]);
+  const [gaps, setGaps] = useState<InformationGap[]>([]);
   const [loading, setLoading] = useState(true);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
@@ -43,12 +47,14 @@ export default function SourcesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [srcs, lgs] = await Promise.all([
+      const [srcs, lgs, gps] = await Promise.all([
         fetchMonitoredSources(),
-        fetchIngestionLogs()
+        fetchIngestionLogs(),
+        fetchDetectedGaps(8)
       ]);
       setSources(srcs);
       setLogs(lgs);
+      setGaps(gps);
     } catch (err) {
       console.error(err);
     } finally {
@@ -130,6 +136,54 @@ export default function SourcesPage() {
           <CheckCircle2 className="w-4 h-4 text-blue-600" />
           <span>{scanMessage}</span>
         </div>
+      )}
+
+      {/* Active Information Gap Targets */}
+      {gaps.length > 0 && (
+        <section className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">
+                <Target className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Obiettivi di Ricerca Mirata Attiva (Active Gap Hunter)</span>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                    Auto-Learning
+                  </span>
+                </h2>
+                <p className="text-xs text-slate-500">
+                  L'AI individua autonomamente le lacune informative nei programmi dei 18 partiti e caccia sul web esattamente le posizioni mancanti ad ogni ciclo di aggiornamento.
+                </p>
+              </div>
+            </div>
+            <span className="text-xs text-slate-400 font-semibold self-start sm:self-auto">
+              {gaps.length} lacune nel mirino
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5 pt-1">
+            {gaps.map((gap, idx) => (
+              <div key={idx} className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                <div className="flex items-center justify-between gap-1">
+                  <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                    {gap.party_name}
+                  </span>
+                  <span className="text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400 shrink-0">
+                    Score {gap.gap_score}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-600 dark:text-slate-300">
+                  Tema: <strong className="text-blue-600 dark:text-blue-400">{gap.topic}</strong>
+                </div>
+                <div className="text-[10px] text-slate-400 truncate">
+                  {gap.reason}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Grid: Monitored Feeds & Manual Ingestion Extractor */}

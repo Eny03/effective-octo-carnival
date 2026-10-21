@@ -289,3 +289,24 @@ export async function fetchSchedulerStatus(): Promise<SchedulerStatus> {
   return res.json();
 }
 
+export interface InformationGap {
+  party_name: string;
+  party_code: string;
+  topic: string;
+  gap_score: number;
+  existing_count: number;
+  reason: string;
+  queries: string[];
+}
+
+export async function fetchDetectedGaps(limit: number = 6): Promise<InformationGap[]> {
+  try {
+    const res = await fetch(`${API_BASE_URL}/api/ingestion/gaps?limit=${limit}`, { cache: "no-store" });
+    if (!res.ok) return [];
+    return res.json();
+  } catch (e) {
+    return [];
+  }
+}
+
+

@@ -1,0 +1,391 @@
+import json
+import re
+import datetime
+import urllib.parse
+from typing import List, Dict, Any, Tuple, Optional
+from sqlalchemy.orm import Session
+from app.models import PoliticalParty, PoliticalProposal, IngestionLog
+from app.ingestion.universal_web_search import search_web_news, search_duckduckgo_open_web
+from app.ingestion.text_extractor import compute_content_hash, clean_html
+from app.ai.extractor import extract_proposals_from_text
+from app.ai.embeddings import get_text_embedding
+from app.ai.fact_checker import analyze_feasibility_and_factcheck
+from app.ai.policy_merger import find_matching_existing_proposal, merge_or_update_policy_proposal
+from app.ingestion.dossier_generator import generate_party_dossier
+
+CORE_MACRO_TOPICS = [
+    "Fisco",
+    "Lavoro",
+    "Sanità",
+    "Pensioni",
+    "Energia",
+    "Istruzione",
+    "Istituzioni",
+    "Immigrazione",
+    "Politica Estera",
+    "Diritti Civili",
+    "Infrastrutture"
+]
+
+PARTY_SEARCH_ANCHORS = {
+    "Fratelli d'Italia": "Fratelli d'Italia Giorgia Meloni",
+    "Partito Democratico": "Partito Democratico Elly Schlein",
+    "Movimento 5 Stelle": "Movimento 5 Stelle Giuseppe Conte",
+    "Lega - Salvini Premier": "Lega Matteo Salvini",
+    "Forza Italia": "Forza Italia Antonio Tajani",
+    "Alleanza Verdi e Sinistra": "Alleanza Verdi e Sinistra Bonelli Fratoianni",
+    "Azione": "Azione Carlo Calenda",
+    "Italia Viva": "Italia Viva Matteo Renzi",
+    "+Europa": "+Europa Riccardo Magi Emma Bonino",
+    "Partito Liberal Democratico": "Partito Liberal Democratico Luigi Marattin",
+    "Noi Moderati": "Noi Moderati Maurizio Lupi",
+    "Futuro Nazionale": "Futuro Nazionale Roberto Vannacci",
+    "ORA!": "ORA! Alberto Forchielli Michele Boldrin",
+    "Democrazia Sovrana Popolare": "Democrazia Sovrana Popolare Marco Rizzo",
+    "Rifondazione Comunista": "Rifondazione Comunista Maurizio Acerbo",
+    "Potere al Popolo": "Potere al Popolo Marta Collot",
+    "Radicali Italiani": "Radicali Italiani Matteo Hallissey",
+    "Südtiroler Volkspartei": "Südtiroler Volkspartei Dieter Steger"
+}
+
+TOPIC_SEARCH_TERMS = {
+    "Fisco": "fisco tasse flat tax irpef detrazioni cuneo",
+    "Lavoro": "lavoro salario minimo stipendi occupazione contratti",
+    "Sanità": "sanità ospedali fondo sanitario liste attesa medici ssn",
+    "Pensioni": "pensioni quota 41 fornero previdenza uscita anticipata",
+    "Energia": "energia nucleare rinnovabili bollette transizione ecologica fotovoltaico",
+    "Istruzione": "scuola università docenti istruzione ricerca tempo pieno",
+    "Istituzioni": "premierato autonomia differenziata riforme giustizia costituzione",
+    "Immigrazione": "immigrazione migranti frontiere rimpatri cpr asilo",
+    "Politica Estera": "ucraina esteri difesa spese militari unione europea nato",
+    "Diritti Civili": "diritti civili fine vita cittadinanza carceri ius scholae",
+    "Infrastrutture": "infrastrutture opere pubbliche ferrovie trasporti ponti rete idrica"
+}
+
+def detect_information_gaps(db: Session, max_gaps: int = 4) -> List[Dict[str, Any]]:
+    """
+    Scans the database to identify political information voids:
+    1. Finds parties and macro-topics with 0 proposals (total void).
+    2. Finds topics with sparse or outdated coverage (> 12 months).
+    3. Distributes across distinct parties so each update cycle focuses on different political forces.
+    """
+    parties = db.query(PoliticalParty).all()
+    all_proposals = db.query(PoliticalProposal).all()
+    
+    matrix: Dict[str, Dict[str, List[PoliticalProposal]]] = {}
+    party_total_counts: Dict[str, int] = {}
+    
+    for p in parties:
+        matrix[p.name] = {t: [] for t in CORE_MACRO_TOPICS}
+        party_total_counts[p.name] = 0
+        
+    for prop in all_proposals:
+        p_name = prop.partito
+        if p_name in matrix:
+            t = prop.macro_argomento
+            if t in matrix[p_name]:
+                matrix[p_name][t].append(prop)
+            else:
+                for core_t in CORE_MACRO_TOPICS:
+                    if core_t.lower() in t.lower():
+                        matrix[p_name][core_t].append(prop)
+                        break
+            party_total_counts[p_name] = party_total_counts.get(p_name, 0) + 1
+
+    gap_candidates = []
+    now = datetime.datetime.utcnow()
+    
+    for party in parties:
+        p_name = party.name
+        total_p = party_total_counts.get(p_name, 0)
+        
+        for topic in CORE_MACRO_TOPICS:
+            props = matrix[p_name].get(topic, [])
+            gap_score = 0
+            reason = ""
+            
+            if len(props) == 0:
+                gap_score = 100
+                reason = f"Lacuna totale: nessuna proposta censita in materia di {topic}"
+            elif len(props) == 1:
+                gap_score = 45
+                reason = f"Copertura minima: una sola posizione censita in materia di {topic}"
+            else:
+                latest_ts = max((p.timestamp for p in props if p.timestamp), default=datetime.datetime(2022, 1, 1))
+                days_old = (now - latest_ts).days
+                if days_old > 365:
+                    gap_score = 35
+                    reason = f"Posizione da aggiornare: ultimo riscontro risalente a oltre un anno fa ({latest_ts.year})"
+                    
+            if gap_score > 0:
+                if total_p < 5:
+                    gap_score += 35
+                elif total_p < 8:
+                    gap_score += 20
+                elif total_p < 12:
+                    gap_score += 10
+                    
+                anchor = PARTY_SEARCH_ANCHORS.get(p_name, p_name)
+                terms = TOPIC_SEARCH_TERMS.get(topic, topic)
+                queries = [
+                    f"{anchor} {terms} proposta",
+                    f"{p_name} {topic} programma"
+                ]
+                if party.official_website:
+                    domain = urllib.parse.urlparse(party.official_website).netloc.replace("www.", "")
+                    if domain:
+                        queries.append(f"site:{domain} {topic}")
+                
+                gap_candidates.append({
+                    "party_name": p_name,
+                    "party_code": party.code,
+                    "topic": topic,
+                    "gap_score": gap_score,
+                    "existing_count": len(props),
+                    "reason": reason,
+                    "queries": queries
+                })
+
+    gap_candidates.sort(key=lambda x: x["gap_score"], reverse=True)
+    
+    # Pluralistic selection: max 1 gap per party per cycle to diversify knowledge
+    selected_gaps = []
+    seen_parties = set()
+    for candidate in gap_candidates:
+        p = candidate["party_name"]
+        if p not in seen_parties:
+            selected_gaps.append(candidate)
+            seen_parties.add(p)
+            if len(selected_gaps) >= max_gaps:
+                break
+                
+    if len(selected_gaps) < max_gaps:
+        for candidate in gap_candidates:
+            if candidate not in selected_gaps:
+                selected_gaps.append(candidate)
+                if len(selected_gaps) >= max_gaps:
+                    break
+
+    return selected_gaps
+
+def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title: Optional[str] = None) -> Optional[Dict[str, str]]:
+    """
+    Analyzes article text and title specifically for the targeted party and topic to extract
+    concrete programmatic commitments and public policy proposals.
+    """
+    topic_keywords = TOPIC_SEARCH_TERMS.get(topic, topic).split()
+    
+    # 1. Check headline / title for explicit proposal quotes or statements
+    if title:
+        t_low = title.lower()
+        if any(kw in t_low for kw in topic_keywords):
+            quote_m = re.search(r"[:'\"«]\s*([^'\"»]{18,150})", title)
+            if quote_m:
+                q_text = quote_m.group(1).strip()
+                if len(q_text) >= 18 and not any(noise in q_text.lower() for noise in ["ecco chi", "cosa è successo", "il video", "live"]):
+                    act = "Proposta di legge" if any(w in t_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
+                    return {
+                        "sintesi": f"{q_text[0].upper() + q_text[1:]}",
+                        "tipo_azione": act,
+                        "costo": "Non quantificato",
+                        "coperture": "Fondi ordinari di bilancio e riordino della spesa"
+                    }
+
+    # 2. Check body sentences for policy commitments
+    sentences = re.split(r"(?<=[.!?])\s+", text)
+    
+    commitment_patterns = [
+        r"(?:propon(?:e|e di|iamo|e che)|chied(?:e|e di|iamo)|presenta (?:un |la |il )?(?:ddl|disegno di legge|proposta|mozione|piano|riforma)|nostro programma prevede|nostra proposta (?:è|sarà)|intende (?:introdurre|istituire|tagliare|aumentare|cancellare|riformare|ridurre)|priorit[àa] (?:è|sarà|rimane)|sostien(?:e|iamo)|punta (?:su|a)|vuole (?:introdurre|tagliare|riformare|investire)|lancia (?:la proposta|il piano|la misura per))\s+([^.!?]{18,220})",
+        r"(?:battaglia|obiettivo|impegno).*sul(?:la|lo|l')?\s+([a-zA-Z0-9\s,]{15,180})",
+        r"(?:per riformare|per rilanciare|per sostenere|per tagliare|per finanziare)\s+([^.!?]{18,180})"
+    ]
+    
+    for sentence in sentences:
+        s_low = sentence.lower()
+        if any(kw in s_low for kw in topic_keywords):
+            for pat in commitment_patterns:
+                match = re.search(pat, sentence, re.I)
+                if match:
+                    raw_prop = match.group(1).strip()
+                    raw_prop = re.sub(r"\s+", " ", raw_prop)
+                    if len(raw_prop) >= 18 and not any(noise in raw_prop.lower() for noise in ["arrestato", "indagato", "sfida", "congresso"]):
+                        act = "Proposta di legge" if any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
+                        
+                        cost_m = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", sentence, re.I)
+                        cost = cost_m.group(1) if cost_m else "Non quantificato"
+                        
+                        cov = "Fondi ordinari di bilancio e riordino delle spese"
+                        cov_m = re.search(r"(?:coperture|finanziat[oa]|risorse da|tramite)\s*([^.;]{10,80})", sentence, re.I)
+                        if cov_m:
+                            cov = cov_m.group(1).strip()
+                            
+                        return {
+                            "sintesi": f"{raw_prop[0].upper() + raw_prop[1:]}",
+                            "tipo_azione": act,
+                            "costo": cost,
+                            "coperture": cov
+                        }
+    return None
+
+async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict[str, Any]:
+    """
+    Autonomously searches the web for the detected political gaps,
+    extracts policy proposals, merges them into permanent memory,
+    and updates the respective party's AI dossier.
+    """
+    gaps = detect_information_gaps(db, max_gaps=max_gaps)
+    if not gaps:
+        return {"status": "NO_GAPS", "message": "Nessuna lacuna rilevata, copertura bilanciata.", "added": 0}
+        
+    total_added_or_updated = 0
+    searched_targets = []
+    
+    for gap in gaps:
+        p_name = gap["party_name"]
+        topic = gap["topic"]
+        searched_targets.append(f"{p_name} ({topic})")
+        
+        # 1. Fetch targeted news
+        articles = []
+        for q in gap["queries"][:2]:
+            found = search_web_news(q, max_results=5)
+            articles.extend(found)
+            if len(articles) >= 5:
+                break
+                
+        if len(articles) < 3 and len(gap["queries"]) > 1:
+            ddg_items = search_duckduckgo_open_web(gap["queries"][0], max_results=4)
+            articles.extend(ddg_items)
+
+        party_obj = db.query(PoliticalParty).filter(PoliticalParty.name == p_name).first()
+        party_id = party_obj.id if party_obj else None
+
+        gap_filled_for_this_topic = False
+
+        for art in articles:
+            raw_text = art["raw_text"]
+            content_hash = compute_content_hash(raw_text)
+            
+            # Try standard extraction
+            extracted = await extract_proposals_from_text(
+                text=raw_text,
+                url=art["url"],
+                title=art["title"],
+                published_at=art["published_at"]
+            )
+            
+            # If standard extractor missed, use targeted gap commitment heuristic
+            if not extracted:
+                comm = _extract_gap_policy_commitment(raw_text, p_name, topic, title=art.get("title"))
+                if comm:
+                    feasibility, status, motivazione, fonte_verif = analyze_feasibility_and_factcheck(
+                        partito=p_name,
+                        macro_argomento=topic,
+                        sintesi=comm["sintesi"],
+                        costo_stimato=comm["costo"],
+                        coperture=comm["coperture"]
+                    )
+                    
+                    text_to_embed = f"{p_name} {topic} {comm['sintesi']}"
+                    emb_list = await get_text_embedding(text_to_embed)
+                    emb_json = json.dumps(emb_list) if emb_list else None
+                    item_hash = compute_content_hash(f"{p_name}_{topic}_{comm['sintesi']}")
+
+                    record = PoliticalProposal(
+                        party_id=party_id,
+                        partito=p_name,
+                        macro_argomento=topic,
+                        dichiarazione_sintesi=comm["sintesi"],
+                        tipo_azione=comm["tipo_azione"],
+                        costo_stimato=comm["costo"],
+                        coperture_dichiarate=comm["coperture"],
+                        fattibilita_finanziaria=feasibility,
+                        fact_check_status=status,
+                        fact_check_motivazione=motivazione,
+                        fact_check_fonte=fonte_verif,
+                        fonte_url=art["url"],
+                        fonte_titolo=art["title"] or f"Presa di posizione {p_name} su {topic}",
+                        fonte_testata=art.get("source_name", "Ricerca Mirata Web"),
+                        raw_text=raw_text,
+                        content_hash=item_hash,
+                        embedding=emb_json,
+                        timestamp=art.get("published_at", datetime.datetime.utcnow())
+                    )
+                    db.add(record)
+                    total_added_or_updated += 1
+                    gap_filled_for_this_topic = True
+                    break
+
+            for item in extracted:
+                if item.partito.lower() in p_name.lower() or p_name.lower() in item.partito.lower():
+                    text_to_embed = f"{item.partito} {item.macro_argomento} {item.dichiarazione_sintesi}"
+                    emb_list = await get_text_embedding(text_to_embed)
+                    emb_json = json.dumps(emb_list) if emb_list else None
+                    item_hash = compute_content_hash(f"{item.partito}_{item.macro_argomento}_{item.dichiarazione_sintesi}")
+
+                    matching_existing = find_matching_existing_proposal(
+                        db=db,
+                        party_id=party_id,
+                        partito=item.partito,
+                        macro_argomento=item.macro_argomento,
+                        dichiarazione_sintesi=item.dichiarazione_sintesi,
+                        emb_list=emb_list
+                    )
+
+                    if matching_existing:
+                        merge_or_update_policy_proposal(
+                            db=db,
+                            existing=matching_existing,
+                            item=item,
+                            url=art["url"],
+                            title=art["title"],
+                            source_name=art["source_name"],
+                            published_at=art["published_at"],
+                            raw_text=raw_text,
+                            content_hash=item_hash,
+                            emb_json=emb_json
+                        )
+                        total_added_or_updated += 1
+                        gap_filled_for_this_topic = True
+                    else:
+                        dt = datetime.datetime.fromisoformat(item.timestamp) if item.timestamp else art["published_at"]
+                        new_prop = PoliticalProposal(
+                            party_id=party_id,
+                            partito=item.partito,
+                            macro_argomento=item.macro_argomento,
+                            dichiarazione_sintesi=item.dichiarazione_sintesi,
+                            tipo_azione=item.tipo_azione,
+                            costo_stimato=item.impatto_economico.costo_stimato,
+                            coperture_dichiarate=item.impatto_economico.coperture_dichiarate,
+                            fattibilita_finanziaria=item.impatto_economico.fattibilita_finanziaria,
+                            fact_check_status=item.fact_check.status,
+                            fact_check_motivazione=item.fact_check.motivazione_oggettiva,
+                            fact_check_fonte=item.fact_check.fonte_verifica,
+                            fonte_url=item.fonte_url or art["url"],
+                            fonte_titolo=art["title"],
+                            fonte_testata=art["source_name"],
+                            raw_text=raw_text,
+                            content_hash=item_hash,
+                            embedding=emb_json,
+                            timestamp=dt
+                        )
+                        db.add(new_prop)
+                        total_added_or_updated += 1
+                        gap_filled_for_this_topic = True
+
+        # Update dossier for this party if a new proposal was recorded
+        if party_obj:
+            try:
+                dossier_data = generate_party_dossier(party_obj, db)
+                party_obj.dossier_ai = json.dumps(dossier_data, ensure_ascii=False)
+            except Exception as e:
+                print(f"[GapDetector] Dossier update error for {party_obj.name}: {e}")
+
+    db.commit()
+    msg = f"Ricerca mirata su {len(searched_targets)} lacune ({', '.join(searched_targets)}): integrate/aggiornate {total_added_or_updated} posizioni formalizzate."
+    return {
+        "status": "GAPS_SEARCHED",
+        "searched_targets": searched_targets,
+        "proposals_added_or_updated": total_added_or_updated,
+        "message": msg
+    }
