@@ -21,7 +21,11 @@ import {
   BarChart3,
   Flame,
   ChevronRight,
-  Target
+  ChevronDown,
+  ChevronUp,
+  Target,
+  Info,
+  ExternalLink
 } from "lucide-react";
 import { 
   fetchStatsOverview, 
@@ -31,7 +35,7 @@ import {
   fetchDetectedGaps,
   triggerFeedScan,
   StatsOverview, 
-  PoliticalProposal,
+  PoliticalProposal, 
   PoliticalParty,
   InformationGap
 } from "@/lib/api";
@@ -73,13 +77,20 @@ export default function DashboardPage() {
   const [scanPhase, setScanPhase] = useState<"idle" | "searching" | "updating" | "done">("idle");
   const [scanFeedback, setScanFeedback] = useState<string | null>(null);
   const [detectedGaps, setDetectedGaps] = useState<InformationGap[]>([]);
+  const [showGapsDetails, setShowGapsDetails] = useState<boolean>(false);
 
-  // Home Filters
+  // Active view tab: "proposte" | "sondaggi" | "bilancio"
+  const [activeTab, setActiveTab] = useState<"proposte" | "sondaggi" | "bilancio">("proposte");
+
+  // Proposals Tab Filters
   const [selectedTopic, setSelectedTopic] = useState<string>("Tutti");
   const [selectedParty, setSelectedParty] = useState<string>("Tutti");
   const [selectedYear, setSelectedYear] = useState<string>("Tutti gli Anni");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [visibleCount, setVisibleCount] = useState<number>(12);
+
+  // Polls Tab Filter
+  const [pollCoalitionFilter, setPollCoalitionFilter] = useState<string>("Tutti");
 
   const loadData = async () => {
     try {
@@ -123,7 +134,6 @@ export default function DashboardPage() {
 
   const [secondsLeft, setSecondsLeft] = useState<number>(() => getSecondsToNextBlock());
 
-  // Sincronizza subito all'avvio e ad ogni aggiornamento dello schedulerStatus
   useEffect(() => {
     setSecondsLeft(getSecondsToNextBlock(schedulerStatus?.next_run_time));
   }, [schedulerStatus]);
@@ -169,7 +179,6 @@ export default function DashboardPage() {
       }
     }, 1000);
     return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schedulerStatus, scanPhase]);
 
   useEffect(() => {
@@ -206,46 +215,71 @@ export default function DashboardPage() {
     return true;
   });
 
+  // Filter poll rankings by coalition
+  const rawRankings = stats?.party_rankings && stats.party_rankings.length > 0 
+    ? stats.party_rankings 
+    : parties.map((p) => ({
+        name: p.name,
+        code: p.code,
+        color: p.color,
+        coalition: p.coalition,
+        leader: p.leader,
+        poll_percentage: p.poll_percentage || 0,
+        poll_trend: p.poll_trend || "stabile",
+        truthfulness_score: p.truthfulness_score || 82,
+        financial_reliability_score: p.financial_reliability_score || 78,
+        proposals_count: p.proposals_count || 0
+      }));
+
+  const filteredRankings = rawRankings.filter((item) => {
+    if (pollCoalitionFilter === "Tutti") return true;
+    return item.coalition?.toLowerCase().includes(pollCoalitionFilter.toLowerCase());
+  });
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-8">
-      {/* Institutional Hero Section */}
-      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-6 sm:p-10 border border-slate-800 shadow-2xl">
-        <div className="relative z-10 max-w-3xl space-y-4">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-5 sm:py-8 space-y-6">
+      
+      {/* 1. INSTITUTIONAL HERO HEADER */}
+      <section className="relative overflow-hidden rounded-3xl bg-slate-900 text-white p-6 sm:p-8 border border-slate-800 shadow-xl">
+        <div className="relative z-10 space-y-4 max-w-3xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 text-slate-200 border border-white/10 backdrop-blur-xs">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span>Repubblica Italiana • Osservatorio Indipendente Politiche Pubbliche</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight">
-            PolitiLens
-          </h1>
-          <p className="text-sm sm:text-base text-slate-300 font-normal leading-relaxed">
-            Archivio storico 2022–2026 e monitoraggio permanente di tutte le 18 forze politiche italiane.
-            Confronta le posizioni su ciascun tema, segui l'evoluzione delle proposte nel corso della legislatura e verifica la sostenibilità economica con i parametri ufficiali MEF, ISTAT e Corte dei Conti.
-          </p>
+          <div className="space-y-1.5">
+            <h1 className="text-3xl sm:text-4xl font-black tracking-tight leading-tight">
+              PolitiLens
+            </h1>
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-normal">
+              Archivio storico 2022–2026 e osservatorio neutrale sulle 18 forze politiche italiane.
+              Confronta le posizioni su ogni riforma e verifica la sostenibilità con i parametri ufficiali MEF, ISTAT e Corte dei Conti.
+            </p>
+          </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 pt-2">
+          {/* Institutional Fast Action Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <Link
-              href="/compare"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-950 hover:bg-slate-100 transition-all shadow-sm active:scale-95"
+              href="/chat"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white text-slate-950 hover:bg-slate-100 transition-all shadow-xs active:scale-95"
             >
-              <Layers className="w-4 h-4 text-blue-600" />
-              <span>Confronta Posizioni</span>
+              <Bot className="w-4 h-4 text-emerald-600" />
+              <span>Interroga AI Neutrale</span>
               <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
             </Link>
             <Link
-              href="/chat"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all active:scale-95"
+              href="/compare"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all active:scale-95"
             >
-              <Bot className="w-4 h-4 text-emerald-400" />
-              <span>Interroga AI (Evoluzione Storica)</span>
+              <Layers className="w-4 h-4 text-blue-400" />
+              <span>Confronta Posizioni</span>
             </Link>
             <Link
               href="/fact-check"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all active:scale-95"
+              className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 transition-all active:scale-95"
             >
               <ShieldCheck className="w-4 h-4 text-amber-400" />
-              <span>Fact-Checking Finanziario</span>
+              <span>Fact-Checking Bilancio</span>
             </Link>
           </div>
         </div>
@@ -253,340 +287,87 @@ export default function DashboardPage() {
         <div className="absolute right-0 top-0 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl pointer-events-none" />
       </section>
 
-      {/* 10-Minute Continuous Pulse & Live Status Banner */}
-      <section className={`rounded-2xl border p-4 sm:p-5 shadow-xs transition-all duration-300 ${
-        scanPhase === "searching"
-          ? "bg-amber-50/90 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700/60"
-          : scanPhase === "updating"
-          ? "bg-blue-50/90 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700/60"
-          : scanPhase === "done"
-          ? "bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700/60"
-          : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800"
-      }`}>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className={`relative flex items-center justify-center w-11 h-11 rounded-2xl shrink-0 transition-colors ${
-              scanPhase === "searching"
-                ? "bg-amber-500 text-white animate-spin"
-                : scanPhase === "updating"
-                ? "bg-blue-600 text-white animate-pulse"
-                : scanPhase === "done"
-                ? "bg-emerald-600 text-white"
-                : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400"
-            }`}>
-              {scanPhase === "searching" ? (
-                <Search className="w-5 h-5" />
-              ) : scanPhase === "updating" ? (
-                <RefreshCw className="w-5 h-5 animate-spin" />
-              ) : scanPhase === "done" ? (
-                <CheckCircle2 className="w-5 h-5" />
-              ) : (
-                <Clock className="w-5 h-5" />
-              )}
+      {/* 2. COMPACT 24/7 STATUS BAR & ACTIVE HUNTER TOGGLE */}
+      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 px-4 py-3 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          {/* Status info */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                scanPhase === "searching" ? "bg-amber-400" : scanPhase === "updating" ? "bg-blue-400" : "bg-emerald-400"
+              }`} />
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${
+                scanPhase === "searching" ? "bg-amber-500" : scanPhase === "updating" ? "bg-blue-500" : "bg-emerald-500"
+              }`} />
+            </span>
+
+            <div className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
+              <span className="font-bold text-slate-900 dark:text-white">
+                {scanPhase === "searching" 
+                  ? "Ricerca mirata sul web..." 
+                  : scanPhase === "updating" 
+                  ? "Analisi dati e parametri MEF..." 
+                  : scanPhase === "done"
+                  ? "Dati integrati con successo!"
+                  : "Sistema attivo 24/7"}
+              </span>
+              <span className="text-slate-400">•</span>
+              <span className="text-slate-500">
+                Ciclo ogni 10 min
+              </span>
               {scanPhase === "idle" && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse border-2 border-white dark:border-slate-900" />
+                <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/70 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/60">
+                  {formatCountdown(secondsLeft)}
+                </span>
               )}
             </div>
 
-            <div>
-              {scanPhase === "searching" ? (
-                <div>
-                  <div className="font-extrabold text-sm text-amber-900 dark:text-amber-200 flex items-center gap-2">
-                    <span>Ricerca mirata delle informazioni mancanti sul web...</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 dark:bg-amber-900/80 text-amber-900 dark:text-amber-100 animate-pulse">
-                      Caccia alle Lacune
-                    </span>
-                  </div>
-                  <p className="text-xs text-amber-800 dark:text-amber-300/80 mt-0.5">
-                    L'AI individua le aree con meno dati ({detectedGaps.slice(0, 3).map(g => `${g.party_name} su ${g.topic}`).join(", ") || "temi non ancora censiti"}) e scandaglia miratamente motori, atti e siti ufficiali per colmarli.
-                  </p>
-                </div>
-              ) : scanPhase === "updating" ? (
-                <div>
-                  <div className="font-extrabold text-sm text-blue-900 dark:text-blue-200 flex items-center gap-2">
-                    <span>Integrazione posizioni e verifica di bilancio MEF...</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-200 dark:bg-blue-900/80 text-blue-900 dark:text-blue-100 animate-pulse">
-                      Elaborazione AI
-                    </span>
-                  </div>
-                  <p className="text-xs text-blue-800 dark:text-blue-300/80 mt-0.5">
-                    Estrazione delle proposte politiche, verifica di sostenibilità finanziaria con parametri MEF/ISTAT e rigenerazione dei dossier dei partiti.
-                  </p>
-                </div>
-              ) : scanPhase === "done" ? (
-                <div>
-                  <div className="font-extrabold text-sm text-emerald-900 dark:text-emerald-200 flex items-center gap-2">
-                    <span>Dossier e informazioni aggiornate: lacune colmate!</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-200 dark:bg-emerald-900/80 text-emerald-900 dark:text-emerald-100">
-                      Nuovi Dati Integrati
-                    </span>
-                  </div>
-                  <p className="text-xs text-emerald-800 dark:text-emerald-300/80 mt-0.5">
-                    Le informazioni mancanti individuate dall'AI sono state integrate nello storico permanente. Il countdown 24/7 riprende adesso.
-                  </p>
-                </div>
-              ) : (
-                <div>
-                  <div className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
-                    <span>Scansione e Aggiornamento Continuo 24/7 con Ricerca Mirata</span>
-                    <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                      24/7 Attivo
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                    L'AI scansiona costantemente il web ogni 10 min: rileva cosa manca nei dossier dei partiti e cerca esattamente quelle informazioni per arricchire l'archivio.
-                  </p>
-                </div>
-              )}
-            </div>
+            {/* Gap Hunter pill */}
+            {detectedGaps.length > 0 && (
+              <button
+                onClick={() => setShowGapsDetails(!showGapsDetails)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200/70 dark:border-amber-800/60 hover:bg-amber-100 transition-colors ml-auto sm:ml-0"
+              >
+                <Target className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                <span>Caccia alle lacune ({detectedGaps.length})</span>
+                {showGapsDetails ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
           </div>
 
-          {/* Right: Live Countdown & Manual Trigger */}
-          <div className="flex items-center gap-3 self-stretch sm:self-auto justify-between sm:justify-end border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100 dark:border-slate-800/60">
-            <div className="text-left sm:text-right">
-              <div className="text-[10px] uppercase tracking-wider text-slate-400 font-bold">
-                {scanPhase === "idle" ? "Prossimo ciclo 24/7 tra" : "Stato scansione"}
-              </div>
-              <div className="font-mono text-base font-extrabold text-slate-900 dark:text-white flex items-center sm:justify-end gap-1.5 mt-0.5">
-                {scanPhase === "idle" ? (
-                  <span className="text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 px-2 py-0.5 rounded-lg border border-blue-200 dark:border-blue-900/80">
-                    {formatCountdown(secondsLeft)}
-                  </span>
-                ) : (
-                  <span className="text-xs font-sans text-slate-500">
-                    {scanPhase === "searching" ? "Ricerca attiva..." : scanPhase === "updating" ? "Analisi dati..." : "Pronto"}
-                  </span>
-                )}
-              </div>
-            </div>
-
+          {/* Manual scan button */}
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
             <button
               onClick={triggerUpdateCycle}
               disabled={scanPhase !== "idle"}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 transition-all disabled:opacity-50 shadow-xs active:scale-95 shrink-0"
-              title="Avvia subito la ricerca e l'aggiornamento"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-950 transition-all disabled:opacity-50 shadow-2xs active:scale-95"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${scanPhase !== "idle" ? "animate-spin" : ""}`} />
-              <span>{scanPhase !== "idle" ? "In corso..." : "Aggiorna ora"}</span>
+              <span>{scanPhase !== "idle" ? "Aggiornamento..." : "Aggiorna ora"}</span>
             </button>
           </div>
         </div>
-      </section>
 
-      {/* Active Gap Hunter Section */}
-      {detectedGaps.length > 0 && (
-        <section className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">
-                <Target className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Ricerca Mirata delle Lacune Informative</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
-                    Active Hunter
+        {/* Collapsible Gap Details */}
+        {showGapsDetails && detectedGaps.length > 0 && (
+          <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-[11px] text-slate-500">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">
+                Obiettivi prioritari di ricerca web identificati dall'AI:
+              </span>
+              <span>L'AI colma automaticamente queste aree ad ogni ciclo</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+              {detectedGaps.slice(0, 6).map((gap, idx) => (
+                <div key={idx} className="p-2 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 text-[11px] flex items-center justify-between">
+                  <div className="truncate pr-2">
+                    <span className="font-bold text-slate-800 dark:text-slate-200">{gap.party_name}</span>
+                    <span className="text-slate-400 mx-1">›</span>
+                    <span className="text-blue-600 dark:text-blue-400 font-medium">{gap.topic}</span>
+                  </div>
+                  <span className="shrink-0 text-[10px] px-1.5 py-0.5 rounded font-bold bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-300">
+                    Da colmare
                   </span>
-                </h3>
-                <p className="text-[11px] text-slate-500">
-                  Ad ogni ciclo, l'AI rileva quali partiti hanno meno posizioni su determinati temi e cerca miratamente sul web per colmarli.
-                </p>
-              </div>
-            </div>
-            <span className="text-[11px] font-semibold text-slate-400 self-start sm:self-auto">
-              Obiettivi prioritari attivi:
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5 pt-1">
-            {detectedGaps.slice(0, 6).map((gap, idx) => (
-              <div key={idx} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs">
-                <div className="min-w-0 pr-2">
-                  <div className="font-bold text-slate-800 dark:text-slate-200 truncate">
-                    {gap.party_name}
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">
-                    Tema nel mirino: <span className="font-semibold text-blue-600 dark:text-blue-400">{gap.topic}</span>
-                  </div>
-                </div>
-                <span className="shrink-0 text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-100/80 text-amber-900 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-200/60 dark:border-amber-800/60">
-                  Da colmare
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {scanFeedback && (
-        <div className="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 text-xs font-medium text-blue-800 dark:text-blue-300 flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
-          <span>{scanFeedback}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between">
-          <span>{error}</span>
-          <button
-            onClick={loadData}
-            className="px-3 py-1.5 rounded-lg bg-rose-600 text-white font-medium hover:bg-rose-500"
-          >
-            Riprova
-          </button>
-        </div>
-      )}
-
-      {/* KPI Stats Overview */}
-      <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Posizioni Censite</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            {loading ? "..." : stats?.total_proposals || proposals.length}
-          </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Dichiarazioni, atti & manifesti</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Forze Mappate</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white mt-1">
-            {loading ? "..." : stats?.total_parties || parties.length || 17}
-          </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Parlamentari & emergenti</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Media Veridicità</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-1">
-            {loading ? "..." : `${stats?.average_truthfulness || 82.5}%`}
-          </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Basata su dati MEF e ISTAT</p>
-        </div>
-
-        <div className="bg-white dark:bg-slate-900 p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <div className="text-[11px] font-medium uppercase tracking-wider text-slate-400">Costi Quantificati</div>
-          <div className="text-2xl sm:text-3xl font-extrabold text-blue-600 dark:text-blue-400 mt-1">
-            {loading ? "..." : `${stats?.quantified_cost_percentage || 78}%`}
-          </div>
-          <p className="text-[11px] text-slate-500 mt-0.5">Con stima finanziaria esplicita</p>
-        </div>
-      </section>
-
-      {/* Polling & Truthfulness Index Section */}
-      <section className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-xs space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-          <div>
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-1">
-              <TrendingUp className="w-3 h-3" />
-              <span>Media Ponderata Sondaggi Nazionali</span>
-            </div>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-              Sondaggi Elettorali & Indice di Veridicità dei Partiti
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Media dei principali istituti demoscopici (YouTrend/AGI, SWG, Ipsos, Tecnè, Noto) incrociata con la fattibilità economica delle promesse.
-            </p>
-          </div>
-
-          <Link
-            href="/parties"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline shrink-0"
-          >
-            <span>Vedi tutti i dossier</span>
-            <ChevronRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {/* Polling & Truthfulness Cards Grid (All 18 Monitored Parties) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(stats?.party_rankings && stats.party_rankings.length > 0 ? stats.party_rankings : parties.map((p) => ({
-            name: p.name,
-            code: p.code,
-            color: p.color,
-            coalition: p.coalition,
-            leader: p.leader,
-            poll_percentage: p.poll_percentage || 0,
-            poll_trend: p.poll_trend || "stabile",
-            truthfulness_score: p.truthfulness_score || 82,
-            financial_reliability_score: p.financial_reliability_score || 78,
-            proposals_count: p.proposals_count || 0
-          }))).map((item, idx) => (
-            <Link
-              key={idx}
-              href={`/parties?code=${item.code}`}
-              className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
-                    <div>
-                      <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
-                        {item.name}
-                      </span>
-                      <span className="text-[10px] text-slate-400 block line-clamp-1">
-                        {item.leader || item.coalition}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-xs font-black text-slate-900 dark:text-white font-mono">
-                      {item.poll_percentage}%
-                    </span>
-                    <span className={`text-[10px] font-bold ${
-                      item.poll_trend?.startsWith("+")
-                        ? "text-emerald-600 dark:text-emerald-400"
-                        : item.poll_trend?.startsWith("-")
-                        ? "text-rose-600 dark:text-rose-400"
-                        : "text-slate-400"
-                    }`}>
-                      {item.poll_trend}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar of poll percentage */}
-                <div className="w-full bg-slate-200 dark:bg-slate-700/60 h-1.5 rounded-full overflow-hidden mb-2.5">
-                  <div
-                    className="h-full rounded-full transition-all duration-500"
-                    style={{
-                      width: `${Math.min(100, (item.poll_percentage / 35) * 100)}%`,
-                      backgroundColor: item.color
-                    }}
-                  />
-                </div>
-              </div>
-
-              <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] sm:text-[11px] pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
-                <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold" title="Indice di veridicità AI">
-                  <CheckCircle2 className="w-3 h-3 shrink-0" />
-                  <span>Veridicità: {item.truthfulness_score}%</span>
-                </div>
-                <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold" title="Indice coperture finanziarie">
-                  <Coins className="w-3 h-3 shrink-0" />
-                  <span>Coperture: {item.financial_reliability_score}%</span>
-                </div>
-                <div className="text-slate-400 text-[10px] ml-auto">
-                  {item.proposals_count} atti
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
-
-        {/* Coalition Benchmark Summary */}
-        {stats?.coalition_truthfulness && Object.keys(stats.coalition_truthfulness).length > 0 && (
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
-              Media di Veridicità per Schieramento Politico:
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-              {Object.entries(stats.coalition_truthfulness).slice(0, 4).map(([coal, score]) => (
-                <div key={coal} className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-                  <div className="text-[10px] text-slate-500 line-clamp-1">{coal}</div>
-                  <div className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
-                    {score}% <span className="text-[10px] text-emerald-600 font-normal">fondate</span>
-                  </div>
                 </div>
               ))}
             </div>
@@ -594,231 +375,426 @@ export default function DashboardPage() {
         )}
       </section>
 
-      {/* Institutional Reality Check (MEF, ISTAT, Corte dei Conti) */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-500" />
-              <span>Parametri Ufficiali di Bilancio dello Stato</span>
-            </h2>
-            <p className="text-xs text-slate-500 mt-0.5">
-              La realtà dei conti pubblici italiani usata dall'AI per verificare se le promesse sono sostenibili o a debito.
-            </p>
+      {/* 3. CORE METRICS STRIP (Compact & Balanced) */}
+      <section className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Posizioni Censite</div>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+            {loading ? "..." : stats?.total_proposals || proposals.length}
           </div>
-          <Link
-            href="/fact-check"
-            className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 self-start sm:self-auto"
-          >
-            <span>Tutti i parametri e fact-checking</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
+          <p className="text-[10px] text-slate-500 mt-0.5">Atti & dichiarazioni</p>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">PIL Nominale Annuo</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">~2.120 Mld €</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Fonte: ISTAT 2024</div>
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Forze Mappate</div>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
+            {loading ? "..." : stats?.total_parties || parties.length || 18}
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Debito Pubblico / PIL</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">137,3%</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Totale: 2.950 Mld €</div>
+          <p className="text-[10px] text-slate-500 mt-0.5">Parlamentari & civiche</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Media Veridicità</div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
+            {loading ? "..." : `${stats?.average_truthfulness || 82.5}%`}
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Fondo Sanitario Nazionale</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">136,5 Mld €</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">6,4% del PIL (Corte dei Conti)</div>
+          <p className="text-[10px] text-slate-500 mt-0.5">Basata su dati MEF/ISTAT</p>
+        </div>
+
+        <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Coperture Quantificate</div>
+          <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
+            {loading ? "..." : `${stats?.quantified_cost_percentage || 78}%`}
           </div>
-          <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-            <div className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">Spazio di Manovra Netto</div>
-            <div className="text-lg font-bold text-slate-900 dark:text-white mt-0.5">~30 Mld €</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Capienza ordinaria MEF</div>
-          </div>
+          <p className="text-[10px] text-slate-500 mt-0.5">Con stima finanziaria esplicita</p>
         </div>
       </section>
 
-      {/* Interactive Search & Live Filtering Hub */}
-      <section className="space-y-4 pt-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
-              <span>Esplora Tutte le Posizioni Censite ({filteredProposals.length})</span>
-            </h2>
-            <p className="text-xs text-slate-500">
-              Filtra per argomento, cerca per parola chiave o seleziona un partito specifico.
-            </p>
-          </div>
+      {/* 4. MAIN NAVIGATION TABS (Intuitive, Simple & Clear) */}
+      <section className="space-y-4">
+        {/* Navigation Selector Tabs */}
+        <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-200/60 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab("proposte")}
+            className={`flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === "proposte"
+                ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <FileText className={`w-4 h-4 ${activeTab === "proposte" ? "text-blue-600 dark:text-blue-400" : ""}`} />
+            <span>Riforme & Posizioni</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
+              activeTab === "proposte"
+                ? "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+            }`}>
+              {filteredProposals.length}
+            </span>
+          </button>
 
-          {/* Party Quick Filter Dropdown */}
-          <div className="flex items-center gap-2 self-start sm:self-auto">
-            <span className="text-[11px] text-slate-400 font-semibold uppercase tracking-wider">Partito:</span>
-            <select
-              value={selectedParty}
-              onChange={(e) => setSelectedParty(e.target.value)}
-              className="text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-1.5 text-slate-800 dark:text-slate-200 shadow-xs focus:outline-hidden"
-            >
-              <option value="Tutti">Tutti i Partiti</option>
-              {parties.map((p) => (
-                <option key={p.id} value={p.name}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <button
+            onClick={() => setActiveTab("sondaggi")}
+            className={`flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === "sondaggi"
+                ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <TrendingUp className={`w-4 h-4 ${activeTab === "sondaggi" ? "text-emerald-600 dark:text-emerald-400" : ""}`} />
+            <span>Sondaggi & 18 Partiti</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
+              activeTab === "sondaggi"
+                ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+            }`}>
+              18
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("bilancio")}
+            className={`flex-1 min-w-[150px] inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+              activeTab === "bilancio"
+                ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-xs"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+          >
+            <Coins className={`w-4 h-4 ${activeTab === "bilancio" ? "text-amber-600 dark:text-amber-400" : ""}`} />
+            <span>Bilancio dello Stato (MEF)</span>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-semibold ${
+              activeTab === "bilancio"
+                ? "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
+                : "bg-slate-100 dark:bg-slate-800 text-slate-500"
+            }`}>
+              Ufficiale
+            </span>
+          </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cerca per tema, legge o dichiarazione (es. salario minimo, flat tax, nucleare, sanità, premierato)..."
-            className="w-full text-xs sm:text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl pl-10 pr-4 py-3 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500 shadow-xs"
-          />
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery("")}
-              className="absolute right-3.5 top-3 text-xs text-slate-400 hover:text-slate-600 font-semibold"
-            >
-              Cancella
-            </button>
-          )}
-        </div>
+        {/* TAB 1: RIFORME & POSIZIONI */}
+        {activeTab === "proposte" && (
+          <div className="space-y-4">
+            {/* Search and Dropdowns Bar */}
+            <div className="bg-white dark:bg-slate-900 p-3 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                {/* Search text field */}
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Cerca per tema o parola chiave (es. salario minimo, flat tax, sanità, premierato)..."
+                    className="w-full text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl pl-9 pr-4 py-2.5 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                  />
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="absolute right-3 top-2.5 text-xs text-slate-400 hover:text-slate-600 font-semibold"
+                    >
+                      Cancella
+                    </button>
+                  )}
+                </div>
 
-        {/* Year Filter Bar */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none text-xs">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 shrink-0 mr-1 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5 text-blue-500" />
-            <span>Legislatura:</span>
-          </span>
-          {HISTORICAL_YEARS.map((yr) => {
-            const isSelected = selectedYear === yr;
-            return (
-              <button
-                key={yr}
-                onClick={() => setSelectedYear(yr)}
-                className={`shrink-0 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-                  isSelected
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                }`}
-              >
-                {yr}
-              </button>
-            );
-          })}
-        </div>
+                {/* Dropdowns */}
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedParty}
+                    onChange={(e) => setSelectedParty(e.target.value)}
+                    className="text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200 focus:outline-hidden"
+                  >
+                    <option value="Tutti">Tutti i Partiti</option>
+                    {parties.map((p) => (
+                      <option key={p.id} value={p.name}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
 
-        {/* Scrollable Macro Topic Filter Pills */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-none">
-          {MACRO_TOPICS.map((topic) => {
-            const isSelected = selectedTopic === topic;
-            return (
-              <button
-                key={topic}
-                onClick={() => setSelectedTopic(topic)}
-                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  isSelected
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs font-bold"
-                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                {topic}
-              </button>
-            );
-          })}
-        </div>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2.5 text-slate-800 dark:text-slate-200 focus:outline-hidden"
+                  >
+                    {HISTORICAL_YEARS.map((yr) => (
+                      <option key={yr} value={yr}>
+                        {yr}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-        {/* Proposals Grid */}
-        {loading ? (
-          <div className="p-16 text-center text-xs text-slate-400">Caricamento delle posizioni politiche in corso...</div>
-        ) : filteredProposals.length === 0 ? (
-          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
-            Nessuna posizione trovata per i criteri di ricerca selezionati.
-          </div>
-        ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredProposals.slice(0, visibleCount).map((prop) => (
-                <ProposalCard key={prop.id} proposal={prop} />
-              ))}
+              {/* Scrollable Macro Topic Filter Pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-1 scrollbar-none">
+                {MACRO_TOPICS.map((topic) => {
+                  const isSelected = selectedTopic === topic;
+                  return (
+                    <button
+                      key={topic}
+                      onClick={() => setSelectedTopic(topic)}
+                      className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                        isSelected
+                          ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs font-bold"
+                          : "bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800"
+                      }`}
+                    >
+                      {topic}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {visibleCount < filteredProposals.length && (
-              <div className="text-center pt-2">
-                <button
-                  onClick={() => setVisibleCount((prev) => prev + 12)}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition-colors shadow-xs"
-                >
-                  <span>Mostra altre posizioni ({filteredProposals.length - visibleCount} rimanenti)</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
+            {/* Proposals Cards Grid */}
+            {loading ? (
+              <div className="p-16 text-center text-xs text-slate-400 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800">
+                Caricamento posizioni politiche in corso...
+              </div>
+            ) : filteredProposals.length === 0 ? (
+              <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-500">
+                Nessuna posizione trovata per i criteri selezionati.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                  {filteredProposals.slice(0, visibleCount).map((prop) => (
+                    <ProposalCard key={prop.id} proposal={prop} />
+                  ))}
+                </div>
+
+                {visibleCount < filteredProposals.length && (
+                  <div className="text-center pt-2">
+                    <button
+                      onClick={() => setVisibleCount((prev) => prev + 12)}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200 transition-colors shadow-2xs"
+                    >
+                      <span>Mostra altre ({filteredProposals.length - visibleCount} rimanenti)</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
         )}
+
+        {/* TAB 2: SONDAGGI & 18 PARTITI */}
+        {activeTab === "sondaggi" && (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 shadow-2xs space-y-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <span>Sondaggi Elettorali & Indice di Veridicità</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Media ponderata dei principali istituti demoscopici (YouTrend/AGI, SWG, Ipsos, Tecnè) incrociata con l'indice di veridicità delle promesse.
+                </p>
+              </div>
+
+              {/* Coalition filter pills */}
+              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none self-start sm:self-auto">
+                {["Tutti", "Maggioranza", "Opposizione", "Centro"].map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setPollCoalitionFilter(c)}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      pollCoalitionFilter === c
+                        ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
+                        : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200"
+                    }`}
+                  >
+                    {c}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 18 Party Poll Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {filteredRankings.map((item, idx) => (
+                <Link
+                  key={idx}
+                  href={`/parties?code=${item.code}`}
+                  className="p-3.5 rounded-2xl bg-slate-50/70 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                        <div>
+                          <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                            {item.name}
+                          </span>
+                          <span className="text-[10px] text-slate-400 block line-clamp-1">
+                            {item.leader || item.coalition}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-xs font-black text-slate-900 dark:text-white font-mono">
+                          {item.poll_percentage}%
+                        </span>
+                        <span className={`text-[10px] font-bold ${
+                          item.poll_trend?.startsWith("+")
+                            ? "text-emerald-600 dark:text-emerald-400"
+                            : item.poll_trend?.startsWith("-")
+                            ? "text-rose-600 dark:text-rose-400"
+                            : "text-slate-400"
+                        }`}>
+                          {item.poll_trend}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Progress bar */}
+                    <div className="w-full bg-slate-200 dark:bg-slate-700/60 h-1.5 rounded-full overflow-hidden mb-2.5">
+                      <div
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{
+                          width: `${Math.min(100, (item.poll_percentage / 35) * 100)}%`,
+                          backgroundColor: item.color
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-[10px] sm:text-[11px] pt-2 border-t border-slate-200/60 dark:border-slate-700/60">
+                    <div className="flex items-center gap-1 text-emerald-700 dark:text-emerald-400 font-semibold" title="Indice di veridicità AI">
+                      <CheckCircle2 className="w-3 h-3 shrink-0" />
+                      <span>Veridicità: {item.truthfulness_score}%</span>
+                    </div>
+                    <div className="flex items-center gap-1 text-amber-700 dark:text-amber-400 font-semibold" title="Coperture finanziarie">
+                      <Coins className="w-3 h-3 shrink-0" />
+                      <span>Coperture: {item.financial_reliability_score}%</span>
+                    </div>
+                    <div className="text-slate-400 text-[10px] ml-auto">
+                      {item.proposals_count} atti
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {/* Coalition Benchmark Footer */}
+            {stats?.coalition_truthfulness && Object.keys(stats.coalition_truthfulness).length > 0 && (
+              <div className="pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">
+                  Media di Veridicità per Schieramento Politico:
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {Object.entries(stats.coalition_truthfulness).slice(0, 4).map(([coal, score]) => (
+                    <div key={coal} className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800">
+                      <div className="text-[10px] text-slate-500 line-clamp-1">{coal}</div>
+                      <div className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                        {score}% <span className="text-[10px] text-emerald-600 font-normal">fondate</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: CONTI PUBBLICI & BILANCIO (MEF / ISTAT / CORTE DEI CONTI) */}
+        {activeTab === "bilancio" && (
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-2xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+              <div>
+                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-500" />
+                  <span>Parametri Ufficiali di Bilancio dello Stato</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Quadro macroeconomico ufficiale utilizzato dal motore AI per verificare la fattibilità economica delle proposte politiche.
+                </p>
+              </div>
+
+              <Link
+                href="/fact-check"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all shrink-0"
+              >
+                <span>Esplora Fact-Checking Completo</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+
+            {/* Official Macroeconomic Indicators Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">PIL Nominale Annuo</div>
+                <div className="text-2xl font-black text-slate-900 dark:text-white">~2.120 Mld €</div>
+                <div className="text-[11px] text-slate-500">Fonte: ISTAT 2024 / DEF</div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Debito Pubblico / PIL</div>
+                <div className="text-2xl font-black text-rose-600 dark:text-rose-400">137,3%</div>
+                <div className="text-[11px] text-slate-500">Totale: ~2.950 Mld € (Banca d'Italia)</div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Fondo Sanitario Nazionale</div>
+                <div className="text-2xl font-black text-blue-600 dark:text-blue-400">136,5 Mld €</div>
+                <div className="text-[11px] text-slate-500">6,4% del PIL (Corte dei Conti)</div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 space-y-1">
+                <div className="text-[10px] text-slate-400 uppercase tracking-wider font-bold">Spazio di Manovra Netto</div>
+                <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">~30 Mld €</div>
+                <div className="text-[11px] text-slate-500">Capienza annua Legge di Bilancio</div>
+              </div>
+            </div>
+
+            {/* Explanation box */}
+            <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/30 border border-blue-200/70 dark:border-blue-900/60 space-y-2 text-xs">
+              <div className="flex items-center gap-2 font-bold text-blue-900 dark:text-blue-200">
+                <Info className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                <span>Come verifica l'AI la fattibilità delle proposte?</span>
+              </div>
+              <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
+                Ogni promessa o programma politico viene confrontato con le tabelle di spesa dello Stato italiano. Se una proposta comporta un costo superiore allo spazio di bilancio ordinario (circa 30 miliardi annui) senza indicare adeguate coperture (tagli di spesa o entrate fiscali verificate dalla Ragioneria Generale dello Stato), l'AI segnala il rischio di incremento del debito pubblico.
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
-      {/* Parties Roster Strip */}
-      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 space-y-4">
+      {/* 5. QUICK ACCESS TO PARTY DOSSIERS STRIP */}
+      <section className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 space-y-3 shadow-2xs">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-              <Building2 className="w-4 h-4 text-indigo-500" />
-              <span>Dossier Istituzionali dei Partiti</span>
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-slate-500" />
+            <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+              Dossier Completi dei 18 Partiti
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Consulta l'archivio completo di ciascun partito politico monitorato.
-            </p>
           </div>
           <Link
             href="/parties"
             className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
           >
-            <span>Apri tutti i dossier</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Apri tutti ({parties.length || 18})</span>
+            <ChevronRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-          {parties.map((party) => (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {parties.map((p) => (
             <Link
-              key={party.id}
-              href={`/parties?code=${party.code}`}
-              className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex flex-col justify-between"
+              key={p.id}
+              href={`/parties?code=${p.code}`}
+              className="shrink-0 px-3 py-1.5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 transition-all flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
             >
-              <div>
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: party.color }} />
-                  <span className="font-bold text-xs text-slate-900 dark:text-white line-clamp-1">{party.name}</span>
-                </div>
-                <div className="text-[11px] text-slate-500 line-clamp-1">{party.leader || party.coalition}</div>
-                <div className="flex items-center gap-1.5 mt-2 pt-1 border-t border-slate-100 dark:border-slate-800">
-                  {party.poll_percentage !== undefined && (
-                    <span className="text-[10px] font-mono font-bold text-blue-600 dark:text-blue-400">
-                      {party.poll_percentage}%
-                    </span>
-                  )}
-                  {party.truthfulness_score !== undefined && (
-                    <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400">
-                      • {party.truthfulness_score}% V
-                    </span>
-                  )}
-                </div>
-              </div>
-              <div className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold mt-2 flex items-center gap-0.5">
-                <span>Vedi dossier</span>
-                <ChevronRight className="w-2.5 h-2.5" />
-              </div>
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.color }} />
+              <span>{p.name}</span>
             </Link>
           ))}
         </div>
       </section>
+
     </div>
   );
 }

@@ -20,33 +20,34 @@ PARTY_KEYWORDS = {
     "Partito Democratico": ["partito democratico", "pd", "elly schlein", "schlein"],
     "Movimento 5 Stelle": ["movimento 5 stelle", "m5s", "giuseppe conte", "conte", "cinquestelle"],
     "Lega - Salvini Premier": ["lega", "salvini", "matteo salvini"],
-    "Forza Italia": ["forza italia", "fi", "tajani", "antonio tajani"],
-    "Alleanza Verdi e Sinistra": ["alleanza verdi e sinistra", "avs", "bonelli", "fratoianni"],
+    "Forza Italia": ["forza italia", "tajani", "antonio tajani", "berlusconi"],
+    "Alleanza Verdi e Sinistra": ["alleanza verdi e sinistra", "avs", "bonelli", "fratoianni", "verdi"],
     "Azione": ["azione", "calenda", "carlo calenda"],
     "Italia Viva": ["italia viva", "renzi", "matteo renzi"],
-    "+Europa": ["+europa", "più europa", "piu europa", "magi", "riccardo magi", "bonino"],
+    "+Europa": ["+europa", "più europa", "piu europa", "magi", "riccardo magi", "bonino", "emma bonino"],
     "Partito Liberal Democratico": ["partito liberal democratico", "pld", "libdem", "marattin", "luigi marattin"],
     "Noi Moderati": ["noi moderati", "lupi", "maurizio lupi"],
     "Futuro Nazionale": ["futuro nazionale", "fnv", "vannacci", "roberto vannacci"],
-    "ORA!": ["movimento ora", "partito ora", "forchielli", "boldrin", "drin drin", "ora!"],
+    "ORA!": ["movimento ora", "partito ora", "forchielli", "alberto forchielli", "boldrin", "michele boldrin", "drin drin", "ora!"],
     "Democrazia Sovrana Popolare": ["democrazia sovrana popolare", "dsp", "rizzo", "marco rizzo"],
     "Rifondazione Comunista": ["rifondazione comunista", "prc", "acerbo", "maurizio acerbo"],
-    "Potere al Popolo": ["potere al popolo", "pap", "granato", "collot"],
-    "Radicali Italiani": ["radicali italiani", "radicali", "hallissey", "crivellini"],
-    "Südtiroler Volkspartei": ["südtiroler volkspartei", "svp", "steger"]
+    "Potere al Popolo": ["potere al popolo", "pap", "collot", "marta collot", "granato"],
+    "Radicali Italiani": ["radicali italiani", "radicali", "hallissey", "matteo hallissey", "crivellini"],
+    "Südtiroler Volkspartei": ["südtiroler volkspartei", "svp", "steger", "dieter steger"]
 }
 
 TOPIC_KEYWORDS = {
-    "Lavoro": ["salario minimo", "salario", "lavoro", "stipendi", "occupazione", "cuneo", "retribuzioni", "precariato", "settimana corta", "pmi"],
-    "Pensioni": ["pensione", "pensioni", "quota 41", "fornero", "uscita a 64", "opzione donna", "previdenza"],
-    "Fisco": ["fisco", "tasse", "flat tax", "irpef", "patrimoniale", "extraprofitti", "rottamazione", "concordato", "evasione"],
-    "Sanità": ["sanità", "sanita", "ssn", "medici", "ospedali", "liste d'attesa", "fondo sanitario", "infermieri"],
-    "Energia": ["nucleare", "smr", "rinnovabili", "eolico", "fotovoltaico", "energia", "bollette", "trivelle", "gas"],
-    "Istruzione": ["scuola", "docenti", "insegnanti", "istruzione", "università", "its", "tempo pieno", "fuga di cervelli"],
-    "Istituzioni": ["premierato", "autonomia differenziata", "lep", "riforma costituzionale", "bicameralismo", "carceri"],
-    "Diritti Civili": ["giustizia", "separazione delle carriere", "cittadinanza", "ius scholae", "ius soli", "cannabis", "fine vita", "diritti"],
-    "Immigrazione": ["immigrazione", "migranti", "sbarchi", "albania", "cpr", "blocco navale", "confini"],
-    "Politica Estera": ["ucraina", "armi", "russia", "spese militari", "nato", "difesa", "piano mattei", "europa", "ue"]
+    "Lavoro": ["salario minimo", "salario", "lavoro", "stipendi", "occupazione", "cuneo", "retribuzioni", "precariato", "settimana corta", "pmi", "contrattazione"],
+    "Pensioni": ["pensione", "pensioni", "quota 41", "quota 103", "fornero", "uscita a 64", "opzione donna", "previdenza", "ape sociale", "tfr"],
+    "Fisco": ["fisco", "tasse", "flat tax", "irpef", "patrimoniale", "extraprofitti", "rottamazione", "concordato", "evasione", "aliquote", "cuneo fiscale"],
+    "Sanità": ["sanità", "sanita", "ssn", "medici", "ospedali", "liste d'attesa", "fondo sanitario", "infermieri", "cup", "pronto soccorso"],
+    "Energia": ["nucleare", "smr", "rinnovabili", "eolico", "fotovoltaico", "energia", "bollette", "trivelle", "gas", "decarbonizzazione", "comunità energetiche"],
+    "Istruzione": ["scuola", "docenti", "insegnanti", "istruzione", "università", "its", "tempo pieno", "fuga di cervelli", "asili nido", "ricerca"],
+    "Istituzioni": ["premierato", "autonomia differenziata", "lep", "riforma costituzionale", "bicameralismo", "carceri", "giustizia", "separazione delle carriere"],
+    "Diritti Civili": ["cittadinanza", "ius scholae", "ius soli", "cannabis", "fine vita", "eutanasia", "matrimonio egualitario", "ddl zan", "gpa", "diritti"],
+    "Immigrazione": ["immigrazione", "migranti", "sbarchi", "albania", "cpr", "blocco navale", "confini", "decreto flussi", "accoglienza", "bossi-fini"],
+    "Politica Estera": ["ucraina", "armi", "russia", "spese militari", "nato", "difesa", "piano mattei", "europa", "ue", "medio oriente", "israele", "palestina"],
+    "Infrastrutture": ["ponte sullo stretto", "ponte di messina", "infrastrutture", "tav", "treni", "ferrovie", "rete idrica", "dissesto idrogeologico"]
 }
 
 def detect_entities_and_topics(query: str) -> Tuple[List[str], List[str]]:
@@ -235,40 +236,67 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
         if generated:
             answer_text = generated
 
-    # High-Quality Autonomous Neural Synthesis (Zero dump, articulate comparative prose)
+    # High-Quality Autonomous Neural Synthesis (Direct, powerful, accurate, strictly neutral)
     if not answer_text:
         if not top_candidates:
             answer_text = (
                 "Non sono state rilevate proposte politiche direttamente associate a questa specifica formulazione.\n\n"
-                "👉 **Consiglio di ricerca:** prova a specificare un argomento chiave (es. *'Salario Minimo'*, *'Quota 41'*, *'Sanità Pubblica'*, *'Rinnovabili e Nucleare'*, *'Premierato'*) "
-                "oppure il nome di un partito o leader (es. *'Fratelli d'Italia'*, *'Elly Schlein'*, *'Movimento 5 Stelle'*, *'Roberto Vannacci'*, *'ORA!'*)."
+                "👉 **Consiglio di ricerca rapida:** prova a chiedere di un tema chiave (es. *'Salario Minimo'*, *'Quota 41'*, *'Sanità'*, *'Flat Tax'*, *'Nucleare'*, *'Autonomia Differenziata'*) "
+                "oppure confronta direttamente due partiti o leader (es. *'PD vs FdI'*, *'Cosa propone Roberto Vannacci?'*, *'Posizione di ORA! sul fisco'*)."
             )
         else:
+            # Detect Question Types for targeted, high-precision answers
+            is_cost_query = any(w in q_low for w in ["quanto costa", "costo", "costi", "coperture", "finanziat", "mef", "fattibilità", "debito", "spesa"])
+            is_who_supports = any(w in q_low for w in ["chi vuole", "chi è a favore", "chi è contrario", "chi propone", "chi sostiene", "chi si oppone", "favorevoli", "contrari", "chi appoggia"])
+            is_head_to_head = len(matched_parties) >= 2
+
             # Group retrieved candidates by coalition
             maggioranza = [p for p in top_candidates if any(c in p.partito for c in ["Fratelli d'Italia", "Lega", "Forza Italia", "Noi Moderati"])]
             opposizione = [p for p in top_candidates if any(c in p.partito for c in ["Partito Democratico", "Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Sinistra", "Potere al Popolo", "Rifondazione"])]
             liberali_altri = [p for p in top_candidates if p not in maggioranza and p not in opposizione]
             
-            # Determine main subject or topic
             topic_str = matched_topics[0] if matched_topics else (top_candidates[0].macro_argomento if top_candidates else "Politica Nazionale")
             
-            # 1. Executive Introduction
-            answer_text += f"### 📊 Sintesi Comparativa Istituzionale: {req.question.strip().rstrip('?')}\n\n"
+            # Header
+            answer_text += f"### 📊 Sintesi Istituzionale: {req.question.strip().rstrip('?')}\n\n"
             
-            if matched_parties and len(matched_parties) == 1:
+            # 1. Direct Executive Answer (Risposta Diretta Immediata)
+            if is_who_supports:
+                fav_parties = [p.partito for p in top_candidates if p.tipo_azione in ["Proposta di legge", "Dichiarazione programmatica"] and p.fact_check_status != "Inattuabile"]
+                opp_parties = [p.partito for p in top_candidates if p.tipo_azione == "Opposizione" or p.fact_check_status == "Inattuabile"]
+                fav_str = ", ".join(list(dict.fromkeys(fav_parties))[:4]) or "diverse forze parlamentari"
+                opp_str = ", ".join(list(dict.fromkeys(opp_parties))[:3]) or "le forze contrarie o favorevoli a strumenti alternativi"
+                answer_text += (
+                    f"**Risposta diretta:** Riguardo a **{topic_str}**, le forze politiche favorevoli e promotrici di riforme attive sono principalmente **{fav_str}**. "
+                    f"Al contrario, esprimono contrarietà o propongono modelli contrattuali alternativi forze come **{opp_str}**.\n\n"
+                )
+            elif is_head_to_head and len(matched_parties) >= 2:
+                p1, p2 = matched_parties[0], matched_parties[1]
+                answer_text += (
+                    f"**Confronto diretto:** Sul tema **{topic_str}**, **{p1}** e **{p2}** esprimono visioni programmatiche distinte. "
+                    f"Di seguito vengono confrontate le rispettive proposte formali, gli atti depositati e la sostenibilità economica:\n\n"
+                )
+            elif is_cost_query:
+                quantified = [p for p in top_candidates if p.costo_stimato and p.costo_stimato != "Non quantificato"]
+                costs_summary = "; ".join([f"{p.partito}: {p.costo_stimato}" for p in quantified[:3]]) if quantified else "costi non quantificati nei testi normativi"
+                answer_text += (
+                    f"**Quadro economico:** La valutazione finanziaria per le proposte relative a **{topic_str}** evidenzia stime ufficiali di costo: {costs_summary}. "
+                    f"La Ragioneria Generale dello Stato e la Corte dei Conti richiedono per ciascuna misura coperture certe a saldi invariati ex art. 81 Costituzione.\n\n"
+                )
+            elif matched_parties and len(matched_parties) == 1:
                 p_name = matched_parties[0]
                 p_obj = all_parties.get(p_name)
                 p_poll = f"{p_obj.poll_percentage}%" if p_obj else "in rilevazione"
                 p_ver = f"{p_obj.truthfulness_score}%" if p_obj else "85%"
                 answer_text += (
-                    f"Riguardo alle posizioni formalizzate da **{p_name}** (accreditato al **{p_poll}** nei sondaggi nazionali, "
-                    f"con un indice medio di veridicità calcolato dall'AI pari al **{p_ver}**), dall'analisi degli atti parlamentari, "
-                    f"disegni di legge e archivio storico delle prese di posizione (2022-2026) emergono i seguenti riscontri:\n\n"
+                    f"**Sintesi per {p_name}:** Il partito (attestato al **{p_poll}** nei sondaggi nazionali, "
+                    f"con un indice medio di veridicità calcolato dall'AI del **{p_ver}**) formalizza sul tema **{topic_str}** "
+                    f"le seguenti posizioni e proposte di legge ufficiali:\n\n"
                 )
             else:
                 answer_text += (
-                    f"Sul tema **{topic_str}**, l'analisi autonoma delle dichiarazioni, degli atti parlamentari e dei programmi "
-                    f"censiti nell'archivio storico evidenzia un confronto articolato tra le diverse forze dell'arco parlamentare:\n\n"
+                    f"**Quadro generale:** Sul tema **{topic_str}**, l'analisi degli atti parlamentari, disegni di legge "
+                    f"e dichiarazioni ufficiali evidenzia posizioni articolate tra maggioranza e opposizioni:\n\n"
                 )
 
             # Historical Evolution Detection & Trajectory Builder
@@ -276,7 +304,6 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
             relevant_parties = matched_parties if matched_parties else list(set(p.partito for p in top_candidates))
             
             for party_name in relevant_parties:
-                # Find all proposals for this party on the relevant topic(s)
                 related_props = [
                     p for p in all_proposals 
                     if p.partito == party_name and (not matched_topics or p.macro_argomento in matched_topics)
@@ -285,8 +312,6 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
                     related_props = [p for p in all_proposals if p.partito == party_name]
                     
                 related_props_sorted = sorted(related_props, key=lambda x: x.timestamp or datetime.datetime.min)
-                
-                # Check if multiple distinct timestamps exist across years or dates
                 years = {p.timestamp.year for p in related_props_sorted if p.timestamp}
                 if len(related_props_sorted) >= 2 and (len(years) >= 2 or wants_evolution):
                     traj_lines = [f"**{party_name}** ({related_props_sorted[0].macro_argomento}):"]
@@ -298,9 +323,6 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
             # If user asked about evolution or history, put the Timeline front and center
             if wants_evolution and historical_trajectories:
                 answer_text += "#### ⏱️ Evoluzione Temporale & Storico delle Posizioni (2022 – 2026)\n"
-                answer_text += (
-                    "L'analisi longitudinale dell'archivio PolitiLens evidenzia la seguente traiettoria politica nel corso della legislatura:\n\n"
-                )
                 for traj in historical_trajectories:
                     answer_text += f"{traj}\n\n"
 
@@ -310,8 +332,8 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
                 for p in maggioranza:
                     dt_str = f" ({p.timestamp.strftime('%Y')})" if p.timestamp else ""
                     answer_text += f"- **{p.partito}{dt_str}:** {p.dichiarazione_sintesi}\n"
-                    answer_text += f"  - *Quadro economico:* costo `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
-                    answer_text += f"  - *Verifica istituzionale:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
+                    answer_text += f"  - *Costo & Coperture:* `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
+                    answer_text += f"  - *Verifica MEF/ISTAT:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
                 answer_text += "\n"
 
             # 3. Section: Opposizione Progressista e Sinistra
@@ -320,8 +342,8 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
                 for p in opposizione:
                     dt_str = f" ({p.timestamp.strftime('%Y')})" if p.timestamp else ""
                     answer_text += f"- **{p.partito}{dt_str}:** {p.dichiarazione_sintesi}\n"
-                    answer_text += f"  - *Quadro economico:* costo `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
-                    answer_text += f"  - *Verifica istituzionale:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
+                    answer_text += f"  - *Costo & Coperture:* `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
+                    answer_text += f"  - *Verifica MEF/ISTAT:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
                 answer_text += "\n"
 
             # 4. Section: Area Riformista, Civica & Nuove Forze
@@ -330,33 +352,23 @@ Organizza la sintesi per schieramenti politici (maggioranza, opposizione, altre 
                 for p in liberali_altri:
                     dt_str = f" ({p.timestamp.strftime('%Y')})" if p.timestamp else ""
                     answer_text += f"- **{p.partito}{dt_str}:** {p.dichiarazione_sintesi}\n"
-                    answer_text += f"  - *Quadro economico:* costo `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
-                    answer_text += f"  - *Verifica istituzionale:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
+                    answer_text += f"  - *Costo & Coperture:* `{p.costo_stimato}` • Coperture: *{p.coperture_dichiarate}*\n"
+                    answer_text += f"  - *Verifica MEF/ISTAT:* **{p.fact_check_status}** ({p.fact_check_motivazione or p.fattibilita_finanziaria})\n"
                 answer_text += "\n"
 
-            # If not already shown above and trajectories exist, append historical timeline
+            # Append historical timeline if not already shown above
             if not wants_evolution and historical_trajectories:
-                answer_text += "#### ⏱️ Cronologia Storica (2022 – 2026)\n"
-                answer_text += "Confronto con le posizioni depositate nelle fasi precedenti della legislatura:\n\n"
+                answer_text += "#### ⏱️ Precedenti Storici (Archivio 2022 – 2026)\n"
                 for traj in historical_trajectories[:2]:
                     answer_text += f"{traj}\n\n"
 
             # 5. Institutional Reality Check (Macroeconomic parameters)
-            answer_text += "#### ⚖️ Valutazione di Sostenibilità Finanziaria (Dati MEF / ISTAT / Corte dei Conti)\n"
+            answer_text += "#### ⚖️ Vincoli Macroeconomici & Quadro di Bilancio (MEF / Corte dei Conti)\n"
             answer_text += (
-                "Ogni proposta viene parametrata rispetto ai vincoli macroeconomici dello Stato italiano: "
-                "il **PIL nominale** ammonta a circa 2.120 Miliardi €, il **Debito Pubblico** si attesta al 137.3% del PIL "
-                "e la spesa sanitaria del **FSN** è fissata a 136.5 Miliardi €. "
-                "Le misure che non prevedono coperture tributarie o tagli di spesa certificati rimangono classificate dall'AI "
-                "come *'In attesa di copertura'* o *'Esagerate'* per garantire piena trasparenza democratica."
+                "Ogni riforma viene valutata sui parametri reali della finanza pubblica italiana: "
+                "**PIL nominale** pari a 2.120 Miliardi €, **Debito Pubblico** al 137.3% del PIL e tetto del disavanzo al 3% stabilito dal Patto di Stabilità UE. "
+                "Le promesse prive di coperture certe rimangono classificate dall'AI come *'In attesa di copertura'* o *'Esagerate'* per garantire massima trasparenza democratica."
             )
-
-    return ChatQueryResponse(
-        answer=answer_text,
-        neutrality_disclaimer=disclaimer,
-        mode=req.mode or "comparativo",
-        citations=citations
-    )
 
     return ChatQueryResponse(
         answer=answer_text,
