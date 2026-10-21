@@ -255,6 +255,8 @@ if os.path.exists(STATIC_DIR):
 
     @app.get("/{full_path:path}")
     async def serve_catch_all(full_path: str):
+        if full_path.startswith("api/"):
+            return JSONResponse(status_code=404, content={"detail": "Not Found"})
         file_path = os.path.join(STATIC_DIR, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
