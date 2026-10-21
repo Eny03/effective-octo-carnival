@@ -45,6 +45,13 @@ async def trigger_ingestion_scan(background_tasks: BackgroundTasks):
     background_tasks.add_task(run_pipeline_scan)
     return {"status": "TRIGGERED", "message": "Scansione asincrona dei feed avviata in background."}
 
+@router.post("/update-dossiers")
+def trigger_dossiers_update(db: Session = Depends(get_db)):
+    """Regenerates the enhanced AI dossiers and metrics for all political parties."""
+    from app.ingestion.dossier_generator import update_all_party_dossiers
+    update_all_party_dossiers(db)
+    return {"status": "UPDATED", "message": "Dossier strategici e parametri finanziari dei 18 partiti aggiornati con successo."}
+
 @router.post("/manual", response_model=List[PoliticalProposalDetail])
 async def ingest_manual(req: IngestionRequest, db: Session = Depends(get_db)):
     """
