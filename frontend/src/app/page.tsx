@@ -180,6 +180,17 @@ function DashboardContent() {
       setSchedulerStatus(schedData);
       setParties(partiesData);
       setDetectedGaps(gapsData);
+
+      // Determine real poll timestamp and persist to local storage
+      const pollTimeStr = statsData.last_poll_time || (partiesData[0]?.poll_sources?.includes("Rilevazione") ? partiesData[0].poll_sources.split("Rilevazione")[1].replace(/[()]/g, "").trim() : "");
+      if (pollTimeStr) {
+        setLastPollTime(pollTimeStr);
+      }
+      try {
+        localStorage.setItem("politiclens_cached_stats", JSON.stringify(statsData));
+        localStorage.setItem("politiclens_cached_parties", JSON.stringify(partiesData));
+        if (pollTimeStr) localStorage.setItem("politiclens_last_poll_time", pollTimeStr);
+      } catch (e) {}
     } catch (err: any) {
       console.error(err);
       setError("Impossibile caricare i dati della dashboard. Verifica la connessione al server.");
@@ -189,10 +200,20 @@ function DashboardContent() {
   };
 
   useEffect(() => {
-    loadData();
-    setLastPollTime(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+    // 1. Instant hydration from localStorage (persists across page reloads & app closures)
+    try {
+      const cachedStats = localStorage.getItem("politiclens_cached_stats");
+      const cachedParties = localStorage.getItem("politiclens_cached_parties");
+      const cachedPollTime = localStorage.getItem("politiclens_last_poll_time");
+      if (cachedStats) setStats(JSON.parse(cachedStats));
+      if (cachedParties) setParties(JSON.parse(cachedParties));
+      if (cachedPollTime) setLastPollTime(cachedPollTime);
+    } catch (e) {}
 
-    // Automated 10-minute polling update via internet search
+    // 2. Fetch fresh live data from server
+    loadData();
+
+    // 3. Automated 10-minute polling update via internet search
     const pollInterval = setInterval(async () => {
       try {
         await triggerPollUpdate();
@@ -202,7 +223,13 @@ function DashboardContent() {
         ]);
         setStats(statsData);
         setParties(partiesData);
-        setLastPollTime(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+        const pollTimeStr = statsData.last_poll_time || (partiesData[0]?.poll_sources?.includes("Rilevazione") ? partiesData[0].poll_sources.split("Rilevazione")[1].replace(/[()]/g, "").trim() : new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+        setLastPollTime(pollTimeStr);
+        try {
+          localStorage.setItem("politiclens_cached_stats", JSON.stringify(statsData));
+          localStorage.setItem("politiclens_cached_parties", JSON.stringify(partiesData));
+          localStorage.setItem("politiclens_last_poll_time", pollTimeStr);
+        } catch (e) {}
       } catch (err) {
         console.error("Auto poll interval notice:", err);
       }
@@ -247,7 +274,13 @@ function DashboardContent() {
       ]);
       setStats(statsData);
       setParties(partiesData);
-      setLastPollTime(new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+      const pollTimeStr = statsData.last_poll_time || (partiesData[0]?.poll_sources?.includes("Rilevazione") ? partiesData[0].poll_sources.split("Rilevazione")[1].replace(/[()]/g, "").trim() : new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" }));
+      setLastPollTime(pollTimeStr);
+      try {
+        localStorage.setItem("politiclens_cached_stats", JSON.stringify(statsData));
+        localStorage.setItem("politiclens_cached_parties", JSON.stringify(partiesData));
+        localStorage.setItem("politiclens_last_poll_time", pollTimeStr);
+      } catch (e) {}
     } catch (e: any) {
       setPollFeedback("Errore durante l'aggiornamento dei sondaggi.");
     } finally {

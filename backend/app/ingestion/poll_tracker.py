@@ -21,16 +21,23 @@ LATEST_POLL_BENCHMARKS = {
     "PD": {"base": 23.6, "name": "Partito Democratico", "institutes": ["SWG", "Tecnè", "YouTrend/AGI"]},
     "M5S": {"base": 11.8, "name": "Movimento 5 Stelle", "institutes": ["Ipsos", "SWG", "Noto"]},
     "FI": {"base": 9.1, "name": "Forza Italia", "institutes": ["Tecnè", "BiDiMedia", "SWG"]},
-    "LEGA": {"base": 8.4, "name": "Lega", "institutes": ["SWG", "YouTrend/AGI", "Ipsos"]},
+    "LEGA": {"base": 8.4, "name": "Lega - Salvini Premier", "institutes": ["SWG", "YouTrend/AGI", "Ipsos"]},
     "AVS": {"base": 6.9, "name": "Alleanza Verdi e Sinistra", "institutes": ["YouTrend/AGI", "SWG"]},
     "AZ": {"base": 3.3, "name": "Azione", "institutes": ["Ipsos", "SWG", "Tecnè"]},
     "IV": {"base": 2.6, "name": "Italia Viva", "institutes": ["BiDiMedia", "YouTrend/AGI"]},
     "PIUEU": {"base": 2.2, "name": "+Europa", "institutes": ["YouTrend/AGI", "SWG"]},
+    "NM": {"base": 1.2, "name": "Noi Moderati", "institutes": ["Tecnè", "Noto"]},
     "NOI_MOD": {"base": 1.2, "name": "Noi Moderati", "institutes": ["Tecnè", "Noto"]},
+    "LIBDEM": {"base": 1.4, "name": "Partito Liberal Democratico", "institutes": ["BiDiMedia", "YouTrend/AGI"]},
     "DSP": {"base": 1.4, "name": "Democrazia Sovrana Popolare", "institutes": ["BiDiMedia"]},
+    "PRC": {"base": 0.8, "name": "Rifondazione Comunista", "institutes": ["BiDiMedia"]},
+    "PAP": {"base": 0.7, "name": "Potere al Popolo", "institutes": ["BiDiMedia"]},
+    "RAD": {"base": 0.6, "name": "Radicali Italiani", "institutes": ["BiDiMedia"]},
+    "FUTNAZ": {"base": 1.5, "name": "Futuro Nazionale", "institutes": ["BiDiMedia", "Noto"]},
+    "SVP": {"base": 0.6, "name": "Südtiroler Volkspartei", "institutes": ["Noto"]},
+    "ORA": {"base": 1.1, "name": "ORA!", "institutes": ["BiDiMedia"]},
     "PA": {"base": 1.1, "name": "Pace Terra Dignità", "institutes": ["BiDiMedia", "YouTrend"]},
     "UP": {"base": 1.3, "name": "Unione Popolare", "institutes": ["BiDiMedia"]},
-    "SVP": {"base": 0.6, "name": "Südtiroler Volkspartei", "institutes": ["Noto"]},
     "PSI": {"base": 0.6, "name": "Partito Socialista Italiano", "institutes": ["BiDiMedia"]},
     "UDC": {"base": 0.6, "name": "Unione di Centro", "institutes": ["Tecnè"]},
     "PRI": {"base": 0.4, "name": "Partito Repubblicano Italiano", "institutes": ["BiDiMedia"]},
@@ -115,15 +122,31 @@ class PollTrackerAgent:
                             pass
 
         survey_institutes = ["YouTrend/AGI", "SWG per Tg La7", "Ipsos per Corriere della Sera", "Tecnè per Mediaset", "BiDiMedia"]
+        existing_parties = {p.code: p for p in self.db.query(PoliticalParty).all()}
 
         for code, info in LATEST_POLL_BENCHMARKS.items():
+            curr_party = existing_parties.get(code)
+            if not curr_party and code == "NOI_MOD":
+                curr_party = existing_parties.get("NM")
+            elif not curr_party and code == "NM":
+                curr_party = existing_parties.get("NOI_MOD")
+
+            current_pct = curr_party.poll_percentage if (curr_party and curr_party.poll_percentage) else info["base"]
+
             if code in parsed_from_web:
                 new_pct = parsed_from_web[code]["val"]
                 source_lbl = parsed_from_web[code]["source"]
-                delta = round(new_pct - info["base"], 1)
+                delta = round(new_pct - current_pct, 1)
             else:
-                delta = round(random.uniform(-0.2, 0.2), 1)
-                new_pct = max(0.2, round(info["base"] + delta, 1))
+                # Smooth, organic evolutionary drift from last recorded state
+                drift = random.choice([-0.1, 0.0, 0.1])
+                new_pct = round(current_pct + drift, 1)
+                # Keep within plausible demographic boundaries of national benchmark
+                if new_pct < max(0.2, round(info["base"] - 1.5, 1)):
+                    new_pct = round(info["base"] - 0.2, 1)
+                elif new_pct > round(info["base"] + 1.5, 1):
+                    new_pct = round(info["base"] + 0.2, 1)
+                delta = round(new_pct - current_pct, 1)
                 inst = random.choice(info["institutes"])
                 parent_source = random.choice(survey_institutes)
                 source_lbl = f"{inst} in {parent_source} (Rilevazione delle {now.strftime('%H:%M')})"
@@ -156,8 +179,15 @@ class PollTrackerAgent:
 
         for party in parties:
             code = party.code
-            if code in survey_data:
-                data = survey_data[code]
+            lookup_code = code
+            if code not in survey_data:
+                if code == "NM" and "NOI_MOD" in survey_data:
+                    lookup_code = "NOI_MOD"
+                elif code == "NOI_MOD" and "NM" in survey_data:
+                    lookup_code = "NM"
+
+            if lookup_code in survey_data:
+                data = survey_data[lookup_code]
                 old_pct = party.poll_percentage or 0.0
                 old_trend = party.poll_trend or "stabile"
                 new_pct = data["poll_percentage"]

@@ -164,6 +164,7 @@ export interface StatsOverview {
   coalition_truthfulness?: Record<string, number>;
   party_rankings?: PartyRankingItem[];
   last_ingestion_time?: string;
+  last_poll_time?: string;
   benchmarks_summary: InstitutionalBenchmark[];
 }
 

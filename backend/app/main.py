@@ -68,11 +68,17 @@ def seed_database_if_empty():
                 curr.color = p_data.get("color", curr.color)
                 curr.description = p_data.get("description", curr.description)
                 curr.official_website = p_data.get("official_website", curr.official_website)
-                curr.poll_percentage = p_data.get("poll_percentage", curr.poll_percentage)
-                curr.poll_trend = p_data.get("poll_trend", curr.poll_trend)
-                curr.poll_sources = p_data.get("poll_sources", curr.poll_sources)
-                curr.truthfulness_score = p_data.get("truthfulness_score", curr.truthfulness_score)
-                curr.financial_reliability_score = p_data.get("financial_reliability_score", curr.financial_reliability_score)
+                # CRITICAL: Preserve dynamic live poll data & truthfulness scores across server restarts/deploys
+                if curr.poll_percentage is None or curr.poll_percentage == 0.0:
+                    curr.poll_percentage = p_data.get("poll_percentage", 0.0)
+                if not curr.poll_trend:
+                    curr.poll_trend = p_data.get("poll_trend", "stabile")
+                if not curr.poll_sources:
+                    curr.poll_sources = p_data.get("poll_sources", "Media YouTrend/AGI, SWG, Ipsos, Tecnè, Noto")
+                if curr.truthfulness_score is None or curr.truthfulness_score == 0.0:
+                    curr.truthfulness_score = p_data.get("truthfulness_score", 80.0)
+                if curr.financial_reliability_score is None or curr.financial_reliability_score == 0.0:
+                    curr.financial_reliability_score = p_data.get("financial_reliability_score", 80.0)
                 if not curr.dossier_ai and p_data.get("dossier_ai"):
                     curr.dossier_ai = p_data.get("dossier_ai")
         db.commit()
@@ -301,6 +307,20 @@ async def lifespan(app: FastAPI):
     print("[PoliticLens] Inizializzazione piattaforma e database...")
     seed_database_if_empty()
     start_scheduler()
+    
+    # Autonomous startup poll sync (in background after 2 seconds)
+    async def _startup_poll_sync():
+        await asyncio.sleep(2)
+        try:
+            db_sync = SessionLocal()
+            from app.ingestion.poll_tracker import run_poll_tracker_pipeline
+            print("[PoliticLens] Sincronizzazione demoscopica iniziale all'avvio...")
+            run_poll_tracker_pipeline(db_sync)
+            db_sync.close()
+        except Exception as e:
+            print(f"[PoliticLens] Notice sincronizzazione demoscopica avvio: {e}")
+
+    asyncio.create_task(_startup_poll_sync())
     keepalive_task = asyncio.create_task(_autonomous_self_keepalive())
     yield
     print("[PoliticLens] Arresto servizi...")

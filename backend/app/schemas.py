@@ -180,6 +180,7 @@ class StatsOverviewResponse(BaseModel):
     coalition_truthfulness: Dict[str, float] = {}
     party_rankings: List[Dict[str, Any]] = []
     last_ingestion_time: Optional[datetime] = None
+    last_poll_time: Optional[str] = None
     benchmarks_summary: List[InstitutionalBenchmarkSchema]
 
 # Audit Trail & Modification Changelog

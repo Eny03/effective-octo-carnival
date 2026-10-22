@@ -118,6 +118,13 @@ def get_overview_stats(db: Session = Depends(get_db)):
     last_log = db.query(IngestionLog).order_by(IngestionLog.timestamp.desc()).first()
     last_ingestion_time = last_log.timestamp if last_log else None
 
+    # Last poll sweep time from AuditLog
+    from app.models import AuditLog
+    last_poll_log = db.query(AuditLog).filter(
+        AuditLog.event_type.in_(["POLL_UPDATE", "POLL_SWEEP_COMPLETED"])
+    ).order_by(AuditLog.timestamp.desc()).first()
+    last_poll_time_str = last_poll_log.timestamp.strftime("%d/%m/%Y ore %H:%M") if last_poll_log else None
+
     # Benchmarks
     benchmarks = db.query(InstitutionalBenchmark).all()
     benchmarks_summary = [InstitutionalBenchmarkSchema.model_validate(b) for b in benchmarks]
@@ -135,5 +142,6 @@ def get_overview_stats(db: Session = Depends(get_db)):
         coalition_truthfulness=coalition_truthfulness,
         party_rankings=party_rankings,
         last_ingestion_time=last_ingestion_time,
+        last_poll_time=last_poll_time_str,
         benchmarks_summary=benchmarks_summary
     )
