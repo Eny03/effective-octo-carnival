@@ -315,4 +315,54 @@ export async function fetchDetectedGaps(limit: number = 6): Promise<InformationG
   }
 }
 
+export interface AuditLog {
+  id: number;
+  event_type: string;
+  entity_type: string;
+  entity_id?: string;
+  entity_name: string;
+  old_value?: string;
+  new_value?: string;
+  agent_responsible: string;
+  details?: string;
+  timestamp: string;
+}
+
+export interface AuditListResponse {
+  total: number;
+  logs: AuditLog[];
+  event_types: string[];
+  agents: string[];
+}
+
+export async function fetchAuditLogs(params?: {
+  event_type?: string;
+  agent?: string;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<AuditListResponse> {
+  const query = new URLSearchParams();
+  if (params?.event_type && params.event_type !== "Tutti") query.append("event_type", params.event_type);
+  if (params?.agent && params.agent !== "Tutti") query.append("agent", params.agent);
+  if (params?.search) query.append("search", params.search);
+  if (params?.limit) query.append("limit", params.limit.toString());
+  if (params?.offset) query.append("offset", params.offset.toString());
+
+  const url = `${API_BASE_URL}/api/audit/logs${query.toString() ? `?${query.toString()}` : ""}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Errore nel recupero del registro di audit");
+  return res.json();
+}
+
+export async function triggerPollUpdate(): Promise<{ status: string; message: string; updated_parties: any[] }> {
+  const res = await fetch(`${API_BASE_URL}/api/parties/update-polls`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" }
+  });
+  if (!res.ok) throw new Error("Errore nell'aggiornamento dei sondaggi elettorali");
+  return res.json();
+}
+
+
 

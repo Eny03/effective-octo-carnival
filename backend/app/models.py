@@ -83,3 +83,18 @@ class InstitutionalBenchmark(Base):
     anno_riferimento = Column(Integer, nullable=False)
     descrizione = Column(Text, nullable=True)
     url_fonte = Column(String(500), nullable=True)
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    event_type = Column(String(50), nullable=False, index=True) # "POLL_UPDATE", "PROPOSAL_CREATED", "PROPOSAL_UPDATED", "FACT_CHECK_AUDIT", "INGESTION_SCAN", "BENCHMARK_SYNC"
+    entity_type = Column(String(50), nullable=False, index=True) # "party", "proposal", "benchmark", "source"
+    entity_id = Column(String(100), nullable=True)
+    entity_name = Column(String(255), nullable=False)
+    old_value = Column(Text, nullable=True)
+    new_value = Column(Text, nullable=True)
+    agent_responsible = Column(String(100), nullable=False, default="System") # "PollTrackerAgent", "PolicyDistillerAgent", "FiscalAuditorAgent", "ReconciliationAgent", "System"
+    details = Column(Text, nullable=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow, index=True)
+

@@ -88,3 +88,19 @@ def get_party_detail(party_code_or_id: str, db: Session = Depends(get_db)):
         "proposals": [PoliticalProposalDetail.model_validate(p) for p in proposals]
     }
 
+@router.post("/update-polls")
+def update_polls(db: Session = Depends(get_db)):
+    """
+    Triggers PollTrackerAgent to ingest, extract, and reconcile latest electoral poll
+    distribution from certified polling institutes (YouTrend, SWG, Ipsos, Tecnè, BiDiMedia).
+    Generates AuditLog entries for every party percentage change.
+    """
+    from app.ingestion.poll_tracker import run_poll_tracker_pipeline
+    updated = run_poll_tracker_pipeline(db)
+    return {
+        "status": "SUCCESS",
+        "message": f"Aggiornamento demoscopico completato: {len(updated)} partiti ricalcolati con successo.",
+        "updated_parties": updated
+    }
+
+

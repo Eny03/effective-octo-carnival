@@ -345,24 +345,24 @@ export default function ComparePage() {
           </div>
 
           {/* AI STRATEGIC SYNTHESIS CARD */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-linear-to-br from-white via-slate-50/50 to-blue-50/30 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20 border border-blue-200/80 dark:border-blue-900/60 shadow-xs space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200/60 dark:border-slate-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-xl bg-blue-600 text-white shadow-xs">
+          <div className="p-5 sm:p-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="p-1.5 rounded-xl bg-blue-600 text-white shadow-2xs shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                <div className="min-w-0">
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
                     Sintesi Strategica AI: {partyA} vs {partyB}
                   </h3>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-[11px] text-slate-500 truncate">
                     Analisi autonoma di convergenze programmatiche, divergenze e rapporto economico
                   </p>
                 </div>
               </div>
 
               {loadingSynthesis && (
-                <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium">
+                <div className="flex items-center gap-1.5 text-xs text-blue-600 dark:text-blue-400 font-medium shrink-0">
                   <div className="w-2 h-2 rounded-full bg-blue-600 animate-ping" />
                   <span>Elaborazione AI...</span>
                 </div>
@@ -371,20 +371,20 @@ export default function ComparePage() {
 
             {synthesis && (
               <div className="space-y-4 text-xs sm:text-sm">
-                <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                <p className="text-slate-700 dark:text-slate-300 leading-relaxed break-words">
                   {synthesis.executive_summary}
                 </p>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Convergences */}
-                  <div className="p-4 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
+                  <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/50 space-y-2 min-w-0">
                     <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                      <span>Punti di Convergenza & Terreno Comune</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="truncate">Punti di Convergenza & Terreno Comune</span>
                     </div>
                     <ul className="space-y-1.5 text-xs text-emerald-950 dark:text-emerald-200">
                       {synthesis.convergences.map((c, i) => (
-                        <li key={i} className="flex items-start gap-1.5">
+                        <li key={i} className="flex items-start gap-1.5 break-words">
                           <span className="text-emerald-500 font-bold shrink-0 mt-0.5">•</span>
                           <span>{c}</span>
                         </li>
@@ -393,14 +393,14 @@ export default function ComparePage() {
                   </div>
 
                   {/* Divergences */}
-                  <div className="p-4 rounded-2xl bg-rose-50/60 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/60 space-y-2">
+                  <div className="p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/50 space-y-2 min-w-0">
                     <div className="flex items-center gap-1.5 font-bold text-rose-900 dark:text-rose-300">
-                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-                      <span>Punti di Contrasto & Divergenze Primarie</span>
+                      <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
+                      <span className="truncate">Punti di Contrasto & Divergenze Primarie</span>
                     </div>
                     <ul className="space-y-1.5 text-xs text-rose-950 dark:text-rose-200">
                       {synthesis.divergences.map((d, i) => (
-                        <li key={i} className="flex items-start gap-1.5">
+                        <li key={i} className="flex items-start gap-1.5 break-words">
                           <span className="text-rose-500 font-bold shrink-0 mt-0.5">•</span>
                           <span>{d}</span>
                         </li>
@@ -410,23 +410,24 @@ export default function ComparePage() {
                 </div>
 
                 {/* Cost ratio comparison box */}
-                <div className="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-900/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
+                <div className="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2 min-w-0">
                     <Coins className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <div>
+                    <div className="min-w-0 truncate">
                       <strong className="text-amber-950 dark:text-amber-200">Rapporto di Costo Comparato: </strong>
                       <span className="text-amber-900 dark:text-amber-300 font-mono">
                         {synthesis.cost_comparison.ratio_summary}
                       </span>
                     </div>
                   </div>
-                  <div className="text-[11px] text-amber-800 dark:text-amber-400 font-semibold">
+                  <div className="text-[11px] text-amber-800 dark:text-amber-400 font-semibold shrink-0">
                     {synthesis.cost_comparison.compliance_mef}
                   </div>
                 </div>
               </div>
             )}
           </div>
+
 
           {/* Comparison Rows */}
           <div className="space-y-4">

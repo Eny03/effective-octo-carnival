@@ -463,9 +463,9 @@ export default function PartiesPage() {
 
                         <div className="space-y-4 relative before:absolute before:inset-0 before:left-3.5 before:w-0.5 before:bg-slate-200 dark:before:bg-slate-800">
                           {/* Phase 1: Campagna Elettorale 2022 */}
-                          <div className="relative pl-8 space-y-1.5">
+                          <div className="relative pl-7 sm:pl-8 space-y-1.5 min-w-0">
                             <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-amber-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs" />
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
                                 🗳️ Campagna Elettorale 2022
                               </span>
@@ -473,7 +473,7 @@ export default function PartiesPage() {
                             </div>
                             <div className="space-y-1.5">
                               {timelinePhases.phase2022.map((item, idx) => (
-                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 break-words">
                                   {item.text}
                                 </p>
                               ))}
@@ -481,9 +481,9 @@ export default function PartiesPage() {
                           </div>
 
                           {/* Phase 2: Primi Atti di Legislatura 2023 - 2024 */}
-                          <div className="relative pl-8 space-y-1.5">
+                          <div className="relative pl-7 sm:pl-8 space-y-1.5 min-w-0">
                             <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-blue-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs" />
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
                                 🏛️ Primi Atti di Legislatura (2023 – 2024)
                               </span>
@@ -491,7 +491,7 @@ export default function PartiesPage() {
                             </div>
                             <div className="space-y-1.5">
                               {timelinePhases.phase2324.map((item, idx) => (
-                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 break-words">
                                   {item.text}
                                 </p>
                               ))}
@@ -499,23 +499,24 @@ export default function PartiesPage() {
                           </div>
 
                           {/* Phase 3: Posizioni Recenti & Sviluppi Futuri */}
-                          <div className="relative pl-8 space-y-1.5">
+                          <div className="relative pl-7 sm:pl-8 space-y-1.5 min-w-0">
                             <div className="absolute left-1.5 top-1 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-xs" />
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-1.5">
                               <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                                ⚡ Posizioni Recenti & Sviluppi Futuri (2025 – In Corso & Futuro)
+                                ⚡ Posizioni Recenti & Sviluppi Futuri
                               </span>
-                              <span className="text-[10px] text-slate-400">Adattamento a vincoli MEF, PNRR e riforme in discussione</span>
+                              <span className="text-[10px] text-slate-400">Adattamento a vincoli MEF, PNRR e riforme</span>
                             </div>
                             <div className="space-y-1.5">
                               {timelinePhases.phase2526.map((item, idx) => (
-                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <p key={idx} className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 break-words">
                                   {item.text}
                                 </p>
                               ))}
                             </div>
                           </div>
                         </div>
+
                       </div>
 
                       {/* Key Policy Pillars */}

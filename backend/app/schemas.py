@@ -181,3 +181,26 @@ class StatsOverviewResponse(BaseModel):
     party_rankings: List[Dict[str, Any]] = []
     last_ingestion_time: Optional[datetime] = None
     benchmarks_summary: List[InstitutionalBenchmarkSchema]
+
+# Audit Trail & Modification Changelog
+class AuditLogSchema(BaseModel):
+    id: int
+    event_type: str
+    entity_type: str
+    entity_id: Optional[str] = None
+    entity_name: str
+    old_value: Optional[str] = None
+    new_value: Optional[str] = None
+    agent_responsible: str
+    details: Optional[str] = None
+    timestamp: datetime
+
+    class Config:
+        from_attributes = True
+
+class AuditListResponse(BaseModel):
+    total: int
+    logs: List[AuditLogSchema]
+    event_types: List[str]
+    agents: List[str]
+

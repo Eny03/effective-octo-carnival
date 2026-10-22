@@ -26,6 +26,8 @@ from app.api.comparison import router as comparison_router
 from app.api.chat import router as chat_router
 from app.api.ingestion import router as ingestion_router
 from app.api.stats import router as stats_router
+from app.api.audit import router as audit_router, seed_audit_history_if_empty
+
 
 def seed_database_if_empty():
     """Seeds initial parties, documented proposals, and economic benchmarks if not present."""
@@ -183,6 +185,12 @@ def seed_database_if_empty():
         except Exception as de:
             print(f"[Database] Dossier update notice: {de}")
 
+        # Seed initial audit history
+        try:
+            seed_audit_history_if_empty(db)
+        except Exception as ae:
+            print(f"[Database] Audit seed notice: {ae}")
+
     except Exception as e:
         db.rollback()
         print(f"[Database] Seeding error: {e}")
@@ -253,6 +261,8 @@ app.include_router(comparison_router)
 app.include_router(chat_router)
 app.include_router(ingestion_router)
 app.include_router(stats_router)
+app.include_router(audit_router)
+
 
 @app.get("/api/health")
 async def health_check():

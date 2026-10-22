@@ -12,7 +12,8 @@ import {
   Rss, 
   Menu, 
   X,
-  Scale
+  Scale,
+  History
 } from "lucide-react";
 
 export function Navbar() {
@@ -30,12 +31,14 @@ export function Navbar() {
 
   const navLinks = [
     { name: "Dashboard", href: "/", icon: <Compass className="w-4 h-4" /> },
-    { name: "Manifesto Dinamico", href: "/compare", icon: <Layers className="w-4 h-4" /> },
-    { name: "Partiti & Dossier", href: "/parties", icon: <Building2 className="w-4 h-4" /> },
-    { name: "Fact-Checking", href: "/fact-check", icon: <ShieldCheck className="w-4 h-4" /> },
-    { name: "PolitiLens AI", href: "/chat", icon: <Bot className="w-4 h-4" /> },
-    { name: "Fonti & Ingestion", href: "/sources", icon: <Rss className="w-4 h-4" /> },
+    { name: "Manifesto", href: "/compare", icon: <Layers className="w-4 h-4" /> },
+    { name: "Partiti", href: "/parties", icon: <Building2 className="w-4 h-4" /> },
+    { name: "Fact-Check", href: "/fact-check", icon: <ShieldCheck className="w-4 h-4" /> },
+    { name: "Chat AI", href: "/chat", icon: <Bot className="w-4 h-4" /> },
+    { name: "Fonti", href: "/sources", icon: <Rss className="w-4 h-4" /> },
+    { name: "Log Modifiche", href: "/audit", icon: <History className="w-4 h-4" /> },
   ];
+
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs">

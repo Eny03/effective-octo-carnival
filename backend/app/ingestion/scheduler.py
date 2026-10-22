@@ -154,8 +154,17 @@ async def run_pipeline_scan():
             log_message=f"Scansione completata: {total_articles} articoli analizzati dal web, {total_proposals} posizioni formalizzate censite/aggiornate{gap_info_msg}."
         )
         db.add(log_entry)
+
+        # Refresh demographic polling distribution & log audit entries
+        try:
+            from app.ingestion.poll_tracker import run_poll_tracker_pipeline
+            run_poll_tracker_pipeline(db)
+        except Exception as pe:
+            print(f"[Scheduler] Poll tracker refresh notice: {pe}")
+
         db.commit()
         print(f"[Scheduler] Pipeline completed: {total_articles} articles, {total_proposals} proposals processed{gap_info_msg}.")
+
     except Exception as e:
         db.rollback()
         print(f"[Scheduler] Ingestion error: {e}")
