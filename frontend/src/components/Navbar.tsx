@@ -13,12 +13,38 @@ import {
   Menu, 
   X,
   Scale,
-  History
+  History,
+  Sun,
+  Moon
 } from "lucide-react";
 
 export function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDark, setIsDark] = useState<boolean>(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("politilens_theme");
+    if (saved === "dark") {
+      setIsDark(true);
+      document.documentElement.classList.add("dark");
+    } else {
+      setIsDark(false);
+      document.documentElement.classList.remove("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    const nextDark = !isDark;
+    setIsDark(nextDark);
+    if (nextDark) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("politilens_theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("politilens_theme", "light");
+    }
+  };
 
   // Client-side keepalive heartbeat: pings /api/health every 4 minutes while the app is open
   useEffect(() => {
@@ -28,6 +54,7 @@ export function Navbar() {
     const interval = setInterval(keepalive, 240000);
     return () => clearInterval(interval);
   }, []);
+
 
   const navLinks = [
     { name: "Dashboard", href: "/", icon: <Compass className="w-4 h-4" /> },
@@ -93,11 +120,23 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Neutrality Pill */}
-          <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-            <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Parametri MEF & ISTAT</span>
+          {/* Neutrality Pill & Theme Toggle */}
+          <div className="flex items-center gap-2">
+            <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Parametri MEF & ISTAT</span>
+            </div>
+
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-semibold"
+              title={isDark ? "Passa a Tema Chiaro" : "Passa a Tema Scuro"}
+            >
+              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+              <span className="hidden xl:inline">{isDark ? "Tema Chiaro" : "Tema Scuro"}</span>
+            </button>
           </div>
+
 
           {/* Mobile menu button */}
           <button
@@ -131,8 +170,20 @@ export function Navbar() {
               </Link>
             );
           })}
+          
+          <button
+            onClick={() => {
+              toggleTheme();
+              setMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          >
+            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+            <span>{isDark ? "Passa a Tema Chiaro" : "Passa a Tema Scuro"}</span>
+          </button>
         </div>
       )}
+
     </header>
   );
 }

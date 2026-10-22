@@ -43,6 +43,8 @@ import {
 import { ProposalCard } from "@/components/ProposalCard";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TopicBadge } from "@/components/TopicBadge";
+import { MarkdownMessage } from "@/components/MarkdownMessage";
+
 
 export default function PartiesPage() {
   const [parties, setParties] = useState<PoliticalParty[]>([]);
@@ -397,9 +399,10 @@ export default function PartiesPage() {
                             {partyDossier.ultimo_aggiornamento_web}
                           </span>
                         </div>
-                        <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                          {partyDossier.sintesi_strategica}
-                        </p>
+                        <div className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                          <MarkdownMessage content={partyDossier.sintesi_strategica} />
+                        </div>
+
                       </div>
 
                       {/* RADAR CHART: PRIORITÀ TEMATICHE (RECHARTS) */}
@@ -530,34 +533,42 @@ export default function PartiesPage() {
                           {partyDossier.pilastri_programmatici.map((pil, idx) => (
                             <div
                               key={idx}
-                              className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xs space-y-2.5"
+                              className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3"
                             >
-                              <div className="flex items-center justify-between">
+                              <div className="flex items-center justify-between gap-2">
                                 <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                                   {pil.tema}
                                 </span>
-                                <span className="text-[10px] font-semibold text-slate-400">
+                                <span className="text-[10px] font-semibold text-slate-400 truncate">
                                   {pil.tipo_azione}
                                 </span>
                               </div>
 
-                              <p className="text-xs font-medium text-slate-900 dark:text-slate-100 line-clamp-3">
+                              <p className="text-xs font-bold text-slate-900 dark:text-slate-100 leading-snug">
                                 {pil.proposta_chiave}
                               </p>
 
-                              <div className="space-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800 text-[11px]">
-                                <div className="flex items-center justify-between text-slate-600 dark:text-slate-400">
-                                  <span>Costo: <strong className="text-slate-900 dark:text-white">{pil.costo}</strong></span>
-                                  <span>Coperture: <strong className="text-slate-900 dark:text-white">{pil.coperture}</strong></span>
+                              <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs">
+                                <div className="space-y-1.5 bg-slate-50 dark:bg-slate-800/50 p-2.5 rounded-xl border border-slate-100 dark:border-slate-800 text-[11px]">
+                                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1">
+                                    <span className="text-slate-500 font-medium shrink-0">Stima di Costo:</span>
+                                    <strong className="text-slate-900 dark:text-white font-semibold text-right">{pil.costo}</strong>
+                                  </div>
+                                  <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-1 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
+                                    <span className="text-slate-500 font-medium shrink-0">Copertura Dichiarata:</span>
+                                    <strong className="text-slate-900 dark:text-white font-semibold text-right">{pil.coperture}</strong>
+                                  </div>
                                 </div>
-                                <div className="text-slate-500 text-[10px] leading-relaxed line-clamp-2">
+
+                                <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                                   {pil.motivazione}
-                                </div>
+                                </p>
                               </div>
                             </div>
                           ))}
                         </div>
                       </div>
+
 
                       {/* Strengths & Vulnerabilities */}
                       {(partyDossier.punti_di_forza || partyDossier.criticita_osservatorio) && (

@@ -85,21 +85,48 @@ def seed_database_if_empty():
                 db.add(benchmark)
             db.commit()
 
-        # Non-destructive Proposal Persistence (Preserve full historical record 2022-2026)
+        # Non-destructive Proposal Persistence with Intelligent Deduplication
         parties_map = {p.name: p.id for p in db.query(PoliticalParty).all()}
         from app.ai.embeddings import _local_deterministic_embedding
+        from difflib import SequenceMatcher
 
-        all_seeds = PROPOSALS_SEED + HISTORICAL_PROPOSALS_SEED
+        stopwords = {'e', 'il', 'la', 'i', 'gli', 'le', 'di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra', 'del', 'della', 'dei', 'delle', 'un', 'una', 'uno', 'al', 'alla', 'ai', 'alle'}
+
+        # Deduplicate all seed proposals before inserting
+        deduped_seeds = []
+        for prop in (PROPOSALS_SEED + HISTORICAL_PROPOSALS_SEED):
+            p_text = prop["dichiarazione_sintesi"].lower()
+            p_words = {w for w in p_text.replace(',', ' ').replace('.', ' ').replace(':', ' ').split() if w not in stopwords and len(w) > 3}
+            
+            is_dup = False
+            for existing_idx, existing_seed in enumerate(deduped_seeds):
+                if existing_seed["partito"] == prop["partito"] and existing_seed["macro_argomento"] == prop["macro_argomento"]:
+                    e_text = existing_seed["dichiarazione_sintesi"].lower()
+                    e_words = {w for w in e_text.replace(',', ' ').replace('.', ' ').replace(':', ' ').split() if w not in stopwords and len(w) > 3}
+                    common = p_words & e_words
+                    overlap = len(common) / max(len(p_words), len(e_words)) if max(len(p_words), len(e_words)) > 0 else 0
+                    ratio = SequenceMatcher(None, p_text, e_text).ratio()
+                    
+                    if (overlap >= 0.30 or len(common) >= 3 or ratio >= 0.35):
+                        is_dup = True
+                        # If current prop is more detailed or formal, replace the existing one
+                        if len(prop["dichiarazione_sintesi"]) > len(existing_seed["dichiarazione_sintesi"]):
+                            deduped_seeds[existing_idx] = prop
+                        break
+            if not is_dup:
+                deduped_seeds.append(prop)
+
+        # Seed missing clean proposals
         existing_proposals = db.query(PoliticalProposal).all()
         existing_signatures = {
-            (p.partito.strip(), p.macro_argomento.strip(), p.dichiarazione_sintesi.strip().lower()[:40])
+            (p.partito.strip(), p.macro_argomento.strip(), p.dichiarazione_sintesi.strip().lower()[:35])
             for p in existing_proposals
         }
         existing_hashes = {p.content_hash for p in existing_proposals if p.content_hash}
 
         added_count = 0
-        for prop in all_seeds:
-            sig = (prop["partito"].strip(), prop["macro_argomento"].strip(), prop["dichiarazione_sintesi"].strip().lower()[:40])
+        for prop in deduped_seeds:
+            sig = (prop["partito"].strip(), prop["macro_argomento"].strip(), prop["dichiarazione_sintesi"].strip().lower()[:35])
             hash_key = compute_content_hash(f"{prop['partito']}_{prop['macro_argomento']}_{prop['dichiarazione_sintesi']}")
             
             if sig not in existing_signatures and hash_key not in existing_hashes:
@@ -142,14 +169,56 @@ def seed_database_if_empty():
 
         if added_count > 0:
             db.commit()
-            print(f"[Database] Successfully seeded/updated {added_count} policy proposals (including historical 2022-2026 archive). Total proposals: {db.query(PoliticalProposal).count()}")
-        else:
-            print(f"[Database] All proposals are up to date and preserved in history ({len(existing_proposals)} total).")
+            print(f"[Database] Successfully seeded {added_count} policy proposals.")
 
-        # Autonomous Public Finance Audit: Guarantee all proposals have quantified cost and coverage
+        # Post-Seed Database Deduplication Pass: Remove any duplicated proposals across all topics
+        existing_db_props = db.query(PoliticalProposal).order_by(PoliticalProposal.id).all()
+        by_grp = {}
+        db_to_delete = []
+        for p in existing_db_props:
+            grp_key = (p.partito.strip().lower(), p.macro_argomento.strip().lower())
+            clean_text = p.dichiarazione_sintesi.lower().replace(',', ' ').replace('.', ' ').replace(':', ' ').replace('(', ' ').replace(')', ' ').replace("'", ' ').replace(';', ' ')
+            p_words = {w for w in clean_text.split() if w not in stopwords and len(w) > 3}
+            if grp_key not in by_grp:
+                by_grp[grp_key] = [(p, p_words)]
+            else:
+                dup_found = False
+                for prev_p, prev_words in by_grp[grp_key]:
+                    common = p_words & prev_words
+                    ratio = SequenceMatcher(None, p.dichiarazione_sintesi.lower(), prev_p.dichiarazione_sintesi.lower()).ratio()
+                    if (len(common) >= 3 or ratio >= 0.35):
+                        dup_found = True
+                        # Keep the longer, more descriptive one
+                        if len(p.dichiarazione_sintesi) > len(prev_p.dichiarazione_sintesi):
+                            db_to_delete.append(prev_p)
+                        else:
+                            db_to_delete.append(p)
+                        break
+                if not dup_found:
+                    by_grp[grp_key].append((p, p_words))
+
+        for dp in db_to_delete:
+            try:
+                db.delete(dp)
+            except Exception:
+                pass
+        if db_to_delete:
+            db.commit()
+            print(f"[Database] Post-seed clean: deleted {len(db_to_delete)} duplicate proposals from database.")
+
+        print(f"[Database] All proposals are up to date and deduplicated ({db.query(PoliticalProposal).count()} total).")
+
+
+        # Realistic Public Finance Audit: Art. 81 Cost. & Legge 196/2009
         try:
-            from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
+            from app.ai.fiscal_calculator import sanitize_proposal_title
             all_db_props = db.query(PoliticalProposal).all()
+            
+            FORMAL_ACT_KEYWORDS = [
+                "legge", "decreto", "ddl", "a.c.", "a.s.", "atto di governo", 
+                "delibera", "l.", "d.l.", "d.lgs.", "l. 86/2024", "l. 159/2024", "l. 14/2024"
+            ]
+
             for p in all_db_props:
                 clean_t = sanitize_proposal_title(p.dichiarazione_sintesi, p.partito)
                 if "le intese sul programma" in p.dichiarazione_sintesi.lower():
@@ -158,25 +227,25 @@ def seed_database_if_empty():
                 if clean_t and clean_t != p.dichiarazione_sintesi:
                     p.dichiarazione_sintesi = clean_t
 
-                cost_needs = not p.costo_stimato or "non quantificato" in p.costo_stimato.lower() or not any(c.isdigit() for c in p.costo_stimato)
-                cov_needs = not p.coperture_dichiarate or "non specificat" in p.coperture_dichiarate.lower() or len(p.coperture_dichiarate) < 10
-                if cost_needs or cov_needs:
-                    calc_res = calculate_fiscal_impact_and_coverage(
-                        partito=p.partito,
-                        macro_argomento=p.macro_argomento,
-                        sintesi=p.dichiarazione_sintesi,
-                        costo_stimato=p.costo_stimato,
-                        coperture_dichiarate=p.coperture_dichiarate
+                act_str = (p.tipo_azione or "").lower()
+                text_str = (p.dichiarazione_sintesi or "").lower()
+                is_formal = any(k in act_str or k in text_str for k in FORMAL_ACT_KEYWORDS)
+
+                # Programmatic declarations / commitments are NOT treated as costed laws:
+                if not is_formal or "dichiarazione programmatica" in act_str or "opposizione" in act_str:
+                    p.costo_stimato = "Non quantificato"
+                    p.coperture_dichiarate = "Non specificate (In attesa di DDL formale e Relazione Tecnica MEF)"
+                    p.fact_check_status = "In attesa di copertura"
+                    p.fact_check_motivazione = (
+                        "Trattandosi di dichiarazione di indirizzo politico o promessa elettorale priva di disegno di legge "
+                        "depositato con Relazione Tecnica asseverata dalla Ragioneria Generale dello Stato (art. 17 L. 196/2009), "
+                        "ai sensi dell'art. 81 Cost. la copertura finanziaria non risulta formalmente asseverata."
                     )
-                    p.costo_stimato = calc_res["costo_stimato"]
-                    p.coperture_dichiarate = calc_res["coperture_dichiarate"]
-                    p.fattibilita_finanziaria = calc_res["fattibilita_finanziaria"]
-                    p.fact_check_status = calc_res["fact_check_status"]
-                    p.fact_check_motivazione = calc_res["fact_check_motivazione"]
-                    p.fact_check_fonte = calc_res["fact_check_fonte"]
             db.commit()
+            print("[Database] Realistic Art. 81 public finance audit applied cleanly.")
         except Exception as fe:
             print(f"[Database] Fiscal audit notice: {fe}")
+
 
         # Update all party dossiers on startup
         try:

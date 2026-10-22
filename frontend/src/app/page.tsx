@@ -374,7 +374,7 @@ function DashboardContent() {
             <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Media Veridicità</div>
               <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
-                {stats?.average_truthfulness ? `${stats.average_truthfulness}%` : "84.2%"}
+                {stats?.average_truthfulness !== undefined ? `${stats.average_truthfulness}%` : "--%"}
               </div>
               <p className="text-[10px] text-slate-500 mt-0.5">Parametri MEF / ISTAT</p>
             </div>
@@ -382,10 +382,11 @@ function DashboardContent() {
             <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
               <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Coperture Quantificate</div>
               <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
-                {stats?.quantified_cost_percentage ? `${stats.quantified_cost_percentage}%` : "79%"}
+                {stats?.quantified_cost_percentage !== undefined ? `${stats.quantified_cost_percentage}%` : "--%"}
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Con stima di bilancio esplicita</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Atti formali con Relazione Tecnica MEF</p>
             </div>
+
           </>
         )}
       </section>

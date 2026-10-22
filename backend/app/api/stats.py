@@ -39,13 +39,20 @@ def get_overview_stats(db: Session = Depends(get_db)):
     fc_counts_raw = db.query(PoliticalProposal.fact_check_status, func.count(PoliticalProposal.id)).group_by(PoliticalProposal.fact_check_status).all()
     fact_check_distribution: Dict[str, int] = {item[0]: item[1] for item in fc_counts_raw}
 
-    # Cost quantification percentage
+    # Cost quantification percentage (Only formal acts with RT and verified financial coverage)
     quantified_count = db.query(func.count(PoliticalProposal.id)).filter(
         PoliticalProposal.costo_stimato != "Non quantificato",
-        PoliticalProposal.costo_stimato.isnot(None)
+        ~PoliticalProposal.costo_stimato.ilike("%non quantificato%"),
+        ~PoliticalProposal.costo_stimato.ilike("%non specificat%"),
+        PoliticalProposal.costo_stimato.isnot(None),
+        PoliticalProposal.coperture_dichiarate.isnot(None),
+        ~PoliticalProposal.coperture_dichiarate.ilike("%non specificat%"),
+        ~PoliticalProposal.coperture_dichiarate.ilike("%in attesa%"),
+        PoliticalProposal.fact_check_status == "Verificato"
     ).scalar() or 0
     
     quantified_percentage = round((quantified_count / total_proposals * 100), 1) if total_proposals > 0 else 0.0
+
 
     # Truthfulness and feasibility metrics
     verified_count = fact_check_distribution.get("Verificato", 0)

@@ -16,6 +16,8 @@ ENV/
 # Local database
 test_fresh.db
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
 
 # OS / Environment
