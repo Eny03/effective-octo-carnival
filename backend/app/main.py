@@ -320,7 +320,12 @@ if os.path.exists(STATIC_DIR):
     async def serve_sources():
         return FileResponse(os.path.join(STATIC_DIR, "sources.html"))
 
+    @app.get("/audit")
+    async def serve_audit():
+        return FileResponse(os.path.join(STATIC_DIR, "audit.html"))
+
     @app.get("/")
+
     async def serve_root():
         index_file = os.path.join(STATIC_DIR, "index.html")
         if os.path.exists(index_file):
