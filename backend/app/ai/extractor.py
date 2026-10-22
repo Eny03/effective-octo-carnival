@@ -9,7 +9,7 @@ from app.ai.fact_checker import analyze_feasibility_and_factcheck
 from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
 from app.ingestion.sources_config import PARTY_ALIASES, MACRO_TOPICS_KEYWORDS
 
-EXTRACTION_SYSTEM_PROMPT = """Sei l'assistente AI analista politico e istituzionale neutrale di PolitiLens.
+EXTRACTION_SYSTEM_PROMPT = """Sei l'assistente AI analista politico e istituzionale neutrale di PoliticLens.
 Il tuo compito è analizzare il testo di notizie, comunicati stampa o atti parlamentari ed estrarre ESCLUSIVAMENTE REALI PROPOSTE POLITICHE e RIFORME PROGRAMMATICHE dei partiti in formato JSON rigoroso.
 
 LINEE GUIDA INDEROGABILI:

@@ -1,6 +1,6 @@
 {
-  "name": "PolitiLens - Osservatorio Politico",
-  "short_name": "PolitiLens",
+  "name": "PoliticLens - Osservatorio Politico",
+  "short_name": "PoliticLens",
   "description": "Analizzatore e comparatore politico autonomo, neutrale e open-source con fact-checking istituzionale.",
   "start_url": "/",
   "display": "standalone",

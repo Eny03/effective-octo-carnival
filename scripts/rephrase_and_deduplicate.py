@@ -3,7 +3,7 @@ import sys
 import json
 import re
 
-db_path = os.path.abspath('backend/politilens.db')
+db_path = os.path.abspath('backend/politiclens.db')
 os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
 sys.path.insert(0, os.path.abspath('backend'))
 
@@ -167,7 +167,7 @@ def rephrase_and_deduplicate():
             if prop:
                 # Save previous declaration as part of raw_text / context if not already there
                 if not prop.raw_text or len(prop.raw_text) < 40:
-                    prop.raw_text = f"{prop.dichiarazione_sintesi}. Monitoraggio web PolitiLens: proposta avanzata da {prop.partito} in materia di {prop.macro_argomento}."
+                    prop.raw_text = f"{prop.dichiarazione_sintesi}. Monitoraggio web PoliticLens: proposta avanzata da {prop.partito} in materia di {prop.macro_argomento}."
                 prop.dichiarazione_sintesi = concise_text
                 emb = _local_deterministic_embedding(f"{prop.partito} {prop.macro_argomento} {prop.dichiarazione_sintesi}")
                 prop.embedding = json.dumps(emb)

@@ -83,7 +83,7 @@ async def ingest_manual(req: IngestionRequest, db: Session = Depends(get_db)):
     Extracts structured schema (Section 4.B) and stores it in the database.
     """
     text = req.raw_text
-    url = req.url or "https://manual-entry.politilens.local"
+    url = req.url or "https://manual-entry.politiclens.local"
     title = req.title or "Inserimento Manuale / Comunicato Diretto"
     
     if req.url and not text:

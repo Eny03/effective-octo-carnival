@@ -134,7 +134,7 @@ PARTY_ACCURATE_DATA = {
 def sync_database_and_seed():
     db = SessionLocal()
     try:
-        print("[UpdateScript] Sincronizzazione database politilens.db...")
+        print("[UpdateScript] Sincronizzazione database politiclens.db...")
         # 1. Update PoliticalParty records in database
         for code, data in PARTY_ACCURATE_DATA.items():
             party = db.query(PoliticalParty).filter(PoliticalParty.code == code).first()

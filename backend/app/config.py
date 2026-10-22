@@ -3,12 +3,12 @@ from typing import Optional
 from pydantic import BaseModel
 
 class Settings(BaseModel):
-    APP_NAME: str = "PolitiLens"
+    APP_NAME: str = "PoliticLens"
     APP_VERSION: str = "1.0.0"
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     
     # Database
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./politilens.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./politiclens.db")
     
     # Local LLM / Ollama settings (100% open-source)
     OLLAMA_BASE_URL: str = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")

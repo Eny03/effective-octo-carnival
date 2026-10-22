@@ -21,7 +21,7 @@ export function InstallAppBanner() {
       const isApple = /iphone|ipad|ipod/.test(userAgent);
       setIsIOS(isApple);
       
-      const dismissed = localStorage.getItem("politilens_pwa_dismissed");
+      const dismissed = localStorage.getItem("politiclens_pwa_dismissed") || localStorage.getItem("politilens_pwa_dismissed");
       if (isMobile && !dismissed) {
         setShow(true);
       }
@@ -30,7 +30,7 @@ export function InstallAppBanner() {
 
   const handleDismiss = () => {
     setShow(false);
-    localStorage.setItem("politilens_pwa_dismissed", "true");
+    localStorage.setItem("politiclens_pwa_dismissed", "true");
   };
 
   if (!show) return null;
@@ -44,7 +44,7 @@ export function InstallAppBanner() {
             <Smartphone className="w-4 h-4 text-white" />
           </div>
           <div>
-            <span className="font-bold">Usa PolitiLens come App su Telefono!</span>
+            <span className="font-bold">Usa PoliticLens come App su Telefono!</span>
             <p className="text-[11px] text-blue-200">Tocca per istruzioni di installazione rapida</p>
           </div>
         </div>
@@ -66,7 +66,7 @@ export function InstallAppBanner() {
               <div className="flex items-center gap-2">
                 <Smartphone className="w-5 h-5 text-blue-600" />
                 <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                  Installa PolitiLens su Telefono
+                  Installa PoliticLens su Telefono
                 </h3>
               </div>
               <button onClick={() => setModalOpen(false)} className="text-slate-400 p-1">
@@ -75,7 +75,7 @@ export function InstallAppBanner() {
             </div>
 
             <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              PolitiLens è una <strong>Progressive Web App (PWA)</strong>. Puoi aggiungerla alla schermata Home del tuo smartphone per aprirla a schermo intero come un'app nativa:
+              PoliticLens è una <strong>Progressive Web App (PWA)</strong>. Puoi aggiungerla alla schermata Home del tuo smartphone per aprirla a schermo intero come un'app nativa:
             </p>
 
             {isIOS ? (

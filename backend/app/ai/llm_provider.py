@@ -37,7 +37,7 @@ class LLMProvider:
         else:
             return {
                 "provider": "deterministic",
-                "label": "Motore Euristico Istituzionale PolitiLens (Offline 0€)",
+                "label": "Motore Euristico Istituzionale PoliticLens (Offline 0€)",
                 "model": "rule-based-econometric-v2"
             }
 
@@ -110,7 +110,7 @@ class LLMProvider:
                 print(f"[LLMProvider] Gemini call error: {e}")
 
         # 4. Deterministic fallback
-        return fallback_text or "Risposta generata dal motore istituzionale di PolitiLens.", "deterministic"
+        return fallback_text or "Risposta generata dal motore istituzionale di PoliticLens.", "deterministic"
 
     async def stream_chat(
         self,
@@ -220,7 +220,7 @@ class LLMProvider:
 
         # 4. Deterministic Stream Fallback (Smooth chunking)
         full_text = fallback_text or (
-            "PolitiLens AI ha elaborato i dati d'archivio parlamentare. "
+            "PoliticLens AI ha elaborato i dati d'archivio parlamentare. "
             "Tutti i dati citati provengono da atti formali registrati presso la Camera, il Senato e il MEF."
         )
         words = full_text.split(" ")

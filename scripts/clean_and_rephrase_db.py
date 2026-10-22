@@ -3,8 +3,8 @@ import sys
 import json
 import re
 
-# Point DATABASE_URL directly to backend/politilens.db
-db_path = os.path.abspath('backend/politilens.db')
+# Point DATABASE_URL directly to backend/politiclens.db
+db_path = os.path.abspath('backend/politiclens.db')
 os.environ["DATABASE_URL"] = f"sqlite:///{db_path}"
 
 # Ensure backend path is in sys.path

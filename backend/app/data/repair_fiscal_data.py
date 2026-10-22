@@ -1,5 +1,5 @@
 """
-Database and Seed Data Fiscal Repair Script for PolitiLens.
+Database and Seed Data Fiscal Repair Script for PoliticLens.
 Applies accurate econometric cost estimations and public finance coverage mechanisms to all proposals,
 replaces nonsensical/leaked newspaper headlines, and refreshes all party dossiers.
 """

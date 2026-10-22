@@ -108,7 +108,7 @@ export function ProposalDetailModal({ proposal, isOpen, onClose }: ProposalDetai
           <div className="p-4 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/40 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-300">
               <Globe2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-              <span>Analisi e Confronto dal Web (PolitiLens AI)</span>
+              <span>Analisi e Confronto dal Web (PoliticLens AI)</span>
             </div>
             <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
               {proposal.raw_text && proposal.raw_text.length > 80 

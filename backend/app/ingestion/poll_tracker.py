@@ -1,5 +1,5 @@
 """
-PolitiLens Poll Tracker Agent
+PoliticLens Poll Tracker Agent
 Monitors, extracts, and reconciles real Italian electoral polling data from certified survey institutes
 (YouTrend/AGI, SWG Tg La7, Ipsos Corriere, Tecnè Mediaset, BiDiMedia, Noto, Ministero dell'Interno).
 Continuously fetches real-time articles via web RSS / search feeds every 10 minutes, calculates

@@ -9,7 +9,7 @@ export function Footer() {
           <div className="md:col-span-2 space-y-3">
             <div className="flex items-center gap-2 text-white">
               <Scale className="w-5 h-5 text-blue-400" />
-              <span className="font-bold text-lg">PolitiLens</span>
+              <span className="font-bold text-lg">PoliticLens</span>
               <span className="text-xs px-2 py-0.5 rounded bg-blue-900/60 text-blue-300 border border-blue-700">
                 100% Open-Source
               </span>
@@ -76,7 +76,7 @@ export function Footer() {
 
         <div className="pt-8 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            © {new Date().getFullYear()} PolitiLens. Rilasciato sotto licenza MIT. Costo di licenza zero.
+            © {new Date().getFullYear()} PoliticLens. Rilasciato sotto licenza MIT. Costo di licenza zero.
           </div>
           <div className="flex items-center gap-4">
             <span className="text-slate-400">Neutralità Algoritmica Certificata</span>

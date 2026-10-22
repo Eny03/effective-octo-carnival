@@ -1,4 +1,4 @@
-# ⚖️ PolitiLens — Analizzatore e Comparatore Politico Autonomo
+# ⚖️ PoliticLens — Analizzatore e Comparatore Politico Autonomo
 
 > **Piattaforma autonoma, 100% open-source e a costo zero di licenze** per il monitoraggio in tempo reale, la schematizzazione neutrale e il fact-checking finanziario delle posizioni politiche italiane su macro-argomenti chiave.
 
@@ -56,7 +56,7 @@
             ┌───────────────┘                 └───────────────┐
             ▼                                                 ▼
 ┌──────────────────────┐                           ┌─────────────────────┐
-│  Manifesto Dinamico  │                           │  PolitiLens AI Chat │
+│  Manifesto Dinamico  │                           │  PoliticLens AI Chat │
 │  (Matrice 2D Temi vs │                           │  (RAG Comparativo   │
 │   Partiti & Stances) │                           │   & Neutral Mode)   │
 └───────────┬──────────┘                           └──────────┬──────────┘
@@ -113,7 +113,7 @@ Estrae da ogni documento il JSON strutturato rigoroso richiesto dalla Sezione 4.
 - **Modalità Testa a Testa:** seleziona due partiti (es. Fratelli d'Italia vs Partito Democratico) per confrontare le loro posizioni tema per tema, con badge di stance ("Favorevole/Riformista", "Contrario/Opposizione", "Focalizzato su Coperture").
 - Filtri interattivi per Schieramento/Coalizione e ricerca testuale.
 
-### D. Chatbot RAG Politicamente Neutrale ("PolitiLens AI")
+### D. Chatbot RAG Politicamente Neutrale ("PoliticLens AI")
 - Motore RAG con ricerca semantica per embedding vettoriali.
 - 3 modalità operative:
   1. `Comparativo`: Panoramica bilanciata delle posizioni di tutti i partiti.
@@ -145,9 +145,9 @@ Estrae da ogni documento il JSON strutturato rigoroso richiesto dalla Sezione 4.
    npm install
    cd ..
    ```
-4. **Avvio di PolitiLens con singolo comando:**
+4. **Avvio di PoliticLens con singolo comando:**
    ```bash
-   python run_politilens.py
+   python run_politiclens.py
    # oppure su Windows:
    start.bat
    ```
@@ -171,7 +171,7 @@ I servizi saranno disponibili:
 
 ## 🤖 5. Configurazione Modello Locale Ollama (Opzionale)
 
-PolitiLens include un motore euristico istituzionale integrato che funziona immediatamente out-of-the-box anche senza Ollama attivo.
+PoliticLens include un motore euristico istituzionale integrato che funziona immediatamente out-of-the-box anche senza Ollama attivo.
 
 Per abilitare l'inferenza LLM locale avanzata:
 1. Installa [Ollama](https://ollama.ai)
@@ -185,10 +185,10 @@ Per abilitare l'inferenza LLM locale avanzata:
    ```bash
    ollama serve
    ```
-PolitiLens rileverà automaticamente la connessione locale su `http://localhost:11434` e la utilizzerà per tutte le estrazioni e per il chatbot RAG!
+PoliticLens rileverà automaticamente la connessione locale su `http://localhost:11434` e la utilizzerà per tutte le estrazioni e per il chatbot RAG!
 
 ---
 
 ## 📜 6. Licenza e Garanzia Etica
-PolitiLens è rilasciato sotto licenza open-source MIT. Zero costi di licenza o API proprietarie.
+PoliticLens è rilasciato sotto licenza open-source MIT. Zero costi di licenza o API proprietarie.
 Tutti i riferimenti numerici citati sono verificati sui database pubblici di ISTAT, Ministero dell'Economia e delle Finanze, Corte dei Conti, Eurostat e Banca d'Italia.

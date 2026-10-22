@@ -51,7 +51,7 @@ def detect_entities(text: str) -> Tuple[List[str], List[str]]:
 async def fetch_article_text(url: str, timeout: float = 10.0) -> Optional[str]:
     """Asynchronously fetches the URL content and cleans it."""
     headers = {
-        "User-Agent": "PolitiLens-Bot/1.0 (PolitiLens Open-Source Political Analyzer; neutral academic research)"
+        "User-Agent": "PoliticLens-Bot/1.0 (PoliticLens Open-Source Political Analyzer; neutral academic research)"
     }
     try:
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=True, headers=headers) as client:

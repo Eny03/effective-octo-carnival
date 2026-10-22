@@ -12,7 +12,7 @@ from app.ingestion.text_extractor import detect_entities, clean_html
 # Fast network socket timeout
 socket.setdefaulttimeout(4)
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 PolitiLens/2.0"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36 PoliticLens/2.0"
 
 def search_web_news(query: str, max_results: int = 15) -> List[Dict[str, Any]]:
     """

@@ -10,7 +10,7 @@ from app.schemas import ChatQueryRequest, ChatQueryResponse, CitationItem
 from app.ai.embeddings import get_text_embedding, cosine_similarity
 from app.ai.llm_provider import llm_provider
 
-RAG_SYSTEM_PROMPT = """Sei PolitiLens AI, la piattaforma di intelligence politica ed economico-finanziaria per l'Italia.
+RAG_SYSTEM_PROMPT = """Sei PoliticLens AI, la piattaforma di intelligence politica ed economico-finanziaria per l'Italia.
 Rispondi con tono istituzionale, neutrale, autorevole ed enciclopedico.
 Regole inderogabili:
 1. Neutralità algoritmica assoluta: tratta maggioranza e opposizione con pari dignità e spazio.
@@ -335,7 +335,7 @@ async def answer_rag_query(req: ChatQueryRequest, db: Session) -> ChatQueryRespo
                 messages.append({"role": h.role, "content": h.content})
 
         user_content = f"""DOMANDA UTENTE: "{req.question}"
-DATI VERIFICATI DALL'ARCHIVIO POLITILENS:
+DATI VERIFICATI DALL'ARCHIVIO POLITICLENS:
 {evidence_text}
 
 Rispondi in modo approfondito, istituzionale, neutrale e ben strutturato in lingua italiana, citando sempre i dati di bilancio."""
@@ -352,7 +352,7 @@ Rispondi in modo approfondito, istituzionale, neutrale e ben strutturato in ling
         except Exception as e:
             print(f"[RAG Engine] LLM generation error: {e}")
 
-    disclaimer = "PolitiLens opera secondo rigorosa neutralità algoritmica. Le sintesi, la cronistoria e le verifiche di bilancio sono elaborate autonomamente dall'AI analizzando atti parlamentari, programmi elettorali 2022-2026 e parametri ufficiali MEF, ISTAT e Corte dei Conti."
+    disclaimer = "PoliticLens opera secondo rigorosa neutralità algoritmica. Le sintesi, la cronistoria e le verifiche di bilancio sono elaborate autonomamente dall'AI analizzando atti parlamentari, programmi elettorali 2022-2026 e parametri ufficiali MEF, ISTAT e Corte dei Conti."
 
     return ChatQueryResponse(
         answer=answer_text,
@@ -403,7 +403,7 @@ async def stream_rag_query(req: ChatQueryRequest, db: Session) -> AsyncGenerator
     evidence_text = "\n".join(evidence_lines)
 
     user_content = f"""DOMANDA UTENTE: "{req.question}"
-DATI VERIFICATI DALL'ARCHIVIO POLITILENS:
+DATI VERIFICATI DALL'ARCHIVIO POLITICLENS:
 {evidence_text}
 
 Rispondi in modo analitico, rigorosamente imparziale, citando cifre di bilancio e posizioni formali."""

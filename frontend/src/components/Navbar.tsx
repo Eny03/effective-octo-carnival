@@ -24,7 +24,7 @@ export function Navbar() {
   const [isDark, setIsDark] = useState<boolean>(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("politilens_theme");
+    const saved = localStorage.getItem("politiclens_theme") || localStorage.getItem("politilens_theme");
     if (saved === "dark") {
       setIsDark(true);
       document.documentElement.classList.add("dark");
@@ -61,10 +61,10 @@ export function Navbar() {
     setIsDark(nextDark);
     if (nextDark) {
       document.documentElement.classList.add("dark");
-      localStorage.setItem("politilens_theme", "dark");
+      localStorage.setItem("politiclens_theme", "dark");
     } else {
       document.documentElement.classList.remove("dark");
-      localStorage.setItem("politilens_theme", "light");
+      localStorage.setItem("politiclens_theme", "light");
     }
   };
 
@@ -146,7 +146,7 @@ export function Navbar() {
                 </div>
                 <div className="flex items-center gap-1.5 leading-tight">
                   <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
-                    PolitiLens
+                    PoliticLens
                   </span>
                   <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
                     Analisi Politica Autonoma
@@ -206,7 +206,7 @@ export function Navbar() {
                 </div>
                 <div>
                   <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
-                    PolitiLens Menu
+                    PoliticLens Menu
                   </div>
                   <div className="text-[10px] text-slate-400">
                     Navigazione & Strumenti Civici

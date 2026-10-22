@@ -282,7 +282,7 @@ async def _autonomous_self_keepalive():
             import urllib.request
             req = urllib.request.Request(
                 health_endpoint,
-                headers={"User-Agent": "PolitiLens-Autonomous-Keepalive/2.0 (+https://politclens.onrender.com)"}
+                headers={"User-Agent": "PoliticLens-Autonomous-Keepalive/2.0 (+https://politclens.onrender.com)"}
             )
             # Run in thread pool to avoid blocking async event loop
             loop = asyncio.get_running_loop()
@@ -298,17 +298,17 @@ async def _autonomous_self_keepalive():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("[PolitiLens] Inizializzazione piattaforma e database...")
+    print("[PoliticLens] Inizializzazione piattaforma e database...")
     seed_database_if_empty()
     start_scheduler()
     keepalive_task = asyncio.create_task(_autonomous_self_keepalive())
     yield
-    print("[PolitiLens] Arresto servizi...")
+    print("[PoliticLens] Arresto servizi...")
     keepalive_task.cancel()
     stop_scheduler()
 
 app = FastAPI(
-    title="PolitiLens Backend API",
+    title="PoliticLens Backend API",
     description="Analizzatore e Comparatore Politico Autonomo, neutrale e 100% open-source.",
     version=settings.APP_VERSION,
     lifespan=lifespan

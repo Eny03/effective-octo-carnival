@@ -80,7 +80,7 @@ const DEFAULT_WELCOME: Message = {
   id: "welcome-1",
   role: "assistant",
   content:
-    "Benvenuto su **PolitiLens AI Intelligence**.\n\nAnalizzo l'intero archivio parlamentare, i programmi di governo e le dichiarazioni dei partiti partendo dal 2022 in poi con **monitoraggio continuo e sviluppi futuri** per fornirti **confronti rigorosamente imparziali** e verifiche di bilancio (**MEF, ISTAT, UPB, Corte dei Conti, Art. 81 Cost.**).\n\nPoni qualsiasi domanda, confronta schieramenti o verifica la fattibilità economica di una legge.",
+    "Benvenuto su **PoliticLens AI Intelligence**.\n\nAnalizzo l'intero archivio parlamentare, i programmi di governo e le dichiarazioni dei partiti partendo dal 2022 in poi con **monitoraggio continuo e sviluppi futuri** per fornirti **confronti rigorosamente imparziali** e verifiche di bilancio (**MEF, ISTAT, UPB, Corte dei Conti, Art. 81 Cost.**).\n\nPoni qualsiasi domanda, confronta schieramenti o verifica la fattibilità economica di una legge.",
   timestamp: "Oggi",
 };
 
@@ -99,7 +99,7 @@ export default function ChatPage() {
   // Load chat history from localStorage on client mount
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("politilens_chat_history");
+      const saved = localStorage.getItem("politiclens_chat_history");
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
@@ -125,7 +125,7 @@ export default function ChatPage() {
   useEffect(() => {
     if (messages.length > 1) {
       try {
-        localStorage.setItem("politilens_chat_history", JSON.stringify(messages));
+        localStorage.setItem("politiclens_chat_history", JSON.stringify(messages));
       } catch (e) {
         console.warn("Failed to persist chat history:", e);
       }
@@ -194,7 +194,7 @@ export default function ChatPage() {
           content: "",
           citations: [],
           disclaimer:
-            "PolitiLens opera secondo rigorosa neutralità algoritmica. Le sintesi e le verifiche di bilancio sono elaborate analizzando atti parlamentari e parametri ufficiali MEF, ISTAT e Corte dei Conti.",
+            "PoliticLens opera secondo rigorosa neutralità algoritmica. Le sintesi e le verifiche di bilancio sono elaborate analizzando atti parlamentari e parametri ufficiali MEF, ISTAT e Corte dei Conti.",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           steps: [],
         },
@@ -289,12 +289,12 @@ export default function ChatPage() {
   };
 
   const handleExportMarkdown = (msg: Message) => {
-    const text = `# Risposta PolitiLens AI - ${msg.timestamp}\n\n${msg.content}\n\n---\n*Fonte: PolitiLens Institutional Intelligence*`;
+    const text = `# Risposta PoliticLens AI - ${msg.timestamp}\n\n${msg.content}\n\n---\n*Fonte: PoliticLens Institutional Intelligence*`;
     const blob = new Blob([text], { type: "text/markdown;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `politilens_risposta_${Date.now()}.md`;
+    link.download = `politiclens_risposta_${Date.now()}.md`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -305,7 +305,7 @@ export default function ChatPage() {
     if (typeof navigator !== "undefined" && navigator.share) {
       try {
         await navigator.share({
-          title: "PolitiLens AI - Intelligence Politica",
+          title: "PoliticLens AI - Intelligence Politica",
           text: msg.content.substring(0, 200) + "...",
           url: window.location.href,
         });
@@ -316,7 +316,7 @@ export default function ChatPage() {
   };
 
   const handleReset = () => {
-    localStorage.removeItem("politilens_chat_history");
+    localStorage.removeItem("politiclens_chat_history");
     setMessages([
       {
         id: `welcome-${Date.now()}`,
@@ -339,7 +339,7 @@ export default function ChatPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
-                PolitiLens AI Stream
+                PoliticLens AI Stream
               </h1>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
                 Live RAG

@@ -14,7 +14,7 @@ async def get_active_provider():
     return await llm_provider.get_active_provider_info()
 
 @router.post("", response_model=ChatQueryResponse)
-async def chat_with_politilens(req: ChatQueryRequest, db: Session = Depends(get_db)):
+async def chat_with_politiclens(req: ChatQueryRequest, db: Session = Depends(get_db)):
     """
     Standard non-streaming RAG-powered conversational endpoint.
     Retrieves evidence from indexed proposals and generates an encyclopedic, strictly neutral comparative response with citations.
@@ -22,7 +22,7 @@ async def chat_with_politilens(req: ChatQueryRequest, db: Session = Depends(get_
     return await answer_rag_query(req, db)
 
 @router.post("/stream")
-async def chat_with_politilens_stream(req: ChatQueryRequest, db: Session = Depends(get_db)):
+async def chat_with_politiclens_stream(req: ChatQueryRequest, db: Session = Depends(get_db)):
     """
     Real-time Token-by-Token Streaming SSE endpoint with Inspection Steps:
     - event: step (retrieval, fiscal check, neutrality balancing)

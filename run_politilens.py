@@ -8,7 +8,7 @@ def main():
     backend_dir = os.path.join(root_dir, "backend")
 
     print("=" * 70)
-    print("   POLITILENS - Analizzatore e Comparatore Politico Autonomo")
+    print("   POLITICLENS - Analizzatore e Comparatore Politico Autonomo")
     print("   100% Open-Source | Architettura Unificata Tutto-in-Uno")
     print("=" * 70)
     print("\nAvvio dell'applicazione unificata (FastAPI + PWA Web App)...")
@@ -20,10 +20,10 @@ def main():
     time.sleep(2)
 
     print("\n" + "=" * 70)
-    print("   POLITILENS È ORA ATTIVO (TUTTO IN UNO)!")
+    print("   POLITICLENS È ORA ATTIVO (TUTTO IN UNO)!")
     print("   👉 Applicazione Web & Mobile:  http://localhost:8000")
     print("   👉 Manifesto Dinamico:         http://localhost:8000/compare")
-    print("   👉 PolitiLens AI Chatbot:      http://localhost:8000/chat")
+    print("   👉 PoliticLens AI Chatbot:      http://localhost:8000/chat")
     print("   👉 Fact-Checking Monitor:      http://localhost:8000/fact-check")
     print("   👉 Documentazione API Swagger: http://localhost:8000/docs")
     print("=" * 70)
@@ -32,7 +32,7 @@ def main():
     try:
         proc.wait()
     except KeyboardInterrupt:
-        print("\nArresto di PolitiLens in corso...")
+        print("\nArresto di PoliticLens in corso...")
         proc.terminate()
         proc.wait()
         print("Servizio arrestato con successo.")

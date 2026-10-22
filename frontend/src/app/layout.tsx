@@ -17,13 +17,13 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "PolitiLens | Analizzatore e Comparatore Politico Autonomo",
+  title: "PoliticLens | Analizzatore e Comparatore Politico Autonomo",
   description: "Piattaforma autonoma e neutrale di monitoraggio delle posizioni politiche italiane, manifesto dinamico comparabile e fact-checking finanziario.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "PolitiLens",
+    title: "PoliticLens",
   },
   icons: {
     icon: "/icon.svg",

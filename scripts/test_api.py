@@ -2,7 +2,7 @@ import os
 import sys
 import json
 
-db_path = os.path.abspath('backend/politilens.db')
+db_path = os.path.abspath('backend/politiclens.db')
 os.environ['DATABASE_URL'] = f'sqlite:///{db_path}'
 sys.path.insert(0, os.path.abspath('backend'))
 

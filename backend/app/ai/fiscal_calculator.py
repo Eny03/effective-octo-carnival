@@ -1,5 +1,5 @@
 """
-Fiscal & Public Finance Calculation Engine for PolitiLens.
+Fiscal & Public Finance Calculation Engine for PoliticLens.
 Calculates realistic econometric costs, institutional coverage mechanisms,
 and audits compliance with art. 81 Cost., Legge di Bilancio (L. 196/2009),
 and official benchmark parameters (MEF, ISTAT, Corte dei Conti, UPB).
@@ -242,7 +242,7 @@ def calculate_fiscal_impact_and_coverage(
 ) -> Dict[str, Any]:
     """
     Calculates exact econometric cost and verified fiscal coverage for ANY proposal.
-    Guarantees that NO proposal in PolitiLens is ever left with 'Non quantificato' or 'Non specificate'.
+    Guarantees that NO proposal in PoliticLens is ever left with 'Non quantificato' or 'Non specificate'.
     """
     sintesi_lower = sintesi.lower() if sintesi else ""
     cost_curr = (costo_stimato or "").strip()

@@ -1,7 +1,7 @@
 """
 Audit & Modification Changelog API Router
 Provides institutional transparency, verifiable tracking of every AI operation,
-poll variance, fiscal audit, and policy distillation across PolitiLens.
+poll variance, fiscal audit, and policy distillation across PoliticLens.
 """
 
 import datetime
