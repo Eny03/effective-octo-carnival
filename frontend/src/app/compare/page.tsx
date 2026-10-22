@@ -199,13 +199,13 @@ export default function ComparePage() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
             <Layers className="w-3.5 h-3.5" />
-            <span>Manifesto Comparativo Istituzionale</span>
+            <span>Manifesto Comparativo Indipendente</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Confronto Programmi & Sintesi Strategica AI
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Confronta le proposte dei partiti su ciascun tema, calcola convergenze, divergenze e saldo dei costi asseverati da MEF/UPB.
+            Confronta le proposte dei partiti su ciascun tema, calcola convergenze, divergenze e stima dei relativi costi finanziari.
           </p>
         </div>
 

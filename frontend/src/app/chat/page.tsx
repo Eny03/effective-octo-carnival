@@ -525,7 +525,7 @@ export default function ChatPage() {
             >
               <div className="flex items-center gap-2">
                 <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-ping" />
-                <span>AI Reasoning & Pipeline Istituzionale in Corso ({activeSteps.length} passi)</span>
+                <span>AI Reasoning & Pipeline di Analisi in Corso ({activeSteps.length} passi)</span>
               </div>
               {isAccordionOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>

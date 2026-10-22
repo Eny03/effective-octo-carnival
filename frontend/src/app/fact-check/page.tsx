@@ -109,7 +109,7 @@ export default function FactCheckPage() {
                 <th className="p-3 font-semibold">Categoria</th>
                 <th className="p-3 font-semibold">Indicatore Ufficiale</th>
                 <th className="p-3 font-semibold">Valore Ufficiale</th>
-                <th className="p-3 font-semibold">Fonte Istituzionale</th>
+                <th className="p-3 font-semibold">Fonte Ufficiale del Dato</th>
                 <th className="p-3 font-semibold">Rilevanza per le Promesse</th>
               </tr>
             </thead>

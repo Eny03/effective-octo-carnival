@@ -148,7 +148,7 @@ export function ProposalDetailModal({ proposal, isOpen, onClose }: ProposalDetai
               <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/60 dark:border-slate-800 space-y-1">
                 <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1">
                   <Scale className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Valutazione di Bilancio (Vincoli MEF / Corte dei Conti)</span>
+                  <span>Valutazione di Sostenibilità Finanziaria</span>
                 </span>
                 <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
                   {proposal.fattibilita_finanziaria}
@@ -157,13 +157,13 @@ export function ProposalDetailModal({ proposal, isOpen, onClose }: ProposalDetai
             )}
           </div>
 
-          {/* Institutional Fact-Check */}
+          {/* Independent Fact-Check */}
           <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-800 space-y-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
                 <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                 <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                  Verifica Istituzionale di Veridicità
+                  Verifica Fattuale di Veridicità
                 </span>
               </div>
               <StatusBadge status={proposal.fact_check_status} size="md" />

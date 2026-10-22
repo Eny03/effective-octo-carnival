@@ -133,13 +133,13 @@ export default function AuditPage() {
         <div>
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
             <History className="w-3.5 h-3.5" />
-            <span>Trasparenza Istituzionale & Audit Trail</span>
+            <span>Trasparenza Civica & Audit Trail Algoritmico</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Registro di Tutte le Modifiche & Log Operazioni AI
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl">
-            Tracciamento trasparente e cronologico di ogni modifica: rilevazioni demoscopiche settimanali dei sondaggi, verifiche di fattibilità economica MEF e sintesi di nuovi disegni di legge dal 2022 a oggi.
+            Tracciamento trasparente e cronologico di ogni modifica: rilevazioni demoscopiche periodiche dei sondaggi, verifiche di sostenibilità economica e sintesi di nuovi atti e dichiarazioni in tempo reale.
           </p>
         </div>
 

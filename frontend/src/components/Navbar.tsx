@@ -39,6 +39,23 @@ export function Navbar() {
     setMenuOpen(false);
   }, [pathname]);
 
+  // Lock body scroll and handle Escape key when lateral menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
+
   const toggleTheme = () => {
     const nextDark = !isDark;
     setIsDark(nextDark);
@@ -63,37 +80,37 @@ export function Navbar() {
   const allSections = [
     { 
       name: "Dashboard & Panoramica", 
-      desc: "Indicatori economici, sondaggi e ultime posizioni censite", 
+      desc: "Indicatori economici reali, sondaggi e ultime posizioni censite", 
       href: "/", 
       icon: <Compass className="w-5 h-5 text-blue-600 dark:text-blue-400" /> 
     },
     { 
       name: "Manifesto Comparativo", 
-      desc: "Confronto testa a testa e matrice 18 partiti su tutti i temi", 
+      desc: "Confronto testa a testa e matrice di tutte le forze politiche", 
       href: "/compare", 
       icon: <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> 
     },
     { 
       name: "Schede Partiti & Dossier", 
-      desc: "Programmi ufficiali, posizioni formali e sintesi strategica", 
+      desc: "Programmi ufficiali, posizioni verificate e sintesi strategica", 
       href: "/parties", 
       icon: <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> 
     },
     { 
-      name: "Fact-Check & Bilancio MEF", 
-      desc: "Scrutinio coperture art. 81 Cost. e relazioni tecniche ufficiali", 
+      name: "Fact-Check Finanziario & Sostenibilità", 
+      desc: "Scrutinio coperture finanziarie, fattibilità economica e vincoli di bilancio", 
       href: "/fact-check", 
       icon: <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" /> 
     },
     { 
-      name: "Chat AI Istituzionale", 
-      desc: "Assistente RAG con citazioni dirette degli atti parlamentari", 
+      name: "Chat AI Neutrale & Atti Parlamentari", 
+      desc: "Assistente RAG indipendente con citazioni verificate dei programmi e degli atti", 
       href: "/chat", 
       icon: <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" /> 
     },
     { 
       name: "Fonti & Web Crawler", 
-      desc: "Monitoraggio continuo feed RSS, DDL e canali istituzionali", 
+      desc: "Monitoraggio continuo feed RSS, DDL e canali pubblici", 
       href: "/sources", 
       icon: <Rss className="w-5 h-5 text-sky-600 dark:text-sky-400" /> 
     },
@@ -108,8 +125,8 @@ export function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs">
-        {/* Institutional Tricolor Top Accent */}
-        <div className="h-[3px] w-full it-tricolor-line" />
+        {/* Subtle Accent Line */}
+        <div className="h-[2px] w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -121,10 +138,10 @@ export function Navbar() {
               <div className="min-w-0">
                 <div className="hidden sm:flex items-center gap-1.5">
                   <span className="text-[9px] font-black tracking-widest uppercase text-slate-500 dark:text-slate-400">
-                    Repubblica Italiana
+                    Monitoraggio Civico Indipendente
                   </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                    Archivio 2022-2026
+                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                    Live • Tempo Reale
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 leading-tight">
@@ -132,17 +149,17 @@ export function Navbar() {
                     PolitiLens
                   </span>
                   <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                    Osservatorio Istituzionale
+                    Analisi Politica Autonoma
                   </span>
                 </div>
               </div>
             </Link>
 
-            {/* Right Action: Clean Three Dots (⋮) Menu Button - NO duplicate header bar */}
+            {/* Right Action: Live Status Indicator & Three Dots (⋮) Menu Button */}
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
                 <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Parametri MEF & ISTAT</span>
+                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Monitoraggio Continuo Live</span>
               </div>
 
               {/* Three Dots (⋮) Button */}
@@ -150,7 +167,7 @@ export function Navbar() {
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
                 className="p-2 sm:px-2.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] shadow-2xs relative z-50 cursor-pointer"
-                aria-label="Tutte le sezioni e strumenti"
+                aria-label="Menu laterale (tutte le sezioni)"
                 title="Menu principale (⋮)"
               >
                 {menuOpen ? (
@@ -164,91 +181,111 @@ export function Navbar() {
         </div>
       </header>
 
-      {/* Global Viewport-Level Slide-down Menu (Independent of header backdrop-filter, works on all pages) */}
+      {/* Lateral Slide-Over Drawer (Right Side) - Works 100% reliably on PC and Mobile */}
       {menuOpen && (
-        <div className="fixed inset-0 z-[100] flex flex-col justify-start">
+        <div className="fixed inset-0 z-[150] flex justify-end">
           {/* Backdrop overlay */}
           <div 
-            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity" 
+            className="fixed inset-0 bg-slate-950/70 backdrop-blur-xs transition-opacity animate-in fade-in duration-200" 
             onClick={() => setMenuOpen(false)}
+            aria-hidden="true"
           />
 
-          {/* Scrollable Menu Panel below header */}
-          <div className="relative z-10 mt-16 max-h-[calc(100vh-4rem)] w-full overflow-y-auto overscroll-contain bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-28 space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Menu PolitiLens • Tutte le Sezioni
+          {/* Right-Side Lateral Drawer Panel */}
+          <aside 
+            className="relative z-10 w-full sm:w-[420px] h-full max-h-screen bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col animate-in slide-in-from-right duration-200"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menu di navigazione"
+          >
+            {/* Header with Title and Close Button */}
+            <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+                  <Scale className="w-4 h-4" />
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setMenuOpen(false)}
-                  className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1 cursor-pointer"
-                >
-                  <span>Chiudi</span>
-                  <X className="w-3.5 h-3.5" />
-                </button>
+                <div>
+                  <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                    PolitiLens Menu
+                  </div>
+                  <div className="text-[10px] text-slate-400">
+                    Navigazione & Strumenti Civici
+                  </div>
+                </div>
               </div>
 
-              {/* Navigation Grid containing ALL pages */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-2">
-                {allSections.map((sec) => {
-                  const isActive = pathname === sec.href;
-                  return (
-                    <Link
-                      key={sec.href}
-                      href={sec.href}
-                      onClick={() => setMenuOpen(false)}
-                      className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 group ${
-                        isActive
-                          ? "bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 shadow-2xs"
-                          : "bg-slate-50/60 dark:bg-slate-800/40 border-slate-200/70 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-                      }`}
-                    >
-                      <div className="p-2 rounded-xl bg-white dark:bg-slate-800 shadow-2xs border border-slate-100 dark:border-slate-700 shrink-0 group-hover:scale-105 transition-transform">
-                        {sec.icon}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className={`text-sm font-bold ${isActive ? "text-blue-900 dark:text-blue-300" : "text-slate-900 dark:text-white"}`}>
-                            {sec.name}
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className="p-2 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                aria-label="Chiudi menu"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Scrollable Navigation List */}
+            <div className="flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 space-y-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 pb-1">
+                Sezioni della Piattaforma
+              </div>
+
+              {allSections.map((sec) => {
+                const isActive = pathname === sec.href;
+                return (
+                  <Link
+                    key={sec.href}
+                    href={sec.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`p-3 rounded-2xl border transition-all flex items-start gap-3 group ${
+                      isActive
+                        ? "bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 shadow-2xs"
+                        : "bg-slate-50/70 dark:bg-slate-800/40 border-slate-200/70 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-800 shadow-2xs border border-slate-100 dark:border-slate-700 shrink-0 group-hover:scale-105 transition-transform">
+                      {sec.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-xs sm:text-sm font-bold ${isActive ? "text-blue-900 dark:text-blue-300" : "text-slate-900 dark:text-white"}`}>
+                          {sec.name}
+                        </span>
+                        {isActive && (
+                          <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Attiva
                           </span>
-                          {isActive && (
-                            <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                              Attiva
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                          {sec.desc}
-                        </p>
+                        )}
                       </div>
-                    </Link>
-                  );
-                })}
-              </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                        {sec.desc}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
 
-              {/* Footer Options inside Menu */}
-              <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-2 text-xs text-slate-500">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-                  <span>Parametri ufficiali MEF, ISTAT, Corte dei Conti & Art. 81 Costituzione</span>
-                </div>
-
-                {/* Theme Toggle option available inside menu */}
+            {/* Footer inside Drawer */}
+            <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-900/60 shrink-0 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">Tema Visivo:</span>
                 <button
                   type="button"
-                  onClick={() => {
-                    toggleTheme();
-                  }}
-                  className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0 cursor-pointer"
+                  onClick={toggleTheme}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer"
                 >
                   {isDark ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5 text-slate-600" />}
-                  <span>{isDark ? "Passa a Tema Chiaro" : "Passa a Tema Scuro"}</span>
+                  <span>{isDark ? "Tema Chiaro" : "Tema Scuro"}</span>
                 </button>
               </div>
+
+              <div className="flex items-center gap-2 text-[10px] text-slate-400 pt-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                <span>Aggiornato in tempo reale con fonti pubbliche e atti ufficiali</span>
+              </div>
             </div>
-          </div>
+          </aside>
         </div>
       )}
     </>

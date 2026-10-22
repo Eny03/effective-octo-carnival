@@ -78,13 +78,9 @@ const MACRO_TOPICS = [
 
 const CURRENT_YEAR = new Date().getFullYear();
 const HISTORICAL_YEARS = [
-  "Tutti gli Anni",
-  ...Array.from({ length: Math.max(1, CURRENT_YEAR - 2022 + 1) }, (_, i) => {
-    const y = CURRENT_YEAR - i;
-    if (y === CURRENT_YEAR) return `${y} (In corso)`;
-    if (y === 2022) return `${y} (Campagna Fondativa)`;
-    return `${y}`;
-  }),
+  "Tutti i Periodi",
+  `${CURRENT_YEAR} (In corso / Live)`,
+  "Posizioni Recenti (2024–2025)",
   "Sviluppi Futuri / DDL"
 ];
 
@@ -115,7 +111,7 @@ function DashboardContent() {
   // Proposals Tab Filters synced with URL
   const initialTopic = searchParams.get("topic") || "Tutti";
   const initialParty = searchParams.get("party") || "Tutti";
-  const initialYear = searchParams.get("year") || "Tutti gli Anni";
+  const initialYear = searchParams.get("year") || "Tutti i Periodi";
   const initialQ = searchParams.get("q") || "";
 
   const [selectedTopic, setSelectedTopicState] = useState<string>(initialTopic);
@@ -135,7 +131,7 @@ function DashboardContent() {
   const updateURL = (paramsToUpdate: Record<string, string | null>) => {
     const current = new URLSearchParams(Array.from(searchParams.entries()));
     for (const [key, value] of Object.entries(paramsToUpdate)) {
-      if (value === null || value === "Tutti" || value === "Tutti gli Anni" || value === "") {
+      if (value === null || value === "Tutti" || value === "Tutti i Periodi" || value === "Tutti gli Anni" || value === "") {
         current.delete(key);
       } else {
         current.set(key, value);
@@ -268,7 +264,7 @@ function DashboardContent() {
   const filteredProposals = proposals.filter((p) => {
     if (selectedTopic !== "Tutti" && p.macro_argomento !== selectedTopic) return false;
     if (selectedParty !== "Tutti" && !p.partito.toLowerCase().includes(selectedParty.toLowerCase())) return false;
-    if (selectedYear !== "Tutti gli Anni") {
+    if (selectedYear !== "Tutti i Periodi" && selectedYear !== "Tutti gli Anni") {
       const pYear = p.timestamp ? new Date(p.timestamp).getFullYear() : 0;
       if (selectedYear.includes("Sviluppi Futuri")) {
         if (pYear < CURRENT_YEAR) return false;
@@ -320,15 +316,15 @@ function DashboardContent() {
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300 text-xs font-semibold">
             <Sparkles className="w-3.5 h-3.5" />
-            <span>Piattaforma di Intelligence Politico-Economica Autonoma</span>
+            <span>Piattaforma Civica in Continua Evoluzione Autonoma</span>
           </div>
 
           <h1 className="text-2xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
-            PolitiLens: Trasparenza, Coperture e Fatti Verificati.
+            PolitiLens: Idee Politiche in Tempo Reale, Trasparenza e Fatti Verificati.
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
-            Monitoraggio continuo degli atti parlamentari, programmi elettorali partendo dal 2022 in poi con aggiornamento costante verso gli sviluppi futuri e verifica delle coperture con parametri ufficiali del <strong>MEF</strong>, <strong>ISTAT</strong> e <strong>Corte dei Conti</strong>.
+            Osservatorio indipendente e neutrale: monitoraggio in tempo reale e in continuo aggiornamento autonomo per permettere a tutti i cittadini di osservare le idee politiche, confrontarle e verificarne la sostenibilità economica.
           </p>
 
           <div className="flex flex-wrap items-center gap-2.5 pt-2">
@@ -401,7 +397,7 @@ function DashboardContent() {
               <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {stats?.average_truthfulness !== undefined ? `${stats.average_truthfulness}%` : "--%"}
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Parametri MEF / ISTAT</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Indice di aderenza ai dati e fatti reali</p>
             </div>
 
             <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
@@ -409,7 +405,7 @@ function DashboardContent() {
               <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
                 {stats?.quantified_cost_percentage !== undefined ? `${stats.quantified_cost_percentage}%` : "--%"}
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Atti formali con Relazione Tecnica MEF</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Proposte con costo e copertura stimata</p>
             </div>
 
           </>
@@ -460,7 +456,7 @@ function DashboardContent() {
             <Coins className={`w-4 h-4 ${activeTab === "bilancio" ? "text-amber-600 dark:text-amber-400" : ""}`} />
             <span>Simulatore Bilancio</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-              MEF / UPB
+              Spesa & Vincoli
             </span>
           </button>
         </div>
@@ -774,10 +770,10 @@ function DashboardContent() {
               <div>
                 <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
                   <Calculator className="w-5 h-5 text-blue-500" />
-                  <span>Simulatore Interattivo di Spesa Pubblica & Vincoli MEF</span>
+                  <span>Simulatore Interattivo di Spesa Pubblica & Vincoli di Bilancio</span>
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Inserisci una cifra stimata per una riforma politica e calcola istantaneamente l'assorbimento delle risorse statali.
+                  Inserisci una cifra stimata per una riforma politica e calcola l'assorbimento delle risorse sui dati macroeconomici reali.
                 </p>
               </div>
 
