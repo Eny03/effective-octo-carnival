@@ -184,13 +184,25 @@ async def run_pipeline_scan():
     finally:
         db.close()
 
+def _poll_scheduler_job():
+    """Dedicated background job to crawl and update political polling data every 10 minutes."""
+    db: Session = SessionLocal()
+    try:
+        from app.ingestion.poll_tracker import run_poll_tracker_pipeline
+        print("[Scheduler] Esecuzione scansione demoscopica automatica 10 min (Web Live)...")
+        run_poll_tracker_pipeline(db)
+    except Exception as e:
+        print(f"[Scheduler] Errore aggiornamento automatico sondaggi: {e}")
+    finally:
+        db.close()
+
 def _scheduler_job():
     """Wrapper for background scheduler thread."""
     import asyncio
     asyncio.run(run_pipeline_scan())
 
 def start_scheduler():
-    """Starts the continuous 24/7 background scheduler (running at :00, :10, :20, :30, :40, :50)."""
+    """Starts the continuous 24/7 background scheduler (running every 10 minutes)."""
     if settings.ENABLE_AUTO_SCHEDULER and not scheduler.running:
         scheduler.add_job(
             _scheduler_job,
@@ -200,8 +212,16 @@ def start_scheduler():
             id="political_rss_monitor",
             replace_existing=True
         )
+        scheduler.add_job(
+            _poll_scheduler_job,
+            "cron",
+            minute="*/10",
+            second="30",
+            id="political_polls_monitor",
+            replace_existing=True
+        )
         scheduler.start()
-        print(f"[Scheduler] Continuous 24/7 background scheduler active (triggering at :00, :10, :20, :30, :40, :50).")
+        print(f"[Scheduler] Continuous 24/7 background scheduler active (monitoring feeds and live polls every 10 minutes).")
 
 def stop_scheduler():
     """Stops the background scheduler."""
