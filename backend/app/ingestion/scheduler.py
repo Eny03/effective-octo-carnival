@@ -46,12 +46,27 @@ async def run_pipeline_scan():
             )
             
             for item in extracted_items:
-                # Find matching party in database to link FK
+                # Pre-ingestion Quality Gate 1: Must match a recognized mapped political party
                 party_obj = db.query(PoliticalParty).filter(
                     (PoliticalParty.name.ilike(f"%{item.partito}%")) |
                     (PoliticalParty.code.ilike(f"%{item.partito}%"))
                 ).first()
-                party_id = party_obj.id if party_obj else None
+                if not party_obj:
+                    print(f"[Ingestion Gatekeeper] Scartata proposta: partito sconosciuto o non censito ('{item.partito}')")
+                    continue
+                party_id = party_obj.id
+
+                # Pre-ingestion Quality Gate 2: Must be a concrete policy statement (>15 chars), not gossip or generic text
+                if not item.dichiarazione_sintesi or len(item.dichiarazione_sintesi.strip()) < 15:
+                    print(f"[Ingestion Gatekeeper] Scartata proposta: descrizione troppo breve o generica")
+                    continue
+
+                # Pre-ingestion Quality Gate 3: Check against gossip & non-policy keywords
+                from app.ai.extractor import NON_POLICY_PATTERNS
+                is_gossip = any(re.search(pat, item.dichiarazione_sintesi, re.IGNORECASE) for pat in NON_POLICY_PATTERNS)
+                if is_gossip:
+                    print(f"[Ingestion Gatekeeper] Scartata proposta per match con pattern di cronaca/gossip: '{item.dichiarazione_sintesi[:50]}...'")
+                    continue
 
                 # Compute embedding
                 text_to_embed = f"{item.partito} {item.macro_argomento} {item.dichiarazione_sintesi}"

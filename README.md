@@ -1,6 +1,8 @@
 # ⚖️ PoliticLens — Analizzatore e Comparatore Politico Autonomo
 
-> **Piattaforma autonoma, 100% open-source e a costo zero di licenze** per il monitoraggio in tempo reale, la schematizzazione neutrale e il fact-checking finanziario delle posizioni politiche italiane su macro-argomenti chiave.
+> **Ideato e sviluppato da Daniel Maffi** (Politecnico di Milano – Ingegneria Magistrale).
+> **Proprietà Intellettuale & Metodo:** Registrato ai sensi della Legge 633/1941. Vedi [INTELLECTUAL_PROPERTY_NOTICE.md](INTELLECTUAL_PROPERTY_NOTICE.md).
+> **Piattaforma autonoma e neutrale** per il monitoraggio in tempo reale, la schematizzazione neutrale e il fact-checking finanziario delle posizioni politiche italiane su macro-argomenti chiave.
 
 ---
 
