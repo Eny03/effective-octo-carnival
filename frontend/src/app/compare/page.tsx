@@ -493,18 +493,25 @@ export default function ComparePage() {
                                 <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">
                                   {prop.dichiarazione_sintesi}
                                 </p>
-                                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] text-slate-500">
-                                  <span>Costo: <strong className="text-slate-800 dark:text-slate-200">{prop.costo_stimato}</strong></span>
-                                  {prop.fonte_url && (
-                                    <a
-                                      href={prop.fonte_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
-                                    >
-                                      <span>Fonte</span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>
+                                <div className="flex flex-col gap-1 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] text-slate-500">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span>Costo: <strong className="text-slate-800 dark:text-slate-200">{prop.costo_stimato}</strong></span>
+                                    {prop.fonte_url && (
+                                      <a
+                                        href={prop.fonte_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                                      >
+                                        <span>Fonte</span>
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                      </a>
+                                    )}
+                                  </div>
+                                  {prop.coperture_dichiarate && (
+                                    <div className="text-[10px] text-slate-500 leading-tight">
+                                      Copertura: <span className="text-slate-700 dark:text-slate-300 font-medium">{prop.coperture_dichiarate}</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
@@ -550,18 +557,25 @@ export default function ComparePage() {
                                 <p className="text-xs font-semibold text-slate-900 dark:text-slate-100 leading-snug">
                                   {prop.dichiarazione_sintesi}
                                 </p>
-                                <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] text-slate-500">
-                                  <span>Costo: <strong className="text-slate-800 dark:text-slate-200">{prop.costo_stimato}</strong></span>
-                                  {prop.fonte_url && (
-                                    <a
-                                      href={prop.fonte_url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
-                                    >
-                                      <span>Fonte</span>
-                                      <ExternalLink className="w-2.5 h-2.5" />
-                                    </a>
+                                <div className="flex flex-col gap-1 pt-1 border-t border-slate-200/60 dark:border-slate-700/60 text-[10px] text-slate-500">
+                                  <div className="flex items-center justify-between gap-2">
+                                    <span>Costo: <strong className="text-slate-800 dark:text-slate-200">{prop.costo_stimato}</strong></span>
+                                    {prop.fonte_url && (
+                                      <a
+                                        href={prop.fonte_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-0.5"
+                                      >
+                                        <span>Fonte</span>
+                                        <ExternalLink className="w-2.5 h-2.5" />
+                                      </a>
+                                    )}
+                                  </div>
+                                  {prop.coperture_dichiarate && (
+                                    <div className="text-[10px] text-slate-500 leading-tight">
+                                      Copertura: <span className="text-slate-700 dark:text-slate-300 font-medium">{prop.coperture_dichiarate}</span>
+                                    </div>
                                   )}
                                 </div>
                               </div>
