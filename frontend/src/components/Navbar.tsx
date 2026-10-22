@@ -75,12 +75,12 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform border border-slate-700/50">
-              <Scale className="w-5 h-5 text-amber-300 dark:text-white" />
+          <Link href="/" className="flex items-center gap-2.5 group min-w-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform border border-slate-700/50 shrink-0">
+              <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 dark:text-white" />
             </div>
-            <div>
-              <div className="flex items-center gap-1.5">
+            <div className="min-w-0">
+              <div className="hidden sm:flex items-center gap-1.5">
                 <span className="text-[9px] font-black tracking-widest uppercase text-slate-500 dark:text-slate-400">
                   Repubblica Italiana
                 </span>
@@ -89,10 +89,10 @@ export function Navbar() {
                 </span>
               </div>
               <div className="flex items-center gap-1.5 leading-tight">
-                <span className="font-extrabold text-lg tracking-tight text-slate-900 dark:text-white">
+                <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white truncate">
                   PolitiLens
                 </span>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
                   Osservatorio Istituzionale
                 </span>
               </div>
@@ -149,38 +149,69 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Nav Drawer */}
+      {/* Mobile Drawer (Tools, Audit & Settings - Anti-Repetition with Bottom Bar) */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-2 pb-4 space-y-1">
-          {navLinks.map((link) => {
-            const isActive = pathname === link.href;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileMenuOpen(false)}
-                className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold min-h-[44px] ${
-                  isActive
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950"
-                    : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
-              >
-                {link.icon}
-                <span>{link.name}</span>
-              </Link>
-            );
-          })}
+        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-3 pb-5 space-y-3 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
+            Strumenti di Intelligence & Impostazioni
+          </div>
           
-          <button
-            onClick={() => {
-              toggleTheme();
-              setMobileMenuOpen(false);
-            }}
-            className="w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-            <span>{isDark ? "Passa a Tema Chiaro" : "Passa a Tema Scuro"}</span>
-          </button>
+          <div className="space-y-1">
+            <Link
+              href="/sources"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                pathname === "/sources"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <Rss className="w-4 h-4 text-blue-500 shrink-0" />
+              <div className="flex-1 flex items-center justify-between">
+                <span>Fonti & Crawler Web</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-mono">Live</span>
+              </div>
+            </Link>
+
+            <Link
+              href="/audit"
+              onClick={() => setMobileMenuOpen(false)}
+              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-colors ${
+                pathname === "/audit"
+                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950"
+                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
+              }`}
+            >
+              <History className="w-4 h-4 text-emerald-500 shrink-0" />
+              <div className="flex-1 flex items-center justify-between">
+                <span>Registro Modifiche & Audit AI</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-mono">Trasparenza</span>
+              </div>
+            </Link>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
+            <button
+              onClick={() => {
+                toggleTheme();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <div className="flex items-center gap-2.5">
+                {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
+                <span>Aspetto Visivo</span>
+              </div>
+              <span className="text-xs font-bold text-slate-500">
+                {isDark ? "Tema Scuro (Attivo)" : "Tema Chiaro (Attivo)"}
+              </span>
+            </button>
+
+            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-500 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              <span>Parametri ufficiali MEF, ISTAT, Corte dei Conti & Art. 81 Cost.</span>
+            </div>
+          </div>
         </div>
       )}
 

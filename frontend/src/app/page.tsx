@@ -466,11 +466,11 @@ function DashboardContent() {
                   )}
                 </div>
 
-                <div className="flex gap-2">
+                <div className="grid grid-cols-2 sm:flex gap-2 w-full sm:w-auto">
                   <select
                     value={selectedParty}
                     onChange={(e) => setSelectedParty(e.target.value)}
-                    className="text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-hidden font-medium"
+                    className="w-full min-w-0 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 sm:px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-hidden font-medium truncate"
                   >
                     <option value="Tutti">Tutti i Partiti</option>
                     {parties.map((p) => (
@@ -483,7 +483,7 @@ function DashboardContent() {
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(e.target.value)}
-                    className="text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-hidden font-medium"
+                    className="w-full min-w-0 text-xs sm:text-sm bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl px-2.5 sm:px-3 py-2 text-slate-800 dark:text-slate-200 focus:outline-hidden font-medium truncate"
                   >
                     {HISTORICAL_YEARS.map((y) => (
                       <option key={y} value={y}>

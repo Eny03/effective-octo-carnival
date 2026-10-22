@@ -411,16 +411,16 @@ export default function ComparePage() {
 
                 {/* Cost ratio comparison box */}
                 <div className="p-3.5 rounded-xl bg-amber-50/60 dark:bg-amber-950/20 border border-amber-200/70 dark:border-amber-900/50 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <Coins className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                    <div className="min-w-0 truncate">
+                  <div className="flex items-start sm:items-center gap-2 min-w-0 flex-1">
+                    <Coins className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5 sm:mt-0" />
+                    <div className="min-w-0 flex-1 leading-snug">
                       <strong className="text-amber-950 dark:text-amber-200">Rapporto di Costo Comparato: </strong>
-                      <span className="text-amber-900 dark:text-amber-300 font-mono">
+                      <span className="text-amber-900 dark:text-amber-300 font-mono break-words">
                         {synthesis.cost_comparison.ratio_summary}
                       </span>
                     </div>
                   </div>
-                  <div className="text-[11px] text-amber-800 dark:text-amber-400 font-semibold shrink-0">
+                  <div className="text-[11px] text-amber-800 dark:text-amber-400 font-semibold shrink-0 pt-1 sm:pt-0">
                     {synthesis.cost_comparison.compliance_mef}
                   </div>
                 </div>
