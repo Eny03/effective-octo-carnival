@@ -16,7 +16,10 @@ import {
   Scale, 
   ExternalLink,
   ChevronRight,
-  Database
+  Database,
+  PlusCircle,
+  Edit3,
+  Trash2
 } from "lucide-react";
 import { fetchAuditLogs, triggerPollUpdate, AuditLog } from "@/lib/api";
 
@@ -81,50 +84,46 @@ export default function AuditPage() {
   };
 
   const getEventBadge = (type: string) => {
-    switch (type) {
-      case "POLL_UPDATE":
-      case "POLL_SWEEP_COMPLETED":
-        return {
-          label: "Sondaggi & Consenso",
-          icon: <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
-          badgeClass: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
-        };
-      case "FACT_CHECK_AUDIT":
-        return {
-          label: "Verifica Bilancio MEF",
-          icon: <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
-          badgeClass: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-        };
-      case "PROPOSAL_CREATED":
-        return {
-          label: "Nuovo Atto Censito",
-          icon: <FileText className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />,
-          badgeClass: "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800"
-        };
-      case "PROPOSAL_UPDATED":
-        return {
-          label: "Evoluzione / Rettifica",
-          icon: <RefreshCw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />,
-          badgeClass: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
-        };
-      case "INGESTION_SCAN":
-        return {
-          label: "Scansione Fonti",
-          icon: <Database className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />,
-          badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-        };
-      default:
-        return {
-          label: type,
-          icon: <Scale className="w-3.5 h-3.5 text-slate-600" />,
-          badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-        };
+    const t = (type || "").toLowerCase();
+    if (t === "aggiunta" || t === "proposal_created") {
+      return {
+        label: "Aggiunta",
+        icon: <PlusCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
+        badgeClass: "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+      };
     }
+    if (t === "modifica" || t === "proposal_updated" || t === "fact_check_audit") {
+      return {
+        label: "Modifica",
+        icon: <Edit3 className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />,
+        badgeClass: "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800"
+      };
+    }
+    if (t === "cancellazione") {
+      return {
+        label: "Cancellazione",
+        icon: <Trash2 className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />,
+        badgeClass: "bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800"
+      };
+    }
+    if (t.includes("sondagg") || t.startsWith("poll")) {
+      return {
+        label: "Sondaggi aggiornati",
+        icon: <TrendingUp className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />,
+        badgeClass: "bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800"
+      };
+    }
+    return {
+      label: type,
+      icon: <Scale className="w-3.5 h-3.5 text-slate-600" />,
+      badgeClass: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+    };
   };
 
-  const pollCount = logs.filter(l => l.event_type.startsWith("POLL")).length;
-  const factCheckCount = logs.filter(l => l.event_type.startsWith("FACT")).length;
-  const proposalCount = logs.filter(l => l.event_type.startsWith("PROPOSAL")).length;
+  const aggiuntaCount = logs.filter(l => l.event_type.toLowerCase() === "aggiunta" || l.event_type.startsWith("PROPOSAL_CR")).length;
+  const modificaCount = logs.filter(l => l.event_type.toLowerCase() === "modifica" || l.event_type.startsWith("PROPOSAL_UP") || l.event_type.startsWith("FACT")).length;
+  const cancellazioneCount = logs.filter(l => l.event_type.toLowerCase() === "cancellazione").length;
+  const pollCount = logs.filter(l => l.event_type.toLowerCase().includes("sondagg") || l.event_type.startsWith("POLL")).length;
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -181,21 +180,21 @@ export default function AuditPage() {
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Rilevazioni Sondaggi</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Aggiunte a Programmi</span>
+          <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{aggiuntaCount}</span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">Nuove proposte censite</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Modifiche o Rettifiche</span>
+          <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{modificaCount}</span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">Evoluzioni e coperture</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sondaggi & Pulizia</span>
           <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5 block">{pollCount}</span>
-          <span className="text-[10px] text-slate-500 mt-0.5 block">Variazioni percentuali</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Verifiche MEF / UPB</span>
-          <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{factCheckCount}</span>
-          <span className="text-[10px] text-slate-500 mt-0.5 block">Asseverazioni contabili</span>
-        </div>
-
-        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Atti & Disegni di Legge</span>
-          <span className="text-xl sm:text-2xl font-black text-indigo-600 dark:text-indigo-400 mt-0.5 block">{proposalCount}</span>
-          <span className="text-[10px] text-slate-500 mt-0.5 block">Distillati dai report ufficiali</span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">Aggiornamenti consolidati</span>
         </div>
       </div>
 
@@ -250,7 +249,7 @@ export default function AuditPage() {
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mr-1 shrink-0">
             Tipo Evento:
           </span>
-          {["Tutti", "POLL_UPDATE", "FACT_CHECK_AUDIT", "PROPOSAL_CREATED", "PROPOSAL_UPDATED", "INGESTION_SCAN", "BENCHMARK_SYNC"].map((evt) => {
+          {["Tutti", "aggiunta", "modifica", "cancellazione", "sondaggi aggiornati"].map((evt) => {
             const isSelected = selectedEventType === evt;
             const badge = getEventBadge(evt);
             return (

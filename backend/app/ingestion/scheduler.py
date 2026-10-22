@@ -4,7 +4,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.config import settings
-from app.models import PoliticalProposal, PoliticalParty, IngestionLog
+from app.models import PoliticalProposal, PoliticalParty, IngestionLog, AuditLog
 from app.ingestion.rss_fetcher import fetch_all_active_feeds
 from app.ingestion.text_extractor import compute_content_hash
 from app.ai.extractor import extract_proposals_from_text
@@ -89,6 +89,7 @@ async def run_pipeline_scan():
                 if matching_existing:
                     # Update existing proposal with the newest position / amended details
                     print(f"[AI Ingestion] Aggiornamento posizione per {item.partito} ({item.macro_argomento}): '{item.dichiarazione_sintesi[:60]}...'")
+                    old_sintesi = matching_existing.dichiarazione_sintesi
                     merge_or_update_policy_proposal(
                         db=db,
                         existing=matching_existing,
@@ -101,6 +102,19 @@ async def run_pipeline_scan():
                         content_hash=item_hash,
                         emb_json=emb_json
                     )
+                    # Audit log: modifica a programma o idea
+                    audit_entry = AuditLog(
+                        event_type="modifica",
+                        entity_type="programma",
+                        entity_id=str(matching_existing.id),
+                        entity_name=f"{item.partito}: {item.macro_argomento}",
+                        old_value=old_sintesi[:90] + "..." if len(old_sintesi) > 90 else old_sintesi,
+                        new_value=item.dichiarazione_sintesi[:90] + "..." if len(item.dichiarazione_sintesi) > 90 else item.dichiarazione_sintesi,
+                        agent_responsible="PolicyMergerAgent",
+                        details=f"Modifica proposta su {item.macro_argomento}: '{item.dichiarazione_sintesi}'. Costo: {item.impatto_economico.costo_stimato}. Coperture: {item.impatto_economico.coperture_dichiarate}.",
+                        timestamp=datetime.datetime.utcnow()
+                    )
+                    db.add(audit_entry)
                 else:
                     dt = datetime.datetime.fromisoformat(item.timestamp) if item.timestamp else art["published_at"]
                     proposal_record = PoliticalProposal(
@@ -124,6 +138,20 @@ async def run_pipeline_scan():
                         timestamp=dt
                     )
                     db.add(proposal_record)
+                    db.flush()
+                    # Audit log: aggiunta a programma o idea
+                    audit_entry = AuditLog(
+                        event_type="aggiunta",
+                        entity_type="programma",
+                        entity_id=str(proposal_record.id),
+                        entity_name=f"{item.partito}: {item.macro_argomento}",
+                        old_value=None,
+                        new_value=item.dichiarazione_sintesi[:90] + "..." if len(item.dichiarazione_sintesi) > 90 else item.dichiarazione_sintesi,
+                        agent_responsible="PolicyDistillerAgent",
+                        details=f"Aggiunta nuova proposta per {item.partito} su {item.macro_argomento}: '{item.dichiarazione_sintesi}'. Fonte: {art.get('source_name', 'Web')}.",
+                        timestamp=datetime.datetime.utcnow()
+                    )
+                    db.add(audit_entry)
                     total_proposals += 1
                 
         # Step 2: Autonomous Targeted Gap Search (Active Learning for Missing Parties & Topics)

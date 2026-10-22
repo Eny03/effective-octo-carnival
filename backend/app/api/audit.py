@@ -24,114 +24,70 @@ def seed_audit_history_if_empty(db: Session):
     print("[Audit] Seeding historical audit trail 2022-2026...")
     historical_events = [
         {
-            "event_type": "POLL_UPDATE",
-            "entity_type": "party",
-            "entity_id": "FDI",
-            "entity_name": "Fratelli d'Italia",
-            "old_value": "26.0% (Elezioni 2022)",
-            "new_value": "29.4% (+0.3%)",
-            "agent_responsible": "PollTrackerAgent",
-            "details": "Aggiornamento media YouTrend/AGI e SWG. Consolidamento primo partito.",
-            "timestamp": datetime.datetime(2026, 4, 15, 10, 30)
+            "event_type": "sondaggi aggiornati",
+            "entity_type": "sondaggi",
+            "entity_id": "ALL_18",
+            "entity_name": "Barometro Elettorale Nazionale",
+            "old_value": "Rilevazione precedente",
+            "new_value": "Sondaggi aggiornati per tutti i 18 partiti",
+            "agent_responsible": "PollTrackerAgent (Web Live)",
+            "details": "Sondaggi aggiornati per tutti i 18 partiti: FDI: 28.4% • PD: 20.6% • M5S: 12.0% • FI: 7.3% • FUTNAZ: 6.6% • AVS: 6.5% • LEGA: 5.5% • AZ: 3.2% • IV: 2.4% • +EU: 1.5% • ... Fonti: Supermedia YouTrend/AGI, SWG Tg La7, Ipsos, Tecnè e BiDiMedia.",
+            "timestamp": datetime.datetime(2026, 10, 22, 18, 0)
         },
         {
-            "event_type": "FACT_CHECK_AUDIT",
-            "entity_type": "proposal",
+            "event_type": "modifica",
+            "entity_type": "programma",
             "entity_id": "prop-sanita-pd",
-            "entity_name": "Piano Straordinario Sanità Pubblica (PD)",
-            "old_value": "In attesa di copertura",
-            "new_value": "Verificato (con clausola salvaguardia)",
-            "agent_responsible": "FiscalAuditorAgent",
-            "details": "Verifica conformità art. 81 Cost. con parametro benchmark FSN MEF (136.5 Mld €). Oneri stimati a 5.5 Mld €.",
-            "timestamp": datetime.datetime(2026, 3, 28, 14, 15)
+            "entity_name": "Partito Democratico: Sanità",
+            "old_value": "Fondo Sanitario Nazionale incrementato del 5%",
+            "new_value": "Fondo Sanitario Nazionale vincolato al 7.5% del PIL",
+            "agent_responsible": "PolicyMergerAgent",
+            "details": "Modifica formulazione e quantificazione con parametro benchmark FSN MEF (136.5 Mld €).",
+            "timestamp": datetime.datetime(2026, 10, 15, 14, 15)
         },
         {
-            "event_type": "PROPOSAL_CREATED",
-            "entity_type": "proposal",
+            "event_type": "aggiunta",
+            "entity_type": "programma",
             "entity_id": "prop-nucleare-fi",
-            "entity_name": "Ritorno al Nucleare di IV Generazione (FI)",
+            "entity_name": "Forza Italia: Energia",
             "old_value": None,
-            "new_value": "Dichiarazione programmatica censita da atti Camera",
+            "new_value": "Ritorno al Nucleare di IV Generazione con reattori modulari SMR",
             "agent_responsible": "PolicyDistillerAgent",
-            "details": "Estratto da DDL delega su mix energetico nazionale. Oneri stimati a 3.0 Mld € cofinanziati con fondi REPowerEU.",
-            "timestamp": datetime.datetime(2026, 2, 10, 11, 45)
+            "details": "Aggiunta nuova proposta da DDL delega su mix energetico nazionale. Oneri stimati a 3.0 Mld € con cofinanziamento REPowerEU.",
+            "timestamp": datetime.datetime(2026, 10, 10, 11, 45)
         },
         {
-            "event_type": "POLL_UPDATE",
-            "entity_type": "party",
-            "entity_id": "PD",
-            "entity_name": "Partito Democratico",
-            "old_value": "19.0% (Elezioni 2022)",
-            "new_value": "23.2% (+0.2%)",
-            "agent_responsible": "PollTrackerAgent",
-            "details": "Rilevazione demoscopica Ipsos per Corriere della Sera. Trend positivo nell'area centrosinistra.",
-            "timestamp": datetime.datetime(2026, 1, 20, 9, 0)
+            "event_type": "cancellazione",
+            "entity_type": "programma",
+            "entity_id": "prop-dup-lega",
+            "entity_name": "Lega - Salvini Premier: Pensioni",
+            "old_value": "Quota 41 per tutti i lavoratori senza penalizzazioni",
+            "new_value": None,
+            "agent_responsible": "DeduplicationAgent",
+            "details": "Cancellazione proposta duplicata a seguito di consolidamento con il testo base formalizzato in legge di bilancio.",
+            "timestamp": datetime.datetime(2026, 10, 5, 9, 30)
         },
         {
-            "event_type": "PROPOSAL_UPDATED",
-            "entity_type": "proposal",
+            "event_type": "modifica",
+            "entity_type": "programma",
             "entity_id": "prop-salario-m5s",
-            "entity_name": "Salario Minimo a 9 Euro (M5S / AVS / PD)",
-            "old_value": "Proposta di legge ordinaria XIX Leg.",
-            "new_value": "Ripresentazione testo unificato e mozione di indirizzo",
-            "agent_responsible": "ReconciliationAgent",
-            "details": "Deduplicazione semantica tra mozione unitaria d'opposizione e testi depositati nel 2023.",
-            "timestamp": datetime.datetime(2025, 11, 14, 16, 20)
+            "entity_name": "Movimento 5 Stelle: Lavoro",
+            "old_value": "Salario Minimo legale senza fondo perequativo",
+            "new_value": "Salario Minimo a 9 Euro con fondo di compensazione PMI",
+            "agent_responsible": "PolicyMergerAgent",
+            "details": "Modifica proposta con recepimento emendamento su incentivi di transizione e relazione tecnica INPS.",
+            "timestamp": datetime.datetime(2026, 9, 28, 16, 20)
         },
         {
-            "event_type": "FACT_CHECK_AUDIT",
-            "entity_type": "proposal",
-            "entity_id": "prop-flattax-lega",
-            "entity_name": "Estensione Flat Tax al 15% fino a 100k (Lega)",
-            "old_value": "Verificato parziale",
-            "new_value": "In attesa di copertura (scostamento UPB)",
-            "agent_responsible": "FiscalAuditorAgent",
-            "details": "Ufficio Parlamentare di Bilancio segnala potenziale minor gettito di 4.2 Mld € senza clausole di compensazione IRPEF.",
-            "timestamp": datetime.datetime(2025, 9, 5, 12, 10)
-        },
-        {
-            "event_type": "INGESTION_SCAN",
-            "entity_type": "source",
-            "entity_id": "ALL_RSS",
-            "entity_name": "Scansione Fonti Istituzionali & Stampa",
-            "old_value": None,
-            "new_value": "28 nuovi articoli parlamentari analizzati",
-            "agent_responsible": "ScoutAgent",
-            "details": "Scansione automatica Gazzetta Ufficiale, Bollettini Camera/Senato, Ansa e Il Sole 24 Ore completata con zero errori.",
-            "timestamp": datetime.datetime(2025, 6, 22, 8, 30)
-        },
-        {
-            "event_type": "BENCHMARK_SYNC",
-            "entity_type": "benchmark",
-            "entity_id": "MEF-PIL-2025",
-            "entity_name": "Aggiornamento Parametri Quadro Macroeconomico MEF",
-            "old_value": "PIL Nominale 2.085 Mld €",
-            "new_value": "PIL Nominale 2.120 Mld € (DEF / Quadro Finanziario)",
-            "agent_responsible": "System",
-            "details": "Allineamento automatico dei coefficienti macroeconomici alle tabelle ISTAT / MEF per i calcoli econometrici.",
-            "timestamp": datetime.datetime(2025, 4, 12, 17, 0)
-        },
-        {
-            "event_type": "PROPOSAL_CREATED",
-            "entity_type": "proposal",
+            "event_type": "aggiunta",
+            "entity_type": "programma",
             "entity_id": "prop-fisco-fdi",
-            "entity_name": "Riforma Fiscale e Concordato Preventivo Biennale (FdI)",
+            "entity_name": "Fratelli d'Italia: Fisco",
             "old_value": None,
-            "new_value": "Decreto Legislativo attuativo legge delega",
+            "new_value": "Riforma IRPEF a tre aliquote e concordato preventivo biennale",
             "agent_responsible": "PolicyDistillerAgent",
-            "details": "Censimento del provvedimento definitivo pubblicato in Gazzetta Ufficiale.",
-            "timestamp": datetime.datetime(2024, 10, 8, 15, 30)
-        },
-        {
-            "event_type": "POLL_UPDATE",
-            "entity_type": "party",
-            "entity_id": "M5S",
-            "entity_name": "Movimento 5 Stelle",
-            "old_value": "15.4% (Elezioni 2022)",
-            "new_value": "11.5% (-0.2%)",
-            "agent_responsible": "PollTrackerAgent",
-            "details": "Media sondaggi post-Europee. Rimodulazione consenso parlamentare.",
-            "timestamp": datetime.datetime(2024, 6, 18, 10, 0)
+            "details": "Aggiunta provvedimento definitivo formalizzato in Gazzetta Ufficiale (D.Lgs. 216/2023).",
+            "timestamp": datetime.datetime(2026, 9, 20, 15, 30)
         }
     ]
 

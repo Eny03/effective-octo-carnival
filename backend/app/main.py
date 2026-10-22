@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from app.config import settings
 from app.database import engine, Base, SessionLocal
-from app.models import PoliticalParty, PoliticalProposal, InstitutionalBenchmark
+from app.models import PoliticalParty, PoliticalProposal, InstitutionalBenchmark, AuditLog
 from app.data.benchmark_data import BENCHMARKS_SEED
 from app.data.seed_data import PARTIES_SEED, PROPOSALS_SEED
 from app.data.historical_proposals import HISTORICAL_PROPOSALS_SEED
@@ -205,6 +205,18 @@ def seed_database_if_empty():
 
         for dp in db_to_delete:
             try:
+                del_log = AuditLog(
+                    event_type="cancellazione",
+                    entity_type="programma",
+                    entity_id=str(dp.id),
+                    entity_name=f"{dp.partito}: {dp.macro_argomento}",
+                    old_value=dp.dichiarazione_sintesi[:90] + "...",
+                    new_value=None,
+                    agent_responsible="DeduplicationAgent",
+                    details=f"Cancellazione proposta duplicata di {dp.partito} ({dp.macro_argomento}): '{dp.dichiarazione_sintesi[:90]}...'.",
+                    timestamp=datetime.datetime.utcnow()
+                )
+                db.add(del_log)
                 db.delete(dp)
             except Exception:
                 pass
