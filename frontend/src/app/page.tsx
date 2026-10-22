@@ -519,8 +519,8 @@ function DashboardContent() {
                 </div>
               </div>
 
-              {/* Topic chips */}
-              <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
+              {/* Topic chips - Wraps cleanly on Desktop PC and Mobile */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0 mr-1">
                   Macro-Tema:
                 </span>

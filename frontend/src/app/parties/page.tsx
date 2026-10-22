@@ -219,7 +219,7 @@ export default function PartiesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Party Selector List */}
         <div className="lg:col-span-4 space-y-3">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+          <div className="flex flex-wrap items-center gap-1.5 pb-1">
             {coalitions.map((c) => (
               <button
                 key={c}
@@ -652,7 +652,7 @@ export default function PartiesPage() {
               {/* Tab 3: Catalog of Formal Proposals */}
               {activeTab === "proposals" && (
                 <div className="space-y-4">
-                  <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+                  <div className="flex flex-wrap items-center gap-1.5 pb-1">
                     {["Tutti", ...RADAR_TOPICS].map((top) => (
                       <button
                         key={top}

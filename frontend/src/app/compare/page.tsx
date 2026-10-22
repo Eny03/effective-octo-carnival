@@ -259,8 +259,8 @@ export default function ComparePage() {
         </div>
       </div>
 
-      {/* Quick Macro-Topic Pills */}
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+      {/* Quick Macro-Topic Pills - Wraps on Desktop PC and Mobile */}
+      <div className="flex flex-wrap items-center gap-1.5 pb-1">
         {macroTopics.map((topic) => {
           const isSelected = selectedTopic === topic;
           return (

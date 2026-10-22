@@ -132,30 +132,9 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Primary Nav (Quick Links) */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {allSections.slice(0, 5).map((link) => {
-              const isActive = pathname === link.href;
-              return (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                    isActive
-                      ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs"
-                      : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800"
-                  }`}
-                >
-                  {link.icon}
-                  <span>{link.name.split(" ")[0]}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* Right Action: Clean Three Dots (⋮) Menu Button - NO theme toggle in top bar */}
+          {/* Right Action: Clean Three Dots (⋮) Menu Button - NO duplicate header bar */}
           <div className="flex items-center gap-2">
-            <div className="hidden xl:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Parametri MEF & ISTAT</span>
             </div>
@@ -177,10 +156,10 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Full Dropdown / Drawer from Three Dots (⋮) */}
+      {/* Full Modal / Drawer from Three Dots (⋮) - Scrollable on both Mobile and PC */}
       {menuOpen && (
-        <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+        <div className="fixed inset-x-0 top-16 bottom-0 z-50 bg-white/98 dark:bg-slate-900/98 backdrop-blur-xl overflow-y-auto overscroll-contain shadow-2xl border-t border-slate-200 dark:border-slate-800 animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 pb-28 space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
                 Menu PolitiLens • Tutte le Sezioni
