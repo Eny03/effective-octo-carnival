@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
-import { MobileTabBar } from "@/components/MobileTabBar";
 import { InstallAppBanner } from "@/components/InstallAppBanner";
 
 const geistSans = localFont({
@@ -57,11 +56,8 @@ export default function RootLayout({
       >
         <Navbar />
         <InstallAppBanner />
-        <main className="flex-1 pb-20 md:pb-0">{children}</main>
-        <div className="hidden md:block">
-          <Footer />
-        </div>
-        <MobileTabBar />
+        <main className="flex-1">{children}</main>
+        <Footer />
       </body>
     </html>
   );

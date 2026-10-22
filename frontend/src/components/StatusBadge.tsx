@@ -33,7 +33,7 @@ export function StatusBadge({ status, size = "md" }: StatusBadgeProps) {
   return (
     <span className={`inline-flex items-center gap-1 rounded-full border whitespace-nowrap shrink-0 shadow-2xs ${padding} ${colorClasses}`}>
       {icon}
-      <span className="truncate">{status}</span>
+      <span>{status}</span>
     </span>
   );
 }

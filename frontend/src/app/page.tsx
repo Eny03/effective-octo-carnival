@@ -672,10 +672,10 @@ function DashboardContent() {
                     <div className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
                       <div>
-                        <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1">
+                        <span className="font-bold text-xs text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors leading-snug">
                           {item.name}
                         </span>
-                        <span className="text-[10px] text-slate-400 block line-clamp-1">
+                        <span className="text-[10px] text-slate-400 block leading-tight">
                           {item.leader || item.coalition}
                         </span>
                       </div>

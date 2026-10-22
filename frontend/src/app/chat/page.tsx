@@ -450,7 +450,7 @@ export default function ChatPage() {
                                 <span className="text-blue-600 dark:text-blue-400">{c.partito}</span>
                                 <span className="text-slate-400">{c.timestamp}</span>
                               </div>
-                              <p className="text-xs text-slate-700 dark:text-slate-300 font-medium line-clamp-2 leading-snug">
+                              <p className="text-xs text-slate-700 dark:text-slate-300 font-medium leading-relaxed">
                                 {c.sintesi}
                               </p>
                             </div>

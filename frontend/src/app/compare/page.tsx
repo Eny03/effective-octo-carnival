@@ -351,11 +351,11 @@ export default function ComparePage() {
                 <div className="p-1.5 rounded-xl bg-blue-600 text-white shadow-2xs shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
-                <div className="min-w-0">
-                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white leading-snug">
                     Sintesi Strategica AI: {partyA} vs {partyB}
                   </h3>
-                  <p className="text-[11px] text-slate-500 truncate">
+                  <p className="text-[11px] text-slate-500 leading-tight">
                     Analisi autonoma di convergenze programmatiche, divergenze e rapporto economico
                   </p>
                 </div>
@@ -380,7 +380,7 @@ export default function ComparePage() {
                   <div className="p-4 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/70 dark:border-emerald-900/50 space-y-2 min-w-0">
                     <div className="flex items-center gap-1.5 font-bold text-emerald-900 dark:text-emerald-300">
                       <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="truncate">Punti di Convergenza & Terreno Comune</span>
+                      <span>Punti di Convergenza & Terreno Comune</span>
                     </div>
                     <ul className="space-y-1.5 text-xs text-emerald-950 dark:text-emerald-200">
                       {synthesis.convergences.map((c, i) => (
@@ -396,7 +396,7 @@ export default function ComparePage() {
                   <div className="p-4 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/70 dark:border-rose-900/50 space-y-2 min-w-0">
                     <div className="flex items-center gap-1.5 font-bold text-rose-900 dark:text-rose-300">
                       <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
-                      <span className="truncate">Punti di Contrasto & Divergenze Primarie</span>
+                      <span>Punti di Contrasto & Divergenze Primarie</span>
                     </div>
                     <ul className="space-y-1.5 text-xs text-rose-950 dark:text-rose-200">
                       {synthesis.divergences.map((d, i) => (
@@ -650,7 +650,7 @@ export default function ComparePage() {
                           {!isCompactView && (
                             <div className="space-y-1.5 pt-0.5">
                               {cell.proposals.slice(0, 2).map((p, idx) => (
-                                <div key={idx} className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-2">
+                                <div key={idx} className="text-[11px] text-slate-700 dark:text-slate-300 leading-snug">
                                   • {p.dichiarazione_sintesi}
                                 </div>
                               ))}
@@ -658,8 +658,8 @@ export default function ComparePage() {
                           )}
                         </div>
 
-                        <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between text-[10px] text-slate-500 mt-2">
-                          <span className="truncate mr-1">{cell.proposals[0]?.costo_stimato || "Non quantificato"}</span>
+                        <div className="pt-2 border-t border-slate-200/50 dark:border-slate-700/50 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[10px] text-slate-500 mt-2">
+                          <span className="leading-tight">{cell.proposals[0]?.costo_stimato || "Non quantificato"}</span>
                           <StatusBadge status={cell.proposals[0]?.fact_check_status || "Verificato"} size="sm" />
                         </div>
                       </div>

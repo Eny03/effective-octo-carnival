@@ -253,11 +253,11 @@ export default function PartiesPage() {
                       className="w-3 h-3 rounded-full shrink-0 shadow-xs"
                       style={{ backgroundColor: p.color }}
                     />
-                    <div className="truncate">
-                      <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                    <div className="min-w-0">
+                      <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white leading-snug">
                         {p.name}
                       </div>
-                      <div className="text-[10px] text-slate-400 truncate">
+                      <div className="text-[10px] text-slate-400 leading-tight">
                         {p.coalition}
                       </div>
                     </div>
@@ -539,7 +539,7 @@ export default function PartiesPage() {
                                 <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200">
                                   {pil.tema}
                                 </span>
-                                <span className="text-[10px] font-semibold text-slate-400 truncate">
+                                <span className="text-[10px] font-semibold text-slate-400">
                                   {pil.tipo_azione}
                                 </span>
                               </div>

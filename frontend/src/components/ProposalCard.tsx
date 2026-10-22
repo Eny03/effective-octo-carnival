@@ -63,25 +63,25 @@ export function ProposalCard({ proposal }: ProposalCardProps) {
             </span>
           </div>
 
-          {/* Clear, Concise Headline with clamp */}
-          <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold leading-snug mb-3 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors line-clamp-2 sm:line-clamp-3">
+          {/* Clear, Concise Headline without truncation */}
+          <h3 className="text-slate-900 dark:text-slate-100 text-sm font-bold leading-snug mb-3 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors">
             {proposal.dichiarazione_sintesi}
           </h3>
 
           {/* Minimal Economic & Fact-Check Summary (Anti-overlap responsive layout) */}
           <div className="space-y-1.5 mb-3 text-xs">
             {/* Economics */}
-            <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-2 min-w-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-1 sm:gap-2">
               <span className="text-slate-500 text-[11px] font-medium shrink-0">Costo Stimato:</span>
-              <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] truncate text-right min-w-0">
+              <span className="font-semibold text-slate-800 dark:text-slate-200 text-[11px] sm:text-right leading-tight">
                 {proposal.costo_stimato && proposal.costo_stimato !== "Non quantificato" ? proposal.costo_stimato : "Invarianza finanziaria"}
               </span>
             </div>
 
             {/* Fact-Check Status */}
-            <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-2 min-w-0">
+            <div className="flex items-center justify-between py-1.5 px-2.5 rounded-lg bg-slate-50/80 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800/80 gap-2">
               <span className="text-[11px] font-semibold text-slate-500 shrink-0">Verifica:</span>
-              <div className="shrink-0 max-w-[65%] truncate">
+              <div className="shrink-0">
                 <StatusBadge status={proposal.fact_check_status} size="sm" />
               </div>
             </div>

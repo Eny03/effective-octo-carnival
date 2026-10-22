@@ -238,7 +238,7 @@ export default function SourcesPage() {
                   <span>{g.party_name}</span>
                   <span className="text-slate-400 font-normal">{g.topic}</span>
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2">
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
                   {g.reason}
                 </p>
                 <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">

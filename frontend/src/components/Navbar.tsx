@@ -10,7 +10,7 @@ import {
   ShieldCheck, 
   Bot, 
   Rss, 
-  Menu, 
+  MoreVertical, 
   X,
   Scale,
   History,
@@ -20,7 +20,7 @@ import {
 
 export function Navbar() {
   const pathname = usePathname();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isDark, setIsDark] = useState<boolean>(false);
 
   useEffect(() => {
@@ -55,17 +55,50 @@ export function Navbar() {
     return () => clearInterval(interval);
   }, []);
 
-
-  const navLinks = [
-    { name: "Dashboard", href: "/", icon: <Compass className="w-4 h-4" /> },
-    { name: "Manifesto", href: "/compare", icon: <Layers className="w-4 h-4" /> },
-    { name: "Partiti", href: "/parties", icon: <Building2 className="w-4 h-4" /> },
-    { name: "Fact-Check", href: "/fact-check", icon: <ShieldCheck className="w-4 h-4" /> },
-    { name: "Chat AI", href: "/chat", icon: <Bot className="w-4 h-4" /> },
-    { name: "Fonti", href: "/sources", icon: <Rss className="w-4 h-4" /> },
-    { name: "Log Modifiche", href: "/audit", icon: <History className="w-4 h-4" /> },
+  const allSections = [
+    { 
+      name: "Dashboard & Panoramica", 
+      desc: "Indicatori economici, sondaggi e ultime posizioni censite", 
+      href: "/", 
+      icon: <Compass className="w-5 h-5 text-blue-600 dark:text-blue-400" /> 
+    },
+    { 
+      name: "Manifesto Comparativo", 
+      desc: "Confronto testa a testa e matrice 18 partiti su tutti i temi", 
+      href: "/compare", 
+      icon: <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" /> 
+    },
+    { 
+      name: "Schede Partiti & Dossier", 
+      desc: "Programmi ufficiali, timeline 2022-2026 e radar delle priorità", 
+      href: "/parties", 
+      icon: <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" /> 
+    },
+    { 
+      name: "Fact-Check & Bilancio MEF", 
+      desc: "Scrutinio coperture art. 81 Cost. e relazioni tecniche ufficiali", 
+      href: "/fact-check", 
+      icon: <ShieldCheck className="w-5 h-5 text-amber-600 dark:text-amber-400" /> 
+    },
+    { 
+      name: "Chat AI Istituzionale", 
+      desc: "Assistente RAG con citazioni dirette degli atti parlamentari", 
+      href: "/chat", 
+      icon: <Bot className="w-5 h-5 text-purple-600 dark:text-purple-400" /> 
+    },
+    { 
+      name: "Fonti & Web Crawler", 
+      desc: "Monitoraggio continuo feed RSS, DDL e canali istituzionali", 
+      href: "/sources", 
+      icon: <Rss className="w-5 h-5 text-sky-600 dark:text-sky-400" /> 
+    },
+    { 
+      name: "Registro Modifiche & Audit AI", 
+      desc: "Tracciamento immutabile di variazioni demoscopiche e verifiche", 
+      href: "/audit", 
+      icon: <History className="w-5 h-5 text-teal-600 dark:text-teal-400" /> 
+    },
   ];
-
 
   return (
     <header className="sticky top-0 z-50 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs">
@@ -89,7 +122,7 @@ export function Navbar() {
                 </span>
               </div>
               <div className="flex items-center gap-1.5 leading-tight">
-                <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white truncate">
+                <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
                   PolitiLens
                 </span>
                 <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
@@ -99,9 +132,9 @@ export function Navbar() {
             </div>
           </Link>
 
-          {/* Desktop Nav */}
-          <nav className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => {
+          {/* Desktop Primary Nav (Quick Links) */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {allSections.slice(0, 5).map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
@@ -114,107 +147,112 @@ export function Navbar() {
                   }`}
                 >
                   {link.icon}
-                  <span>{link.name}</span>
+                  <span>{link.name.split(" ")[0]}</span>
                 </Link>
               );
             })}
           </nav>
 
-          {/* Neutrality Pill & Theme Toggle */}
+          {/* Right Action: Clean Three Dots (⋮) Menu Button - NO theme toggle in top bar */}
           <div className="flex items-center gap-2">
-            <div className="hidden lg:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
+            <div className="hidden xl:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
               <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Parametri MEF & ISTAT</span>
             </div>
 
+            {/* Three Dots (⋮) Button */}
             <button
-              onClick={toggleTheme}
-              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 text-xs font-semibold"
-              title={isDark ? "Passa a Tema Chiaro" : "Passa a Tema Scuro"}
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="p-2 sm:px-2.5 sm:py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-100 transition-colors flex items-center justify-center min-h-[44px] min-w-[44px] shadow-2xs"
+              aria-label="Tutte le sezioni e strumenti"
+              title="Menu principale (⋮)"
             >
-              {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-              <span className="hidden xl:inline">{isDark ? "Tema Chiaro" : "Tema Scuro"}</span>
+              {menuOpen ? (
+                <X className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+              ) : (
+                <MoreVertical className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+              )}
             </button>
           </div>
-
-
-          {/* Mobile menu button */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 min-h-[44px] min-w-[44px] flex items-center justify-center"
-            aria-label="Apri menu"
-          >
-            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile Drawer (Tools, Audit & Settings - Anti-Repetition with Bottom Bar) */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-3 pb-5 space-y-3 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1">
-            Strumenti di Intelligence & Impostazioni
-          </div>
-          
-          <div className="space-y-1">
-            <Link
-              href="/sources"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-colors ${
-                pathname === "/sources"
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              <Rss className="w-4 h-4 text-blue-500 shrink-0" />
-              <div className="flex-1 flex items-center justify-between">
-                <span>Fonti & Crawler Web</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300 font-mono">Live</span>
+      {/* Full Dropdown / Drawer from Three Dots (⋮) */}
+      {menuOpen && (
+        <div className="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl animate-in fade-in slide-in-from-top-2 duration-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                Menu PolitiLens • Tutte le Sezioni
               </div>
-            </Link>
+              <button
+                onClick={() => setMenuOpen(false)}
+                className="text-xs font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 flex items-center gap-1"
+              >
+                <span>Chiudi</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
-            <Link
-              href="/audit"
-              onClick={() => setMobileMenuOpen(false)}
-              className={`flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm font-semibold transition-colors ${
-                pathname === "/audit"
-                  ? "bg-slate-900 text-white dark:bg-white dark:text-slate-950"
-                  : "text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
-            >
-              <History className="w-4 h-4 text-emerald-500 shrink-0" />
-              <div className="flex-1 flex items-center justify-between">
-                <span>Registro Modifiche & Audit AI</span>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-mono">Trasparenza</span>
+            {/* Navigation Grid containing ALL pages */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 pt-4">
+              {allSections.map((sec) => {
+                const isActive = pathname === sec.href;
+                return (
+                  <Link
+                    key={sec.href}
+                    href={sec.href}
+                    onClick={() => setMenuOpen(false)}
+                    className={`p-3.5 rounded-2xl border transition-all flex items-start gap-3 group ${
+                      isActive
+                        ? "bg-blue-50/80 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800 shadow-2xs"
+                        : "bg-slate-50/60 dark:bg-slate-800/40 border-slate-200/70 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                    }`}
+                  >
+                    <div className="p-2 rounded-xl bg-white dark:bg-slate-800 shadow-2xs border border-slate-100 dark:border-slate-700 shrink-0 group-hover:scale-105 transition-transform">
+                      {sec.icon}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-bold ${isActive ? "text-blue-900 dark:text-blue-300" : "text-slate-900 dark:text-white"}`}>
+                          {sec.name}
+                        </span>
+                        {isActive && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            Attiva
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
+                        {sec.desc}
+                      </p>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {/* Footer Options inside Menu */}
+            <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                <span>Parametri ufficiali MEF, ISTAT, Corte dei Conti & Art. 81 Costituzione</span>
               </div>
-            </Link>
-          </div>
 
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
-            <button
-              onClick={() => {
-                toggleTheme();
-                setMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <div className="flex items-center gap-2.5">
+              {/* Theme Toggle option available inside menu */}
+              <button
+                onClick={() => {
+                  toggleTheme();
+                }}
+                className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors shrink-0"
+              >
                 {isDark ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-600" />}
-                <span>Aspetto Visivo</span>
-              </div>
-              <span className="text-xs font-bold text-slate-500">
-                {isDark ? "Tema Scuro (Attivo)" : "Tema Chiaro (Attivo)"}
-              </span>
-            </button>
-
-            <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 text-[11px] text-slate-500 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
-              <span>Parametri ufficiali MEF, ISTAT, Corte dei Conti & Art. 81 Cost.</span>
+                <span>{isDark ? "Passa a Tema Chiaro" : "Passa a Tema Scuro"}</span>
+              </button>
             </div>
           </div>
         </div>
       )}
-
     </header>
   );
 }
