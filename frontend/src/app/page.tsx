@@ -27,7 +27,6 @@ import {
   Target,
   Info,
   ExternalLink,
-  Calculator,
   Percent,
   SlidersHorizontal
 } from "lucide-react";
@@ -104,9 +103,9 @@ function DashboardContent() {
 
   const [showGapsDetails, setShowGapsDetails] = useState<boolean>(false);
 
-  // Active view tab synced with URL param: "proposte" | "sondaggi" | "bilancio"
-  const urlTab = (searchParams.get("tab") as "proposte" | "sondaggi" | "bilancio") || "proposte";
-  const [activeTab, setActiveTabState] = useState<"proposte" | "sondaggi" | "bilancio">(urlTab);
+  // Active view tab synced with URL param: "proposte" | "sondaggi"
+  const urlTab = (searchParams.get("tab") as "proposte" | "sondaggi") || "proposte";
+  const [activeTab, setActiveTabState] = useState<"proposte" | "sondaggi">(urlTab);
 
   // Proposals Tab Filters synced with URL
   const initialTopic = searchParams.get("topic") || "Tutti";
@@ -122,10 +121,6 @@ function DashboardContent() {
 
   // Polls Tab Filter
   const [pollCoalitionFilter, setPollCoalitionFilter] = useState<string>("Tutti");
-
-  // State Budget Simulator State
-  const [simAmount, setSimAmount] = useState<number>(5.0); // 5 Mld € default
-  const [simUnit, setSimUnit] = useState<"mld" | "mln">("mld");
 
   // Helper to sync state to URL
   const updateURL = (paramsToUpdate: Record<string, string | null>) => {
@@ -144,7 +139,7 @@ function DashboardContent() {
     });
   };
 
-  const setActiveTab = (tab: "proposte" | "sondaggi" | "bilancio") => {
+  const setActiveTab = (tab: "proposte" | "sondaggi") => {
     setActiveTabState(tab);
     updateURL({ tab: tab === "proposte" ? null : tab });
   };
@@ -302,13 +297,6 @@ function DashboardContent() {
     };
   });
 
-  // Budget calculations
-  const simAmountMld = simUnit === "mld" ? simAmount : simAmount / 1000;
-  const pctSSN = ((simAmountMld / 136.5) * 100).toFixed(1);
-  const pctManovra = ((simAmountMld / 30.0) * 100).toFixed(1);
-  const pctPIL = ((simAmountMld / 2120.0) * 100).toFixed(2);
-  const pctIstruzione = ((simAmountMld / 78.0) * 100).toFixed(1);
-
   return (
     <div className="space-y-6 max-w-7xl mx-auto px-4 sm:px-6 py-4">
       {/* 1. HERO BANNER (Light, Clean & High-End Editorial Style) */}
@@ -442,21 +430,6 @@ function DashboardContent() {
             <span>Sondaggi & Grafici</span>
             <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-emerald-50 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
               Recharts
-            </span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("bilancio")}
-            className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 py-2 px-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${
-              activeTab === "bilancio"
-                ? "bg-white dark:bg-slate-800 text-slate-950 dark:text-white shadow-2xs"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Coins className={`w-4 h-4 ${activeTab === "bilancio" ? "text-amber-600 dark:text-amber-400" : ""}`} />
-            <span>Simulatore Bilancio</span>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-md font-semibold bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-              Spesa & Vincoli
             </span>
           </button>
         </div>
@@ -759,79 +732,6 @@ function DashboardContent() {
                   </Link>
                 );
               })}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 3: SIMULATORE BILANCIO DELLO STATO */}
-        {activeTab === "bilancio" && (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 p-5 sm:p-7 shadow-2xs space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
-              <div>
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <Calculator className="w-5 h-5 text-blue-500" />
-                  <span>Simulatore Interattivo di Spesa Pubblica & Vincoli di Bilancio</span>
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Inserisci una cifra stimata per una riforma politica e calcola l'assorbimento delle risorse sui dati macroeconomici reali.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-xl">
-                <input
-                  type="number"
-                  min="0.1"
-                  step="0.5"
-                  value={simAmount}
-                  onChange={(e) => setSimAmount(parseFloat(e.target.value) || 0)}
-                  className="w-24 px-2.5 py-1 text-xs sm:text-sm font-bold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-hidden"
-                />
-                <select
-                  value={simUnit}
-                  onChange={(e) => setSimUnit(e.target.value as "mld" | "mln")}
-                  className="text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 font-semibold text-slate-700 dark:text-slate-200"
-                >
-                  <option value="mld">Miliardi € (Mld)</option>
-                  <option value="mln">Milioni € (Mln)</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Simulated Impact Metrics */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-900/60 space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">Assorbimento Manovra Annua</div>
-                <div className="text-2xl font-black text-blue-950 dark:text-blue-200">{pctManovra}%</div>
-                <div className="text-[11px] text-blue-700 dark:text-blue-300">Spazio totale tipico: ~30 Mld €</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">% Fondo Sanitario (SSN)</div>
-                <div className="text-2xl font-black text-emerald-950 dark:text-emerald-200">{pctSSN}%</div>
-                <div className="text-[11px] text-emerald-700 dark:text-emerald-300">Totale SSN: ~136.5 Mld €</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-purple-50/70 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-900/60 space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">% Spesa Istruzione & Ricerca</div>
-                <div className="text-2xl font-black text-purple-950 dark:text-purple-200">{pctIstruzione}%</div>
-                <div className="text-[11px] text-purple-700 dark:text-purple-300">Totale MIUR: ~78.0 Mld €</div>
-              </div>
-
-              <div className="p-4 rounded-2xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/60 space-y-1">
-                <div className="text-[10px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400">Impatto sul PIL Nominale</div>
-                <div className="text-2xl font-black text-amber-950 dark:text-amber-200">{pctPIL}%</div>
-                <div className="text-[11px] text-amber-700 dark:text-amber-300">PIL Italia: ~2.120 Mld €</div>
-              </div>
-            </div>
-
-            {/* Assessment Note */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-              <strong className="text-slate-900 dark:text-white">Verifica Vincoli Costituzionali (Art. 81 Cost.):</strong> Una spesa di <strong>{simAmountMld.toFixed(2)} Mld €</strong> rappresenta una quota significativa delle risorse pubbliche annue. 
-              {parseFloat(pctManovra) > 20 ? (
-                <span className="text-rose-600 dark:text-rose-400 font-bold"> Richiede necessariamente coperture primarie strutturali (tagli lineari o nuove imposte) per evitare procedura di disavanzo UE.</span>
-              ) : (
-                <span className="text-emerald-600 dark:text-emerald-400 font-bold"> È gestibile all'interno degli ordinari saldi di finanza pubblica a fronte di modeste compensazioni.</span>
-              )}
             </div>
           </div>
         )}
