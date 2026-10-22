@@ -39,24 +39,32 @@ def get_overview_stats(db: Session = Depends(get_db)):
     fc_counts_raw = db.query(PoliticalProposal.fact_check_status, func.count(PoliticalProposal.id)).group_by(PoliticalProposal.fact_check_status).all()
     fact_check_distribution: Dict[str, int] = {item[0]: item[1] for item in fc_counts_raw}
 
-    # Cost quantification percentage (Only formal acts with RT and verified financial coverage)
-    quantified_count = db.query(func.count(PoliticalProposal.id)).filter(
-        PoliticalProposal.costo_stimato != "Non quantificato",
-        ~PoliticalProposal.costo_stimato.ilike("%non quantificato%"),
-        ~PoliticalProposal.costo_stimato.ilike("%non specificat%"),
-        PoliticalProposal.costo_stimato.isnot(None),
-        PoliticalProposal.coperture_dichiarate.isnot(None),
-        ~PoliticalProposal.coperture_dichiarate.ilike("%non specificat%"),
-        ~PoliticalProposal.coperture_dichiarate.ilike("%in attesa%"),
-        PoliticalProposal.fact_check_status == "Verificato"
-    ).scalar() or 0
-    
-    quantified_percentage = round((quantified_count / total_proposals * 100), 1) if total_proposals > 0 else 0.0
+    all_proposals = db.query(PoliticalProposal).all()
 
+    # 1. Coperture Economiche: % di proposte in cui è esplicitata e indicata la fonte di copertura finanziaria o l'invarianza
+    with_coverage_count = 0
+    for p in all_proposals:
+        cop = (p.coperture_dichiarate or "").strip().lower()
+        if cop and not any(w in cop for w in ["non specificat", "in attesa", "da definire", "non disponibile", "nessuna copertura", "non indicat"]):
+            with_coverage_count += 1
+            
+    quantified_percentage = round((with_coverage_count / total_proposals * 100), 1) if total_proposals > 0 else 0.0
 
-    # Truthfulness and feasibility metrics
-    verified_count = fact_check_distribution.get("Verificato", 0)
-    avg_truthfulness = round((verified_count / total_proposals * 100), 1) if total_proposals > 0 else 0.0
+    # 2. Indice di Veridicità e Accuratezza Fattuale (Fact-checking ponderato):
+    # - Verificato: 100% (aderente ai dati ufficiali)
+    # - In attesa di copertura: 75% (proposta reale di policy, in attesa di definizione in manovra di bilancio)
+    # - Esagerato: 30% (dati o promesse gonfiate rispetto ai benchmark ISTAT)
+    # - Inattuabile: 10% (contrasto netto con vincoli strutturali o matematici)
+    # - Fake / Infondato: 0%
+    truth_weights = {
+        "Verificato": 100.0,
+        "In attesa di copertura": 75.0,
+        "Esagerato": 30.0,
+        "Inattuabile": 10.0,
+        "Fake / Infondato": 0.0
+    }
+    truth_sum = sum(truth_weights.get(p.fact_check_status, 50.0) for p in all_proposals)
+    avg_truthfulness = round(truth_sum / total_proposals, 1) if total_proposals > 0 else 0.0
 
     # Coalition truthfulness breakdown
     parties = db.query(PoliticalParty).all()

@@ -397,15 +397,15 @@ function DashboardContent() {
               <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                 {stats?.average_truthfulness !== undefined ? `${stats.average_truthfulness}%` : "--%"}
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Indice di aderenza ai dati e fatti reali</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Fact-checking: aderenza a dati e fatti reali</p>
             </div>
 
             <div className="bg-white dark:bg-slate-900 p-3.5 sm:p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Coperture Quantificate</div>
+              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Coperture Economiche</div>
               <div className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5">
                 {stats?.quantified_cost_percentage !== undefined ? `${stats.quantified_cost_percentage}%` : "--%"}
               </div>
-              <p className="text-[10px] text-slate-500 mt-0.5">Proposte con costo e copertura stimata</p>
+              <p className="text-[10px] text-slate-500 mt-0.5">Proposte con fonti di finanziamento indicate</p>
             </div>
 
           </>
