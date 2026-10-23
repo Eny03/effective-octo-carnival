@@ -23,6 +23,13 @@ def compute_content_hash(text: str) -> str:
     """Computes a SHA256 hash for deduplication."""
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
+def _match_term(term: str, lower_text: str) -> bool:
+    """Matches a term with proper boundaries, handling punctuation like '+' or '!'."""
+    esc = re.escape(term.lower())
+    prefix = r"\b" if term[0].isalnum() else r"(?:^|[\s\(\[\"\'«])"
+    suffix = r"\b" if term[-1].isalnum() else r"(?:$|[\s\)\]\"\'».,;:!?])"
+    return bool(re.search(prefix + esc + suffix, lower_text))
+
 def detect_entities(text: str) -> Tuple[List[str], List[str]]:
     """
     Detects which political parties and macro-topics are mentioned in the text.
@@ -34,15 +41,13 @@ def detect_entities(text: str) -> Tuple[List[str], List[str]]:
     
     for party, aliases in PARTY_ALIASES.items():
         for alias in aliases:
-            pattern = r"\b" + re.escape(alias) + r"\b"
-            if re.search(pattern, lower_text):
+            if _match_term(alias, lower_text):
                 matched_parties.append(party)
                 break
 
     for topic, keywords in MACRO_TOPICS_KEYWORDS.items():
         for kw in keywords:
-            pattern = r"\b" + re.escape(kw) + r"\b"
-            if re.search(pattern, lower_text):
+            if _match_term(kw, lower_text):
                 matched_topics.append(topic)
                 break
                 

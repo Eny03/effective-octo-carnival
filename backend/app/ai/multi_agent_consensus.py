@@ -256,20 +256,27 @@ async def run_multi_agent_consensus_pipeline(db: Session, target_parties: Option
     5. Regenerates party dossiers and truthfulness metrics.
     """
     parties = db.query(PoliticalParty).all()
-    party_names = target_parties or [p.name for p in parties]
-    
-    # Pick a rotating batch of topics and parties for continuous coverage
     import random
+    
+    if not target_parties:
+        # Prioritize least-covered parties first to systematically eliminate knowledge voids
+        party_counts = {p.name: db.query(PoliticalProposal).filter(PoliticalProposal.party_id == p.id).count() for p in parties}
+        sorted_by_scarcity = sorted(parties, key=lambda p: party_counts.get(p.name, 0))
+        priority_pool = [p.name for p in sorted_by_scarcity[:8]]
+        selected_parties = random.sample(priority_pool, min(4, len(priority_pool)))
+    else:
+        selected_parties = target_parties[:4]
+    
+    # Pick a rotating batch of topics for continuous coverage
     topics_pool = ["Fisco", "Lavoro", "Sanità", "Pensioni", "Energia", "Istituzioni", "Immigrazione", "Istruzione", "Infrastrutture", "Politica Estera", "Diritti Civili"]
     selected_topics = random.sample(topics_pool, min(4, len(topics_pool)))
-    selected_parties = random.sample(party_names, min(4, len(party_names)))
 
     scouted_articles = []
     queries_run = []
 
     for party in selected_parties:
         for topic in selected_topics[:2]:
-            q = f"{party} {topic} proposta legge"
+            q = f'"{party}" {topic} proposta'
             queries_run.append(q)
             arts = OpenWebScoutAgent.search_multi_vector(q, max_results=3)
             scouted_articles.extend(arts)

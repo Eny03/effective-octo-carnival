@@ -161,7 +161,7 @@ async def run_pipeline_scan():
         try:
             from app.ingestion.gap_detector import autonomous_targeted_gap_search
             print("[Scheduler] Rilevamento lacune informative in corso...")
-            gap_res = await autonomous_targeted_gap_search(db, max_gaps=3)
+            gap_res = await autonomous_targeted_gap_search(db, max_gaps=6)
             if gap_res:
                 gap_added = gap_res.get("proposals_added_or_updated", 0)
                 total_proposals += gap_added

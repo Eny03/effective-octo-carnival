@@ -193,6 +193,13 @@ MONITORED_FEEDS = [
         "is_active": True
     },
     {
+        "name": "Live Web Search - Südtiroler Volkspartei & Steger",
+        "url": "https://news.google.com/rss/search?q=S%C3%BCdtiroler+Volkspartei+Dieter+Steger+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Ricerca Web AI",
+        "reliability": "Massima",
+        "is_active": True
+    },
+    {
         "name": "Live Web Search - Senato & Camera dei Deputati",
         "url": "https://news.google.com/rss/search?q=Parlamento+Camera+Senato+disegno+di+legge+approvato&hl=it&gl=IT&ceid=IT:it",
         "category": "Atti Parlamentari",

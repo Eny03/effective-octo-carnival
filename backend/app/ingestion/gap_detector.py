@@ -49,6 +49,20 @@ PARTY_SEARCH_ANCHORS = {
     "Südtiroler Volkspartei": "Südtiroler Volkspartei Dieter Steger"
 }
 
+TOPIC_FOCUSED_KEYWORDS = {
+    "Fisco": ["tasse", "IRPEF", "flat tax", "cuneo fiscale", "detrazioni"],
+    "Lavoro": ["salario minimo", "stipendi", "occupazione", "contratti"],
+    "Sanità": ["fondo sanitario", "liste attesa", "medici", "ospedali", "SSN"],
+    "Pensioni": ["quota 41", "pensioni", "legge Fornero", "uscita anticipata"],
+    "Energia": ["nucleare", "rinnovabili", "bollette", "transizione energetica"],
+    "Istruzione": ["scuola", "università", "docenti", "tempo pieno"],
+    "Istituzioni": ["premierato", "autonomia differenziata", "riforma giustizia", "separazione carriere"],
+    "Immigrazione": ["immigrazione", "decreti sicurezza", "ius scholae", "CPR"],
+    "Politica Estera": ["Ucraina", "spese militari", "difesa europea", "Nato", "Piano Mattei"],
+    "Diritti Civili": ["fine vita", "matrimonio egualitario", "cittadinanza", "carceri"],
+    "Infrastrutture": ["Ponte sullo Stretto", "ferrovie", "rete idrica", "trasporti"]
+}
+
 TOPIC_SEARCH_TERMS = {
     "Fisco": "fisco tasse flat tax irpef detrazioni cuneo",
     "Lavoro": "lavoro salario minimo stipendi occupazione contratti",
@@ -63,12 +77,12 @@ TOPIC_SEARCH_TERMS = {
     "Infrastrutture": "infrastrutture opere pubbliche ferrovie trasporti ponti rete idrica"
 }
 
-def detect_information_gaps(db: Session, max_gaps: int = 4) -> List[Dict[str, Any]]:
+def detect_information_gaps(db: Session, max_gaps: int = 6) -> List[Dict[str, Any]]:
     """
     Scans the database to identify political information voids:
     1. Finds parties and macro-topics with 0 proposals (total void).
-    2. Finds topics with sparse or outdated coverage (> 12 months).
-    3. Distributes across distinct parties so each update cycle focuses on different political forces.
+    2. Prioritizes under-represented parties to eliminate information starvation.
+    3. Dynamically rotates priorities across 10-minute cycles so all 18 parties and 11 topics are scanned.
     """
     parties = db.query(PoliticalParty).all()
     all_proposals = db.query(PoliticalProposal).all()
@@ -95,6 +109,7 @@ def detect_information_gaps(db: Session, max_gaps: int = 4) -> List[Dict[str, An
 
     gap_candidates = []
     now = datetime.datetime.utcnow()
+    cycle_seed = (now.hour * 6 + now.minute // 10)
     
     for party in parties:
         p_name = party.name
@@ -109,30 +124,36 @@ def detect_information_gaps(db: Session, max_gaps: int = 4) -> List[Dict[str, An
                 gap_score = 100
                 reason = f"Lacuna totale: nessuna proposta censita in materia di {topic}"
             elif len(props) == 1:
-                gap_score = 45
+                gap_score = 35
                 reason = f"Copertura minima: una sola posizione censita in materia di {topic}"
             else:
                 latest_ts = max((p.timestamp for p in props if p.timestamp), default=datetime.datetime(2022, 1, 1))
                 days_old = (now - latest_ts).days
                 if days_old > 365:
-                    gap_score = 35
+                    gap_score = 25
                     reason = f"Posizione da aggiornare: ultimo riscontro risalente a oltre un anno fa ({latest_ts.year})"
                     
             if gap_score > 0:
-                if total_p < 5:
-                    gap_score += 35
-                elif total_p < 8:
-                    gap_score += 20
-                elif total_p < 12:
-                    gap_score += 10
-                    
+                # 1. Scarcity bonus: severely under-represented parties (< 10 proposals) are boosted massively
+                scarcity_bonus = max(0, 20 - total_p) * 25
+                
+                # 2. Dynamic cyclic rotation bonus: rotates priority among tied parties every 10-minute cycle
+                party_hash = sum(ord(ch) for ch in p_name)
+                rot_bonus = ((party_hash + cycle_seed) % 18) * 3
+                
+                total_gap_score = gap_score + scarcity_bonus + rot_bonus
+                
                 anchor = PARTY_SEARCH_ANCHORS.get(p_name, p_name)
-                terms = TOPIC_SEARCH_TERMS.get(topic, topic)
+                focused_terms = TOPIC_FOCUSED_KEYWORDS.get(topic, [topic])
+                k1 = focused_terms[0]
+                k2 = focused_terms[1] if len(focused_terms) > 1 else topic
+                
+                # Crisp, high-yield search queries tailored for search engines
                 queries = [
-                    f"{anchor} {terms} proposta",
-                    f"{p_name} {topic} ddl disegno di legge",
-                    f"{p_name} {topic} programma riforma",
-                    f"{anchor} {topic} conferenza stampa dichiarazione"
+                    f'"{p_name}" {topic} proposta',
+                    f'"{anchor}" {k1} ddl',
+                    f'"{p_name}" {topic} disegno di legge',
+                    f'"{p_name}" programma {k2}'
                 ]
                 if party.official_website:
                     domain = urllib.parse.urlparse(party.official_website).netloc.replace("www.", "")
@@ -143,15 +164,17 @@ def detect_information_gaps(db: Session, max_gaps: int = 4) -> List[Dict[str, An
                     "party_name": p_name,
                     "party_code": party.code,
                     "topic": topic,
-                    "gap_score": gap_score,
+                    "gap_score": total_gap_score,
                     "existing_count": len(props),
+                    "party_total": total_p,
                     "reason": reason,
                     "queries": queries
                 })
 
+    # Sort strictly by gap_score descending (which embeds scarcity and cycle rotation)
     gap_candidates.sort(key=lambda x: x["gap_score"], reverse=True)
     
-    # Pluralistic selection: max 1 gap per party per cycle to diversify knowledge
+    # Pluralistic selection: max 1 gap per party per cycle to diversify knowledge across 6 forces
     selected_gaps = []
     seen_parties = set()
     for candidate in gap_candidates:
@@ -176,17 +199,20 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
     Analyzes article text and title specifically for the targeted party and topic to extract
     concrete programmatic commitments and public policy proposals.
     """
-    topic_keywords = TOPIC_SEARCH_TERMS.get(topic, topic).split()
+    topic_keywords = TOPIC_FOCUSED_KEYWORDS.get(topic, [topic])
+    topic_keywords_all = topic_keywords + [topic.lower()]
     
     # 1. Check headline / title for explicit proposal quotes or statements
     if title:
         t_low = title.lower()
-        if any(kw in t_low for kw in topic_keywords):
+        if any(kw.lower() in t_low for kw in topic_keywords_all):
             quote_m = re.search(r"[:'\"«]\s*([^'\"»]{18,150})", title)
             if quote_m:
                 q_text = quote_m.group(1).strip()
                 if len(q_text) >= 18 and not any(noise in q_text.lower() for noise in ["ecco chi", "cosa è successo", "il video", "live"]):
                     act = "Proposta di legge" if any(w in t_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
+                    if any(w in t_low for w in ["no a", "stop a", "contro", "boccia", "respinge"]):
+                        act = "Opposizione"
                     valid_q = sanitize_and_validate_proposal_statement(q_text)
                     if valid_q:
                         return {
@@ -201,13 +227,16 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
     
     commitment_patterns = [
         r"(?:propon(?:e|e di|iamo|e che)|chied(?:e|e di|iamo)|presenta (?:un |la |il )?(?:ddl|disegno di legge|proposta|mozione|piano|riforma)|nostro programma prevede|nostra proposta (?:è|sarà)|intende (?:introdurre|istituire|tagliare|aumentare|cancellare|riformare|ridurre)|priorit[àa] (?:è|sarà|rimane)|sostien(?:e|iamo)|punta (?:su|a)|vuole (?:introdurre|tagliare|riformare|investire)|lancia (?:la proposta|il piano|la misura per))\s+([^.!?]{18,220})",
+        r"(?:annuncia (?:il|la|un|una) (?:ddl|proposta|piano|legge)|ha depositato (?:un|il) disegno di legge per|deposita la proposta per)\s+([^.!?]{18,220})",
+        r"(?:nel programma di [^:]+:\s*|linea di [^:]+:\s*)([^.!?]{18,220})",
+        r"(?:ferma opposizione (?:a|al|alla|allo|ai|agli|alle)|chiede lo stop (?:a|al|alla|allo|ai|agli|alle|del|della|di)|promuove il referendum (?:per|contro|abrogativo))\s+([^.!?]{18,220})",
         r"(?:battaglia|obiettivo|impegno).*sul(?:la|lo|l')?\s+([a-zA-Z0-9\s,]{15,180})",
         r"(?:per riformare|per rilanciare|per sostenere|per tagliare|per finanziare)\s+([^.!?]{18,180})"
     ]
     
     for sentence in sentences:
         s_low = sentence.lower()
-        if any(kw in s_low for kw in topic_keywords):
+        if any(kw.lower() in s_low for kw in topic_keywords_all):
             for pat in commitment_patterns:
                 match = re.search(pat, sentence, re.I)
                 if match:
@@ -219,14 +248,19 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
                         # Strict validation: verify proposal statement is not an abstract slogan
                         valid_prop = sanitize_and_validate_proposal_statement(raw_prop)
                         if not valid_prop:
-                            # If raw_prop was a rhetorical phrase (e.g. "restituire diritti a chi..."), check if title mentions a specific legislative bill
+                            # If raw_prop was a rhetorical phrase, check if title mentions a specific legislative bill
                             if title and re.search(r"\b(ddl|disegno di legge|proposta di legge|legge|emendamento)\b", title, re.I):
                                 title_clean = re.sub(r"^.*?:\s*", "", title).strip()
                                 valid_prop = sanitize_and_validate_proposal_statement(title_clean)
                         if not valid_prop:
                             continue
 
-                        act = "Proposta di legge" if any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
+                        if any(w in s_low for w in ["ferma opposizione", "chiede lo stop", "referendum abrogativo", "contrari"]):
+                            act = "Opposizione"
+                        elif any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]):
+                            act = "Proposta di legge"
+                        else:
+                            act = "Dichiarazione programmatica"
                         
                         cost_m = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", sentence, re.I)
                         cost = cost_m.group(1) if cost_m else "Non quantificato"
@@ -244,7 +278,7 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
                         }
     return None
 
-async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict[str, Any]:
+async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 6) -> Dict[str, Any]:
     """
     Autonomously searches the web for the detected political gaps,
     extracts policy proposals, merges them into permanent memory,

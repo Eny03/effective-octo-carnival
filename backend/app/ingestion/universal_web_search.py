@@ -84,7 +84,7 @@ def search_duckduckgo_open_web(query: str, max_results: int = 10) -> List[Dict[s
                     combined_text = f"{title}. {snippet}"
                     parties, topics = detect_entities(combined_text)
                     
-                    if parties or topics:
+                    if len(combined_text.strip()) > 20:
                         results.append({
                             "title": title,
                             "url": link,
