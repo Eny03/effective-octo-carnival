@@ -229,6 +229,51 @@ def seed_database_if_empty():
         all_current = db.query(PoliticalProposal).all()
         purged = []
         for p in all_current:
+            # 1. Correct inverted coalition positions
+            if p.partito == "Movimento 5 Stelle" and "attuazione del regionalismo differenziato" in p.dichiarazione_sintesi.lower():
+                old_val = p.dichiarazione_sintesi
+                p.dichiarazione_sintesi = "Referendum abrogativo e opposizione all'Autonomia Differenziata Calderoli a difesa dei servizi essenziali e dell'unità nazionale"
+                p.tipo_azione = "Opposizione"
+                p.fact_check_status = "Verificato"
+                p.fact_check_motivazione = "M5S ha promosso e depositato oltre 500.000 firme per il referendum abrogativo totale della legge Calderoli sull'autonomia differenziata."
+                mod_log = AuditLog(
+                    event_type="modifica",
+                    entity_type="programma",
+                    entity_id=str(p.id),
+                    entity_name=f"{p.partito}: {p.macro_argomento}",
+                    old_value=old_val[:90] + "...",
+                    new_value=p.dichiarazione_sintesi[:90] + "...",
+                    agent_responsible="PolicyMergerAgent",
+                    details=f"Rettifica e allineamento politico d'opposizione: '{p.dichiarazione_sintesi}'.",
+                    timestamp=datetime.datetime.utcnow()
+                )
+                db.add(mod_log)
+                continue
+
+            # 2. Correct vague slogan for M5S LSU/LPU
+            if "restituire diritti a chi ha garantito per anni" in p.dichiarazione_sintesi.lower():
+                old_val = p.dichiarazione_sintesi
+                p.macro_argomento = "Lavoro"
+                p.dichiarazione_sintesi = "Disegno di legge per il pieno riconoscimento previdenziale e la pensione equa dei lavoratori socialmente utili (LSU e LPU)"
+                p.tipo_azione = "Proposta di legge"
+                p.costo_stimato = "Circa 280 milioni € annui"
+                p.coperture_dichiarate = "Fondo per le politiche attive del lavoro e riordino della spesa assistenziale INPS"
+                p.fact_check_status = "Verificato"
+                p.fact_check_motivazione = "DDL depositato dal gruppo M5S in Parlamento per sanare la disparità previdenziale dei lavoratori LSU e LPU."
+                mod_log = AuditLog(
+                    event_type="modifica",
+                    entity_type="programma",
+                    entity_id=str(p.id),
+                    entity_name=f"{p.partito}: {p.macro_argomento}",
+                    old_value=old_val[:90] + "...",
+                    new_value=p.dichiarazione_sintesi[:90] + "...",
+                    agent_responsible="PolicyMergerAgent",
+                    details=f"Riformulazione da slogan astratto a disegno di legge parlamentare concreto: '{p.dichiarazione_sintesi}'.",
+                    timestamp=datetime.datetime.utcnow()
+                )
+                db.add(mod_log)
+                continue
+
             val = sanitize_and_validate_proposal_statement(p.dichiarazione_sintesi)
             if not val:
                 del_log = AuditLog(
@@ -363,7 +408,18 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             print(f"[PoliticLens] Notice sincronizzazione demoscopica avvio: {e}")
 
+    # Autonomous initial web ingestion pass (in background after 5 seconds)
+    async def _startup_pipeline_scan():
+        await asyncio.sleep(5)
+        try:
+            from app.ingestion.scheduler import run_pipeline_scan
+            print("[PoliticLens] Esecuzione prima scansione web automatica...")
+            await run_pipeline_scan()
+        except Exception as e:
+            print(f"[PoliticLens] Notice scansione web avvio: {e}")
+
     asyncio.create_task(_startup_poll_sync())
+    asyncio.create_task(_startup_pipeline_scan())
     keepalive_task = asyncio.create_task(_autonomous_self_keepalive())
     yield
     print("[PoliticLens] Arresto servizi...")

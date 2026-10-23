@@ -22,6 +22,7 @@ import {
   Trash2
 } from "lucide-react";
 import { fetchAuditLogs, triggerPollUpdate, AuditLog, AuditStats } from "@/lib/api";
+import { formatItalianDateTime } from "@/lib/dateUtils";
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
@@ -294,14 +295,7 @@ export default function AuditPage() {
         ) : (
           logs.map((log) => {
             const badge = getEventBadge(log.event_type);
-            const dateObj = new Date(log.timestamp);
-            const formattedDate = dateObj.toLocaleDateString("it-IT", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit"
-            });
+            const formattedDate = formatItalianDateTime(log.timestamp, true);
 
             return (
               <article

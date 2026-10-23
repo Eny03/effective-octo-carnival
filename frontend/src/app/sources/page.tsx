@@ -29,6 +29,7 @@ import {
   PoliticalProposal,
   InformationGap
 } from "@/lib/api";
+import { formatItalianDateTime } from "@/lib/dateUtils";
 import { StatusBadge } from "@/components/StatusBadge";
 import { ProposalCard } from "@/components/ProposalCard";
 
@@ -437,7 +438,7 @@ export default function SourcesPage() {
               {logs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
                   <td className="p-3 font-mono text-slate-500">
-                    {new Date(log.timestamp).toLocaleString("it-IT")}
+                    {formatItalianDateTime(log.timestamp, true)}
                   </td>
                   <td className="p-3 font-semibold text-slate-900 dark:text-white">
                     {log.source_name}

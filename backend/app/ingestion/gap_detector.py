@@ -216,6 +216,16 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
                     raw_prop = re.sub(r"^(?:che\s+|di\s+|per\s+|a\s+|e\s+)", "", raw_prop, flags=re.I).strip()
                     raw_prop = re.sub(r"[,;:\-–—\s]+$", "", raw_prop).strip()
                     if len(raw_prop) >= 18 and not any(noise in raw_prop.lower() for noise in ["arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti"]):
+                        # Strict validation: verify proposal statement is not an abstract slogan
+                        valid_prop = sanitize_and_validate_proposal_statement(raw_prop)
+                        if not valid_prop:
+                            # If raw_prop was a rhetorical phrase (e.g. "restituire diritti a chi..."), check if title mentions a specific legislative bill
+                            if title and re.search(r"\b(ddl|disegno di legge|proposta di legge|legge|emendamento)\b", title, re.I):
+                                title_clean = re.sub(r"^.*?:\s*", "", title).strip()
+                                valid_prop = sanitize_and_validate_proposal_statement(title_clean)
+                        if not valid_prop:
+                            continue
+
                         act = "Proposta di legge" if any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
                         
                         cost_m = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", sentence, re.I)
@@ -227,7 +237,7 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
                             cov = cov_m.group(1).strip()
                             
                         return {
-                            "sintesi": f"{raw_prop[0].upper() + raw_prop[1:]}",
+                            "sintesi": f"{valid_prop[0].upper() + valid_prop[1:]}",
                             "tipo_azione": act,
                             "costo": cost,
                             "coperture": cov
@@ -300,6 +310,37 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                     emb_json = json.dumps(emb_list) if emb_list else None
                     item_hash = compute_content_hash(f"{p_name}_{topic}_{comm['sintesi']}")
 
+                    matching_comm = find_matching_existing_proposal(
+                        db=db,
+                        party_id=party_id,
+                        partito=p_name,
+                        macro_argomento=topic,
+                        dichiarazione_sintesi=comm["sintesi"],
+                        emb_list=emb_list
+                    )
+                    if matching_comm:
+                        old_s = matching_comm.dichiarazione_sintesi
+                        matching_comm.dichiarazione_sintesi = comm["sintesi"]
+                        matching_comm.costo_stimato = comm["costo"]
+                        matching_comm.coperture_dichiarate = comm["coperture"]
+                        matching_comm.fattibilita_finanziaria = feasibility
+                        matching_comm.fact_check_status = status
+                        matching_comm.timestamp = art.get("published_at", datetime.datetime.utcnow())
+                        db.add(AuditLog(
+                            event_type="modifica",
+                            entity_type="programma",
+                            entity_id=str(matching_comm.id),
+                            entity_name=f"{p_name}: {topic}",
+                            old_value=old_s[:90] + "..." if len(old_s) > 90 else old_s,
+                            new_value=comm["sintesi"][:90] + "..." if len(comm["sintesi"]) > 90 else comm["sintesi"],
+                            agent_responsible="PolicyMergerAgent",
+                            details=f"Modifica proposta per {p_name} ({topic}) da riscontro web: '{comm['sintesi']}'.",
+                            timestamp=datetime.datetime.utcnow()
+                        ))
+                        total_added_or_updated += 1
+                        proposals_added_for_topic += 1
+                        continue
+
                     record = PoliticalProposal(
                         party_id=party_id,
                         partito=p_name,
@@ -354,6 +395,7 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                     )
 
                     if matching_existing:
+                        old_s = matching_existing.dichiarazione_sintesi
                         merge_or_update_policy_proposal(
                             db=db,
                             existing=matching_existing,
@@ -366,6 +408,17 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                             content_hash=item_hash,
                             emb_json=emb_json
                         )
+                        db.add(AuditLog(
+                            event_type="modifica",
+                            entity_type="programma",
+                            entity_id=str(matching_existing.id),
+                            entity_name=f"{item.partito}: {item.macro_argomento}",
+                            old_value=old_s[:90] + "..." if len(old_s) > 90 else old_s,
+                            new_value=item.dichiarazione_sintesi[:90] + "..." if len(item.dichiarazione_sintesi) > 90 else item.dichiarazione_sintesi,
+                            agent_responsible="PolicyMergerAgent",
+                            details=f"Modifica proposta per {item.partito} ({item.macro_argomento}): '{item.dichiarazione_sintesi}'.",
+                            timestamp=datetime.datetime.utcnow()
+                        ))
                         total_added_or_updated += 1
                         gap_filled_for_this_topic = True
                     else:

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { ExternalLink, Calendar, Coins, ShieldCheck, ArrowUpRight, ChevronRight, Eye } from "lucide-react";
 import { PoliticalProposal } from "@/lib/api";
+import { parseUtcDate, formatItalianDateTime } from "@/lib/dateUtils";
 import { StatusBadge } from "./StatusBadge";
 import { TopicBadge } from "./TopicBadge";
 import { ProposalDetailModal } from "./ProposalDetailModal";
@@ -14,17 +15,10 @@ interface ProposalCardProps {
 export function ProposalCard({ proposal }: ProposalCardProps) {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
-  const dateObj = proposal.timestamp ? new Date(proposal.timestamp) : null;
+  const dateObj = parseUtcDate(proposal.timestamp);
   const proposalYear = dateObj ? dateObj.getFullYear() : null;
-  const isHistorical = proposalYear && proposalYear < 2025;
-
-  const formattedDate = dateObj
-    ? dateObj.toLocaleDateString("it-IT", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric"
-      })
-    : "";
+  const isHistorical = proposalYear !== null && proposalYear < 2025;
+  const formattedDate = formatItalianDateTime(proposal.timestamp, false);
 
   const partyColor = proposal.party_color || "#3b82f6";
 

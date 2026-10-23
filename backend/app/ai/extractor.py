@@ -7,6 +7,7 @@ from app.schemas import ProposalExtractionSchema, ImpattoEconomicoSchema, FactCh
 from app.ai.llm_provider import llm_provider
 from app.ai.fact_checker import analyze_feasibility_and_factcheck
 from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage, sanitize_proposal_title
+from app.ai.proposal_validator import sanitize_and_validate_proposal_statement
 from app.ingestion.sources_config import PARTY_ALIASES, MACRO_TOPICS_KEYWORDS
 
 EXTRACTION_SYSTEM_PROMPT = """Sei l'assistente AI analista politico e istituzionale neutrale di PoliticLens.
@@ -54,62 +55,156 @@ NON_POLICY_PATTERNS = [
     r"punto stampa.*piazza montecitorio", r"i dati certificano il risanamento", r"replica al pd"
 ]
 
+OPPOSITION_PARTIES = {
+    "Partito Democratico", "Movimento 5 Stelle", "Alleanza Verdi e Sinistra",
+    "Rifondazione Comunista", "Potere al Popolo", "+Europa", "Radicali Italiani"
+}
+
+GOVERNMENT_PARTIES = {
+    "Fratelli d'Italia", "Lega - Salvini Premier", "Forza Italia", "Noi Moderati", "Futuro Nazionale"
+}
+
 POLICY_ACTION_TRANSFORMATIONS = [
-    (r"(?:stop|moratoria|blocco).*(?:pignorament|cartelle|esecuzion|sovraindebitamento)",
-     "Moratoria e sospensione fino a 180 giorni delle procedure esecutive di pignoramento a tutela dei nuclei familiari e debitori in sovraindebitamento", "Economia", "Proposta di legge"),
-    (r"(?:salario minimo|9\s*euro|9€)",
-     "Introduzione del salario minimo legale a 9 euro lordi l'ora per tutti i lavoratori privi di contratti collettivi nazionali maggiormente rappresentativi", "Lavoro", "Proposta di legge"),
-    (r"(?:cuneo fiscale|taglio del cuneo|decontribuzione)",
-     "Taglio strutturale del cuneo fiscale contributivo sui redditi da lavoro dipendente fino a 35.000 euro e decontribuzione per neo-assunti", "Lavoro", "Dichiarazione programmatica"),
-    (r"(?:pensioni a 64|uscita a 64|nodo tfr|quota 41)",
-     "Riforma previdenziale: anticipo dell'uscita pensionistica a 64 anni con ricalcolo contributivo integrale e facoltà di conferimento del TFR a previdenza integrativa", "Pensioni", "Proposta di legge"),
-    (r"(?:tfr.*no tax area|carta sanit|taglio irpef.*ceto medio)",
-     "Manovra fiscale per il ceto medio: riduzione del secondo scaglione IRPEF al 33%, estensione della no tax area under 30 e Carta Sanità per over 65", "Fisco", "Proposta di legge"),
-    (r"(?:trasparenza.*prestazioni sanitarie|costi.*prestazioni sanitarie)",
-     "Disegno di legge per la pubblicazione obbligatoria, comparativa e trasparente dei costi effettivi e dei tempi di attesa di tutte le prestazioni sanitarie", "Sanità", "Proposta di legge"),
-    (r"(?:gioco.*tabacco|accise.*carburant)",
-     "Rimodulazione fiscale con aumento del prelievo erariale su tabacchi e giochi d'azzardo a integrale copertura della riduzione delle accise sui carburanti", "Fisco", "Proposta di legge"),
-    (r"(?:propaganda russa|interferenz|disinformazione)",
-     "Disegno di legge per l'istituzione di una commissione d'inchiesta e presidi sanzionatori contro le interferenze estere e la disinformazione geopolitica online", "Politica Estera", "Proposta di legge"),
-    (r"(?:costi delle proposte|scheda tecnica|upb|trasparenza dei programmi)",
-     "Obbligo di legge di allegare una quantificazione finanziaria preventiva e asseverata dall'Ufficio Parlamentare di Bilancio per ciascuna proposta elettorale", "Istituzioni", "Proposta di legge"),
-    (r"(?:ius scholae|cittadinanza.*scuola)",
-     "Riforma della legge sulla cittadinanza con introduzione dello Ius Scholae per i minori stranieri che abbiano completato 10 anni di studi in Italia", "Diritti Civili", "Proposta di legge"),
-    (r"(?:separazione delle carriere|csm|riforma.*giustizia)",
-     "Riforma costituzionale della Giustizia con netta separazione delle carriere tra magistrati requirenti e giudicanti e sdoppiamento del CSM", "Istituzioni", "Proposta di legge"),
-    (r"(?:nucleare|reattori smr|iv generazione)",
-     "Reintegro dell'energia nucleare pulita di nuova generazione (Small Modular Reactors SMR) nel piano energetico nazionale entro il 2035", "Energia", "Dichiarazione programmatica"),
-    (r"(?:rinnovabili|parchi eolici|comunit[àa] energetic|solare)",
-     "Sblocco autorizzativo accelerato per 10 GW annui di energia rinnovabile e sostegno a 20.000 Comunità Energetiche Rinnovabili", "Energia", "Proposta di legge"),
-    (r"(?:affitti brevi|partita iva|locazioni turistiche)",
-     "Regolamentazione delle locazioni turistiche brevi con obbligo di partita IVA dal terzo immobile e codice identificativo nazionale per contrasto all'elusione", "Fisco", "Proposta di legge"),
-    (r"(?:trivelle|commissario.*trivelle|idrocarburi)",
-     "Normativa per la valorizzazione commissariale delle concessioni di prospezione ed estrazione di gas e idrocarburi per la sicurezza energetica nazionale", "Energia", "Dichiarazione programmatica"),
-    (r"(?:aiuti a kiev|stop alle armi|forniture militari|negoziati di pace)",
-     "Mozione parlamentare per il blocco dell'invio di ulteriori armamenti e investimenti militari e mandato vincolante per una conferenza diplomatica di pace", "Politica Estera", "Opposizione"),
-    (r"(?:fondo sanitario|7\.5% del pil|7,5% del pil)",
-     "Incremento strutturale del Fondo Sanitario Nazionale fino al 7.5% del PIL per l'abbattimento delle liste d'attesa e il piano assunzioni di medici e infermieri", "Sanità", "Proposta di legge"),
-    (r"(?:autonomia differenziata|lep)",
-     "Attuazione del regionalismo differenziato nel rispetto della determinazione preventiva e finanziamento dei Livelli Essenziali delle Prestazioni (LEP)", "Istituzioni", "Proposta di legge"),
-    (r"(?:patrimoniale|grandi ricchezze|super ricchi|next generation tax)",
-     "Imposta straordinaria e progressiva sui patrimoni superiori a 5 milioni di euro destinata a sanità pubblica, scuola e transizione ecologica", "Fisco", "Proposta di legge"),
-    (r"(?:cannabis|fine vita|eutanasia legale)",
-     "Disegno di legge per la legalizzazione del fine vita assistito e regolamentazione del mercato della cannabis terapeutica e ricreativa", "Diritti Civili", "Proposta di legge"),
-    (r"(?:legittima difesa|caso roggero|arma da fuoco|difesa.*abitazione)",
-     "Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Istituzioni", "Proposta di legge"),
-    (r"(?:rigenerazione urbana|confesercenti|negozi di vicinato|commercio)",
-     "Piano nazionale di rigenerazione urbana e fiscalità di vantaggio per la riapertura dei negozi di vicinato nei centri storici", "Economia", "Proposta di legge"),
-    (r"(?:detassazione premi|fringe benefit|welfare aziendale)",
-     "Innalzamento della soglia di detassazione integrale per i fringe benefit e premi di produttività aziendale fino a 3.000 euro", "Lavoro", "Proposta di legge"),
-    (r"(?:sicurezza sul lavoro|omicidio sul lavoro|patente a crediti)",
-     "Introduzione del reato di omicidio sul lavoro e inasprimento del sistema sanzionatorio con patente a crediti per le imprese edili", "Lavoro", "Proposta di legge"),
-    (r"(?:cedolare secca|canone concordato|piano casa)",
-     "Estensione della cedolare secca al 10% per i contratti a canone concordato e piano straordinario per 50.000 nuovi alloggi di edilizia residenziale pubblica", "Infrastrutture", "Proposta di legge"),
-    (r"(?:asili nido gratis|congedo parentale|quoziente familiare)",
-     "Gratuità universale degli asili nido e incremento del congedo parentale retribuito all'80% fino al sesto mese di vita del bambino", "Istruzione", "Proposta di legge"),
-    (r"(?:botta e risposta.*patrimoniale|conte.*patrimoniale|bonelli.*patrimoniale)",
-     "Contrarietà a imposte patrimoniali pure e priorità alla tassazione straordinaria al 100% degli extraprofitti finanziari ed energetici", "Fisco", "Opposizione"),
+    (r"(?:stop|moratoria|blocco).*(?:pignorament|cartelle|esecuzion|sovraindebitamento)", "sovraindebitamento"),
+    (r"(?:\bsalario minimo\b|\b9\s*euro\b|\b9€\b)", "salario_minimo"),
+    (r"(?:\bcuneo fiscale\b|\btaglio del cuneo\b|\bdecontribuzione\b)", "cuneo_fiscale"),
+    (r"(?:\bpensioni a 64\b|\buscita a 64\b|\bnodo tfr\b|\bquota 41\b)", "pensioni_flessibili"),
+    (r"(?:\blsu\b|\blpu\b|lavoratori socialmente utili)", "lsu_lpu"),
+    (r"(?:\btfr.*no tax area\b|\bcarta sanit[àa]\b|\btaglio irpef.*ceto medio\b)", "fisco_ceto_medio"),
+    (r"(?:trasparenza.*prestazioni sanitarie|costi.*prestazioni sanitarie)", "sanita_trasparenza"),
+    (r"(?:gioco.*tabacco|accise.*carburant)", "accise_carburanti"),
+    (r"(?:propaganda russa|interferenz|disinformazione)", "interferenze_estere"),
+    (r"(?:costi delle proposte|scheda tecnica|\bupb\b|trasparenza dei programmi)", "trasparenza_upb"),
+    (r"(?:\bius scholae\b|cittadinanza.*scuola)", "ius_scholae"),
+    (r"(?:separazione delle carriere|\bcsm\b|riforma.*giustizia)", "giustizia_carriere"),
+    (r"(?:\bnucleare\b|\breattori smr\b|\biv generazione\b)", "nucleare"),
+    (r"(?:rinnovabili|parchi eolici|comunit[àa] energetic|solare)", "rinnovabili"),
+    (r"(?:affitti brevi|partita iva|locazioni turistiche)", "affitti_brevi"),
+    (r"(?:trivelle|commissario.*trivelle|idrocarburi)", "energia_fossile"),
+    (r"(?:aiuti a kiev|stop alle armi|forniture militari|negoziati di pace|\bspese militari\b)", "armi_ucraina"),
+    (r"(?:fondo sanitario|7\.5% del pil|7,5% del pil)", "fondo_sanitario"),
+    (r"(?:\bautonomia differenziata\b|\blegge calderoli\b|\blep\b)", "autonomia_differenziata"),
+    (r"(?:\bpremierato\b|\belezione diretta del premier\b|\bddl casellati\b)", "premierato"),
+    (r"(?:patrimoniale|grandi ricchezze|super ricchi|next generation tax)", "patrimoniale"),
+    (r"(?:cannabis|fine vita|eutanasia legale)", "diritti_etici"),
+    (r"(?:legittima difesa|caso roggero|arma da fuoco|difesa.*abitazione)", "legittima_difesa"),
+    (r"(?:rigenerazione urbana|confesercenti|negozi di vicinato|commercio)", "commercio_vicinato"),
+    (r"(?:detassazione premi|fringe benefit|welfare aziendale)", "fringe_benefit"),
+    (r"(?:sicurezza sul lavoro|omicidio sul lavoro|patente a crediti)", "sicurezza_lavoro"),
+    (r"(?:cedolare secca|canone concordato|piano casa)", "piano_casa"),
+    (r"(?:asili nido gratis|congedo parentale|quoziente familiare)", "famiglia_nidi"),
+    (r"(?:botta e risposta.*patrimoniale|conte.*patrimoniale|bonelli.*patrimoniale|extraprofitti)", "extraprofitti")
 ]
+
+def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
+    """
+    Returns (statement, topic, action_type) tailored to the specific party and political alignment.
+    Eliminates political inversions and decontextualized policy assignments.
+    """
+    if policy_key == "sovraindebitamento":
+        return ("Moratoria e sospensione fino a 180 giorni delle procedure esecutive di pignoramento a tutela dei nuclei familiari e debitori in sovraindebitamento", "Economia", "Proposta di legge")
+
+    if policy_key == "salario_minimo":
+        if party_name in OPPOSITION_PARTIES or party_name == "Azione":
+            return ("Introduzione del salario minimo legale a 9 euro lordi l'ora per tutti i lavoratori privi di contratti collettivi nazionali maggiormente rappresentativi", "Lavoro", "Proposta di legge")
+        return ("Priorità al rafforzamento della contrattazione collettiva di settore e detassazione dei premi di produttività rispetto al salario minimo legale", "Lavoro", "Dichiarazione programmatica")
+
+    if policy_key == "cuneo_fiscale":
+        return ("Taglio strutturale del cuneo fiscale contributivo sui redditi da lavoro dipendente fino a 35.000 euro e decontribuzione per neo-assunti", "Lavoro", "Dichiarazione programmatica")
+
+    if policy_key == "pensioni_flessibili":
+        return ("Riforma previdenziale: anticipo dell'uscita pensionistica a 64 anni con ricalcolo contributivo integrale e facoltà di conferimento del TFR a previdenza integrativa", "Pensioni", "Proposta di legge")
+
+    if policy_key == "lsu_lpu":
+        return ("Disegno di legge per il pieno riconoscimento previdenziale e la pensione equa dei lavoratori socialmente utili (LSU e LPU)", "Lavoro", "Proposta di legge")
+
+    if policy_key == "fisco_ceto_medio":
+        return ("Manovra fiscale per il ceto medio: riduzione del secondo scaglione IRPEF al 33%, estensione della no tax area under 30 e Carta Sanità per over 65", "Fisco", "Proposta di legge")
+
+    if policy_key == "sanita_trasparenza":
+        return ("Disegno di legge per la pubblicazione obbligatoria, comparativa e trasparente dei costi effettivi e dei tempi di attesa di tutte le prestazioni sanitarie", "Sanità", "Proposta di legge")
+
+    if policy_key == "accise_carburanti":
+        return ("Rimodulazione fiscale con aumento del prelievo erariale su tabacchi e giochi d'azzardo a integrale copertura della riduzione delle accise sui carburanti", "Fisco", "Proposta di legge")
+
+    if policy_key == "interferenze_estere":
+        return ("Disegno di legge per l'istituzione di una commissione d'inchiesta e presidi sanzionatori contro le interferenze estere e la disinformazione geopolitica online", "Politica Estera", "Proposta di legge")
+
+    if policy_key == "trasparenza_upb":
+        return ("Obbligo di legge di allegare una quantificazione finanziaria preventiva e asseverata dall'Ufficio Parlamentare di Bilancio per ciascuna proposta elettorale", "Istituzioni", "Proposta di legge")
+
+    if policy_key == "ius_scholae":
+        return ("Riforma della legge sulla cittadinanza con introduzione dello Ius Scholae per i minori stranieri che abbiano completato 10 anni di studi in Italia", "Diritti Civili", "Proposta di legge")
+
+    if policy_key == "giustizia_carriere":
+        return ("Riforma costituzionale della Giustizia con netta separazione delle carriere tra magistrati requirenti e giudicanti e sdoppiamento del CSM", "Istituzioni", "Proposta di legge")
+
+    if policy_key == "nucleare":
+        if party_name in {"Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Rifondazione Comunista", "Potere al Popolo"}:
+            return ("Contrarietà al riavvio del nucleare e concentrazione del 100% delle risorse su fonti rinnovabili ed efficienza energetica", "Energia", "Opposizione")
+        return ("Reintegro dell'energia nucleare pulita di nuova generazione (Small Modular Reactors SMR) nel piano energetico nazionale entro il 2035", "Energia", "Proposta di legge")
+
+    if policy_key == "rinnovabili":
+        return ("Sblocco autorizzativo accelerato per 10 GW annui di energia rinnovabile e sostegno a 20.000 Comunità Energetiche Rinnovabili", "Energia", "Proposta di legge")
+
+    if policy_key == "affitti_brevi":
+        return ("Regolamentazione delle locazioni turistiche brevi con obbligo di partita IVA dal terzo immobile e codice identificativo nazionale per contrasto all'elusione", "Fisco", "Proposta di legge")
+
+    if policy_key == "energia_fossile":
+        return ("Normativa per la valorizzazione commissariale delle concessioni di prospezione ed estrazione di gas e idrocarburi per la sicurezza energetica nazionale", "Energia", "Dichiarazione programmatica")
+
+    if policy_key == "armi_ucraina":
+        if party_name in {"Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Rifondazione Comunista", "Potere al Popolo", "Democrazia Sovrana Popolare"}:
+            return ("Mozione parlamentare per il blocco dell'invio di ulteriori armamenti e investimenti militari e mandato vincolante per una conferenza diplomatica di pace", "Politica Estera", "Opposizione")
+        return ("Sostegno agli aiuti multilaterali di sicurezza e rispetto degli impegni di difesa strategica nel quadro UE e NATO", "Politica Estera", "Dichiarazione programmatica")
+
+    if policy_key == "fondo_sanitario":
+        return ("Incremento strutturale del Fondo Sanitario Nazionale fino al 7.5% del PIL per l'abbattimento delle liste d'attesa e il piano assunzioni di medici e infermieri", "Sanità", "Proposta di legge")
+
+    if policy_key == "autonomia_differenziata":
+        if party_name in OPPOSITION_PARTIES:
+            return ("Referendum abrogativo e opposizione all'Autonomia Differenziata Calderoli a tutela dei servizi essenziali e dell'unità nazionale", "Istituzioni", "Opposizione")
+        elif party_name in GOVERNMENT_PARTIES:
+            return ("Attuazione del regionalismo differenziato nel rispetto della determinazione preventiva e finanziamento dei Livelli Essenziali delle Prestazioni (LEP)", "Istituzioni", "Proposta di legge")
+        return ("Riforma del regionalismo vincolata alla previa garanzia e finanziamento perequativo dei Livelli Essenziali delle Prestazioni (LEP)", "Istituzioni", "Dichiarazione programmatica")
+
+    if policy_key == "premierato":
+        if party_name in OPPOSITION_PARTIES:
+            return ("Opposizione alla riforma costituzionale del Premierato a difesa dei poteri di garanzia del Presidente della Repubblica e del Parlamento", "Istituzioni", "Opposizione")
+        return ("Riforma costituzionale del Premierato con elezione diretta del Presidente del Consiglio e clausola di stabilità della maggioranza", "Istituzioni", "Proposta di legge")
+
+    if policy_key == "patrimoniale":
+        if party_name in {"Alleanza Verdi e Sinistra", "Partito Democratico", "Rifondazione Comunista", "Potere al Popolo"}:
+            return ("Imposta straordinaria e progressiva sui patrimoni superiori a 5 milioni di euro destinata a sanità pubblica, scuola e transizione ecologica", "Fisco", "Proposta di legge")
+        elif party_name == "Movimento 5 Stelle":
+            return ("Contrarietà a patrimoniali ordinarie e priorità assoluta alla tassazione straordinaria al 100% degli extraprofitti finanziari ed energetici", "Fisco", "Opposizione")
+        return ("Netta contrarietà a qualsiasi forma di imposta patrimoniale e priorità alla riduzione della pressione fiscale su famiglie e imprese", "Fisco", "Opposizione")
+
+    if policy_key == "diritti_etici":
+        return ("Disegno di legge per la legalizzazione del fine vita assistito e regolamentazione del mercato della cannabis terapeutica e ricreativa", "Diritti Civili", "Proposta di legge")
+
+    if policy_key == "legittima_difesa":
+        return ("Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Istituzioni", "Proposta di legge")
+
+    if policy_key == "commercio_vicinato":
+        return ("Piano nazionale di rigenerazione urbana e fiscalità di vantaggio per la riapertura dei negozi di vicinato nei centri storici", "Economia", "Proposta di legge")
+
+    if policy_key == "fringe_benefit":
+        return ("Innalzamento della soglia di detassazione integrale per i fringe benefit e premi di produttività aziendale fino a 3.000 euro", "Lavoro", "Proposta di legge")
+
+    if policy_key == "sicurezza_lavoro":
+        return ("Introduzione del reato di omicidio sul lavoro e inasprimento del sistema sanzionatorio con patente a crediti per le imprese edili", "Lavoro", "Proposta di legge")
+
+    if policy_key == "piano_casa":
+        return ("Estensione della cedolare secca al 10% per i contratti a canone concordato e piano straordinario per 50.000 nuovi alloggi di edilizia residenziale pubblica", "Infrastrutture", "Proposta di legge")
+
+    if policy_key == "famiglia_nidi":
+        return ("Gratuità universale degli asili nido e incremento del congedo parentale retribuito all'80% fino al sesto mese di vita del bambino", "Istruzione", "Proposta di legge")
+
+    if policy_key == "extraprofitti":
+        return ("Tassazione straordinaria al 100% degli extraprofitti bancari ed energetici a copertura integrale del contrasto al carovita", "Fisco", "Proposta di legge")
+
+    return ("Proposta politica formalizzata di indirizzo legislativo ed economico", "Economia", "Dichiarazione programmatica")
 
 def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tuple]:
     """
@@ -204,24 +299,16 @@ def _extract_heuristically(
         return []
 
     # 3. Policy Proposal Transformation
-    proposal_synthesis = None
-    chosen_topic = None
-    action_type = "Dichiarazione programmatica"
-
-    # Check known policy transformations
-    for pattern, syn, top, act in POLICY_ACTION_TRANSFORMATIONS:
+    matched_key = None
+    for pattern, key in POLICY_ACTION_TRANSFORMATIONS:
         if re.search(pattern, lower, re.I):
-            proposal_synthesis = syn
-            chosen_topic = top
-            action_type = act
+            matched_key = key
             break
 
-    # If no specific policy transformation matched, check dynamic policy commitments across text
-    if not proposal_synthesis:
+    dynamic_res = None
+    if not matched_key:
         dynamic_res = _extract_dynamic_policy_statement(full_text, lower)
-        if dynamic_res:
-            proposal_synthesis, chosen_topic, action_type = dynamic_res
-        else:
+        if not dynamic_res:
             return []
 
     # Extract cost if mentioned
@@ -238,8 +325,17 @@ def _extract_heuristically(
 
     results = []
     for party_name in matched_parties[:2]: # At most 2 explicit parties per article
-        # Sanitize proposal title and calculate institutional fiscal check
-        clean_title = sanitize_proposal_title(proposal_synthesis, chosen_topic)
+        if matched_key:
+            proposal_synthesis, chosen_topic, action_type = resolve_policy_transformation(matched_key, party_name)
+        else:
+            proposal_synthesis, chosen_topic, action_type = dynamic_res
+
+        # Quality Gate: Strict Proposal Validation (discards incomplete texts, clickbait, and vague slogans)
+        valid_synthesis = sanitize_and_validate_proposal_statement(proposal_synthesis)
+        if not valid_synthesis:
+            continue
+
+        clean_title = sanitize_proposal_title(valid_synthesis, chosen_topic)
         fiscal_res = calculate_fiscal_impact_and_coverage(
             partito=party_name,
             macro_argomento=chosen_topic,
@@ -317,6 +413,10 @@ Testo:
                 for it in items:
                     if not isinstance(it, dict) or not it.get("partito") or not it.get("dichiarazione_sintesi"):
                         continue
+                    val_stmt = sanitize_and_validate_proposal_statement(it["dichiarazione_sintesi"])
+                    if not val_stmt:
+                        continue
+                    it["dichiarazione_sintesi"] = val_stmt
                     if "fonte_url" not in it or not it["fonte_url"]:
                         it["fonte_url"] = url
                     if "timestamp" not in it or not it["timestamp"]:

@@ -18,6 +18,7 @@ import {
   Info
 } from "lucide-react";
 import { PoliticalProposal } from "@/lib/api";
+import { formatItalianLongDate } from "@/lib/dateUtils";
 import { StatusBadge } from "./StatusBadge";
 import { TopicBadge } from "./TopicBadge";
 
@@ -47,13 +48,7 @@ export function ProposalDetailModal({ proposal, isOpen, onClose }: ProposalDetai
   if (!isOpen || !proposal) return null;
 
   const partyColor = proposal.party_color || "#3b82f6";
-  const formattedDate = proposal.timestamp
-    ? new Date(proposal.timestamp).toLocaleDateString("it-IT", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric"
-      })
-    : "Data non specificata";
+  const formattedDate = formatItalianLongDate(proposal.timestamp);
 
   return (
     <div 

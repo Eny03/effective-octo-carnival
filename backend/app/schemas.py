@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
-from datetime import datetime
-from pydantic import BaseModel, Field
+from datetime import datetime, timezone
+from pydantic import BaseModel, Field, field_serializer
 
 # Core sub-schemas matching Mission Brief Section 4.B
 class ImpattoEconomicoSchema(BaseModel):
@@ -148,6 +148,12 @@ class IngestionLogSchema(BaseModel):
     log_message: Optional[str] = None
     timestamp: datetime
 
+    @field_serializer("timestamp")
+    def serialize_dt(self, dt: datetime, _info):
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
+
     class Config:
         from_attributes = True
 
@@ -195,6 +201,12 @@ class AuditLogSchema(BaseModel):
     agent_responsible: str
     details: Optional[str] = None
     timestamp: datetime
+
+    @field_serializer("timestamp")
+    def serialize_dt(self, dt: datetime, _info):
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.isoformat()
 
     class Config:
         from_attributes = True
