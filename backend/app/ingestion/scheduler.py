@@ -1,5 +1,6 @@
 import json
 import datetime
+import re
 from apscheduler.schedulers.background import BackgroundScheduler
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
@@ -9,6 +10,7 @@ from app.ingestion.rss_fetcher import fetch_all_active_feeds
 from app.ingestion.text_extractor import compute_content_hash
 from app.ai.extractor import extract_proposals_from_text
 from app.ai.embeddings import get_text_embedding
+from app.ai.proposal_validator import sanitize_and_validate_proposal_statement
 
 scheduler = BackgroundScheduler()
 

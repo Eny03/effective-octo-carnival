@@ -121,6 +121,7 @@ function DashboardContent() {
 
   // Polls Tab Filter
   const [pollCoalitionFilter, setPollCoalitionFilter] = useState<string>("Tutti");
+  const [pollChartType, setPollChartType] = useState<"bar" | "ranking">("bar");
 
   // Helper to sync state to URL
   const updateURL = (paramsToUpdate: Record<string, string | null>) => {
@@ -591,25 +592,27 @@ function DashboardContent() {
 
         {/* TAB 2: SONDAGGI (INTENZIONI DI VOTO PURE - SENZA COPERTURE) */}
         {activeTab === "sondaggi" && (
-          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-5 sm:p-7 shadow-2xs space-y-5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-4 sm:p-7 shadow-2xs space-y-4 sm:space-y-5 scroll-mt-24">
+            {/* Header: Title, Coalition Filters and Update button */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-slate-100 dark:border-slate-800 pb-4">
               <div>
-                <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                  <span>Barometro Elettorale Nazionale: Intenzioni di Voto</span>
+                <h2 className="text-sm sm:text-base md:text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>Barometro Elettorale: Intenzioni di Voto</span>
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Media ponderata dei sondaggi elettorali (YouTrend/AGI, SWG Tg La7, Ipsos, Tecnè) aggiornata costantemente via web crawler.
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
+                  Media ponderata dei sondaggi elettorali (YouTrend/AGI, SWG Tg La7, Ipsos, Tecnè) aggiornata continuamente.
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
+              {/* Action Toolbar: Coalition Pills + View Mode + Update Button */}
+              <div className="flex flex-wrap items-center justify-between lg:justify-end gap-2 w-full lg:w-auto">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl overflow-x-auto scrollbar-none max-w-full">
                   {["Tutti", "Maggioranza", "Opposizione", "Centro"].map((c) => (
                     <button
                       key={c}
                       onClick={() => setPollCoalitionFilter(c)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                      className={`px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-semibold transition-all whitespace-nowrap ${
                         pollCoalitionFilter === c
                           ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
                           : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -620,25 +623,53 @@ function DashboardContent() {
                   ))}
                 </div>
 
-                <button
-                  onClick={handleUpdatePolls}
-                  disabled={updatingPolls}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs transition-colors disabled:opacity-50"
-                  title="Aggiorna le percentuali dei sondaggi interrogando le ultime fonti web"
-                >
-                  <RefreshCw className={`w-3.5 h-3.5 ${updatingPolls ? "animate-spin" : ""}`} />
-                  <span>{updatingPolls ? "Ricerca Web in corso..." : "Aggiorna Ora"}</span>
-                </button>
+                <div className="flex items-center gap-1.5 shrink-0">
+                  {/* View Mode Toggle: Bar vs Ranking */}
+                  <div className="flex items-center bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl text-[11px]">
+                    <button
+                      onClick={() => setPollChartType("bar")}
+                      className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                        pollChartType === "bar"
+                          ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
+                      title="Visualizza grafico a barre verticali"
+                    >
+                      Barre
+                    </button>
+                    <button
+                      onClick={() => setPollChartType("ranking")}
+                      className={`px-2 py-0.5 rounded-lg font-bold transition-all ${
+                        pollChartType === "ranking"
+                          ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-2xs"
+                          : "text-slate-500 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
+                      title="Visualizza classifica orizzontale compatta"
+                    >
+                      Classifica
+                    </button>
+                  </div>
+
+                  <button
+                    onClick={handleUpdatePolls}
+                    disabled={updatingPolls}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-2xs transition-colors disabled:opacity-50 shrink-0"
+                    title="Aggiorna le percentuali dei sondaggi interrogando le ultime fonti web"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${updatingPolls ? "animate-spin" : ""}`} />
+                    <span>{updatingPolls ? "Ricerca..." : "Aggiorna Ora"}</span>
+                  </button>
+                </div>
               </div>
             </div>
 
             {/* 10-Minute Auto Crawler Status Pill */}
-            <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/60 text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/70 dark:border-emerald-800/60 text-xs">
               <div className="flex items-center gap-2 text-emerald-900 dark:text-emerald-300 font-semibold">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span>Aggiornamento automatico attivo ogni 10 minuti tramite ricerche web continue</span>
+                <span className="leading-tight">Aggiornamento automatico continuo ogni 10 minuti da ricerche web e rassegne</span>
               </div>
-              <div className="text-[11px] text-emerald-800 dark:text-emerald-400 font-mono">
+              <div className="text-[11px] text-emerald-800 dark:text-emerald-400 font-mono shrink-0">
                 Ultimo check demoscopico: <strong>{lastPollTime || "In tempo reale"}</strong>
               </div>
             </div>
@@ -652,68 +683,125 @@ function DashboardContent() {
               </div>
             )}
 
-            {/* Pure Electoral Polls Chart (Only Voting % - NO coperture) */}
-            <div className="h-80 w-full pt-2">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={pollChartData}
-                  margin={{ top: 25, right: 15, left: -15, bottom: 35 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
-                  <XAxis 
-                    dataKey="name" 
-                    interval={0} 
-                    angle={-20} 
-                    textAnchor="end" 
-                    tick={{ fontSize: 11, fontWeight: 600, fill: "#64748b" }}
-                  />
-                  <YAxis tick={{ fontSize: 10, fill: "#64748b" }} unit="%" domain={[0, 'dataMax + 4']} />
-                  <Tooltip
-                    content={({ active, payload }) => {
-                      if (active && payload && payload.length) {
-                        const data = payload[0].payload;
-                        return (
-                          <div className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-xl text-xs space-y-2 border border-slate-700 min-w-[210px]">
-                            <div className="font-bold text-sm flex items-center gap-2">
-                              <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
-                              <span>{data.fullName}</span>
-                            </div>
-                            <div className="flex items-baseline justify-between pt-1 border-t border-slate-800">
-                              <span className="text-slate-400 text-xs">Intenzioni di Voto:</span>
-                              <span className="text-lg font-black text-white font-mono">{data.poll}%</span>
-                            </div>
-                            <div className="flex items-center justify-between text-[11px]">
-                              <span className="text-slate-400">Trend Settimanale:</span>
-                              <span className={`font-bold px-1.5 py-0.2 rounded ${
-                                data.trend?.includes("+")
-                                  ? "bg-emerald-950 text-emerald-400"
-                                  : data.trend?.includes("-")
-                                  ? "bg-rose-950 text-rose-400"
-                                  : "bg-slate-800 text-slate-300"
-                              }`}>
-                                {data.trend || "stabile"}
-                              </span>
-                            </div>
-                            {data.sources && (
-                              <div className="text-[10px] text-slate-400 pt-1.5 border-t border-slate-800 leading-tight">
-                                {data.sources}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      }
-                      return null;
-                    }}
-                  />
-                  <Bar dataKey="poll" name="Percentuale di Voto (%)" radius={[8, 8, 0, 0]}>
-                    {pollChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color || "#3b82f6"} />
-                    ))}
-                    <LabelList dataKey="poll" position="top" formatter={(val: any) => `${val}%`} className="text-[11px] font-bold fill-slate-700 dark:fill-slate-200" />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {/* View 1: Vertical Bar Chart (with generous min-width and horizontal scroll on mobile) */}
+            {pollChartType === "bar" ? (
+              <div className="space-y-1">
+                <div className="sm:hidden flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 px-1 font-medium">
+                  <span>Grafico Barometro Elettorale</span>
+                  <span>← Scorri orizzontalmente per vedere tutti i partiti →</span>
+                </div>
+                <div className="overflow-x-auto pb-2 scrollbar-thin rounded-xl">
+                  <div className="min-w-[560px] h-80 pt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        data={pollChartData}
+                        margin={{ top: 25, right: 15, left: -10, bottom: 42 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.15} vertical={false} />
+                        <XAxis 
+                          dataKey="name" 
+                          interval={0} 
+                          angle={-18} 
+                          textAnchor="end" 
+                          tick={{ fontSize: 11, fontWeight: 700, fill: "#64748b" }}
+                        />
+                        <YAxis tick={{ fontSize: 10, fill: "#64748b" }} unit="%" domain={[0, 'dataMax + 4']} />
+                        <Tooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="p-3.5 bg-slate-900 text-white rounded-2xl shadow-xl text-xs space-y-2 border border-slate-700 min-w-[210px]">
+                                  <div className="font-bold text-sm flex items-center gap-2">
+                                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: data.color }} />
+                                    <span>{data.fullName}</span>
+                                  </div>
+                                  <div className="flex items-baseline justify-between pt-1 border-t border-slate-800">
+                                    <span className="text-slate-400 text-xs">Intenzioni di Voto:</span>
+                                    <span className="text-lg font-black text-white font-mono">{data.poll}%</span>
+                                  </div>
+                                  <div className="flex items-center justify-between text-[11px]">
+                                    <span className="text-slate-400">Trend Settimanale:</span>
+                                    <span className={`font-bold px-1.5 py-0.2 rounded ${
+                                      data.trend?.includes("+")
+                                        ? "bg-emerald-950 text-emerald-400"
+                                        : data.trend?.includes("-")
+                                        ? "bg-rose-950 text-rose-400"
+                                        : "bg-slate-800 text-slate-300"
+                                    }`}>
+                                      {data.trend || "stabile"}
+                                    </span>
+                                  </div>
+                                  {data.sources && (
+                                    <div className="text-[10px] text-slate-400 pt-1.5 border-t border-slate-800 leading-tight">
+                                      {data.sources}
+                                    </div>
+                                  )}
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        <Bar dataKey="poll" name="Percentuale di Voto (%)" radius={[8, 8, 0, 0]}>
+                          {pollChartData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color || "#3b82f6"} />
+                          ))}
+                          <LabelList 
+                            dataKey="poll" 
+                            position="top" 
+                            offset={6}
+                            formatter={(val: any) => `${val}%`} 
+                            className="text-[11px] font-bold fill-slate-700 dark:fill-slate-200" 
+                          />
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* View 2: Clean Horizontal Progress Ranking (100% Anti-overlap on any phone screen) */
+              <div className="space-y-2.5 py-2">
+                {pollChartData.map((item, index) => {
+                  const maxVal = Math.max(...pollChartData.map((d: any) => d.poll || 0), 30);
+                  const widthPct = Math.max(6, Math.min(100, ((item.poll || 0) / maxVal) * 100));
+                  return (
+                    <div 
+                      key={item.name || index} 
+                      className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex items-center gap-3 transition-colors hover:bg-slate-100 dark:hover:bg-slate-800/80"
+                    >
+                      <div className="w-16 sm:w-20 shrink-0 flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: item.color }} />
+                        <span className="font-bold text-xs text-slate-900 dark:text-white truncate">{item.name}</span>
+                      </div>
+
+                      <div className="flex-1 min-w-0">
+                        <div className="h-3.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div 
+                            className="h-full rounded-full transition-all duration-500" 
+                            style={{ width: `${widthPct}%`, backgroundColor: item.color }} 
+                          />
+                        </div>
+                      </div>
+
+                      <div className="w-20 shrink-0 text-right flex items-center justify-end gap-1.5">
+                        <span className="font-black text-xs sm:text-sm font-mono text-slate-900 dark:text-white">{item.poll}%</span>
+                        <span className={`text-[10px] font-bold px-1 rounded ${
+                          item.trend?.includes("+")
+                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60"
+                            : item.trend?.includes("-")
+                            ? "text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/60"
+                            : "text-slate-400 bg-slate-100 dark:bg-slate-800"
+                        }`}>
+                          {item.trend || "stabile"}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
 
             {/* Polls Cards Grid (Clean Electoral View - NO coperture) */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
