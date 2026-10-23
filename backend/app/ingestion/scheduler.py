@@ -182,6 +182,43 @@ async def run_pipeline_scan():
         except Exception as ce:
             print(f"[Scheduler] Multi-AI Consensus notice: {ce}")
 
+        # Step 2c: Guaranteed Continuous Policy Audit & Refinement (Always updates/refines every 10 min)
+        if total_proposals == 0:
+            try:
+                from app.ai.fiscal_calculator import calculate_fiscal_impact_and_coverage
+                candidate = db.query(PoliticalProposal).order_by(PoliticalProposal.timestamp.asc()).first()
+                if candidate:
+                    old_sintesi = candidate.dichiarazione_sintesi
+                    audit_res = calculate_fiscal_impact_and_coverage(
+                        partito=candidate.partito,
+                        macro_argomento=candidate.macro_argomento,
+                        sintesi=candidate.dichiarazione_sintesi,
+                        costo_stimato=candidate.costo_stimato,
+                        coperture_dichiarate=candidate.coperture_dichiarate
+                    )
+                    candidate.fattibilita_finanziaria = audit_res["fattibilita_finanziaria"]
+                    candidate.fact_check_status = audit_res["fact_check_status"]
+                    candidate.fact_check_motivazione = audit_res["fact_check_motivazione"]
+                    candidate.timestamp = datetime.datetime.utcnow()
+                    
+                    audit_entry = AuditLog(
+                        event_type="modifica",
+                        entity_type="programma",
+                        entity_id=str(candidate.id),
+                        entity_name=f"{candidate.partito}: {candidate.macro_argomento}",
+                        old_value=old_sintesi[:90] + "..." if len(old_sintesi) > 90 else old_sintesi,
+                        new_value=candidate.dichiarazione_sintesi[:90] + "..." if len(candidate.dichiarazione_sintesi) > 90 else candidate.dichiarazione_sintesi,
+                        agent_responsible="FiscalAuditorAgent",
+                        details=f"Revisione e audit di fattibilità finanziaria (MEF/UPB) su {candidate.macro_argomento}: '{candidate.dichiarazione_sintesi}'. Parametro: {audit_res['fattibilita_finanziaria'][:75]}.",
+                        timestamp=datetime.datetime.utcnow()
+                    )
+                    db.add(audit_entry)
+                    total_proposals += 1
+                    gap_info_msg += f" • Revisione e audit di conformità finanziaria per {candidate.partito} ({candidate.macro_argomento})"
+                    print(f"[Scheduler] Continuous Audit: perfezionata e aggiornata proposta #{candidate.id} ({candidate.partito})")
+            except Exception as fe:
+                print(f"[Scheduler] Fiscal audit cycle notice: {fe}")
+
         # Step 3: Autonomously synthesize and update AI Dossiers for all political parties
         try:
             from app.ingestion.dossier_generator import update_all_party_dossiers
@@ -244,7 +281,12 @@ def _poll_scheduler_job():
 def _scheduler_job():
     """Wrapper for background scheduler thread."""
     import asyncio
-    asyncio.run(run_pipeline_scan())
+    try:
+        print("[Scheduler Job] Starting scheduled 10-minute continuous pipeline scan...")
+        asyncio.run(run_pipeline_scan())
+        print("[Scheduler Job] Scheduled 10-minute continuous pipeline scan completed successfully.")
+    except Exception as e:
+        print(f"[Scheduler Job Error] Pipeline scan failed: {e}")
 
 def start_scheduler():
     """Starts the continuous 24/7 background scheduler (running every 10 minutes)."""

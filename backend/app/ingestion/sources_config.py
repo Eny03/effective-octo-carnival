@@ -4,14 +4,14 @@ MONITORED_FEEDS = [
     # --- Agenzie di Stampa e Istituzioni ---
     {
         "name": "ANSA Politica & Istituzioni",
-        "url": "https://www.ansa.it/sito/ansait_rss.xml",
+        "url": "https://www.ansa.it/sito/notizie/politica/politica_rss.xml",
         "category": "Agenzia Nazionale",
         "reliability": "Massima",
         "is_active": True
     },
     {
         "name": "ANSA Economia & Finanza Pubblica",
-        "url": "https://www.ansa.it/canale_economia/notizie/economia_rss.xml",
+        "url": "https://www.ansa.it/sito/notizie/economia/economia_rss.xml",
         "category": "Economia & Fisco",
         "reliability": "Massima",
         "is_active": True
@@ -21,41 +21,6 @@ MONITORED_FEEDS = [
         "url": "https://www.ilsole24ore.com/rss/italia--politica.xml",
         "category": "Economia & Istituzioni",
         "reliability": "Massima",
-        "is_active": True
-    },
-    {
-        "name": "Il Sole 24 Ore - Fisco & Conti Pubblici",
-        "url": "https://www.ilsole24ore.com/rss/norme-e-tributi.xml",
-        "category": "Fisco & Bilancio",
-        "reliability": "Massima",
-        "is_active": True
-    },
-    {
-        "name": "Adnkronos Politica",
-        "url": "https://www.adnkronos.com/feed/politica.xml",
-        "category": "Agenzia Nazionale",
-        "reliability": "Alta",
-        "is_active": True
-    },
-    {
-        "name": "Adnkronos Economia & Lavoro",
-        "url": "https://www.adnkronos.com/feed/economia.xml",
-        "category": "Lavoro & Welfare",
-        "reliability": "Alta",
-        "is_active": True
-    },
-    {
-        "name": "RaiNews Politica & Parlamento",
-        "url": "https://www.rainews.it/rss/politica.xml",
-        "category": "Servizio Pubblico",
-        "reliability": "Massima",
-        "is_active": True
-    },
-    {
-        "name": "Sky TG24 - Politica & Governance",
-        "url": "https://tg24.sky.it/rss/politica.xml",
-        "category": "Informazione Televisiva",
-        "reliability": "Alta",
         "is_active": True
     },
     {
@@ -80,10 +45,10 @@ MONITORED_FEEDS = [
         "is_active": True
     },
     {
-        "name": "Fanpage Politica & Interviste",
-        "url": "https://www.fanpage.it/feed/",
-        "category": "Web & Inchieste",
-        "reliability": "Media-Alta",
+        "name": "Google News - Politica & Parlamento Live",
+        "url": "https://news.google.com/rss/search?q=governo+politica+camera+senato+proposte&hl=it&gl=IT&ceid=IT:it",
+        "category": "Aggregatore Nazionale",
+        "reliability": "Massima",
         "is_active": True
     },
     # --- Live Web Search AI Crawler (Scansione Web Nazionale per Partito) ---

@@ -32,7 +32,11 @@ def fetch_rss_feed_entries(feed_info: Dict[str, Any], max_items: int = 10) -> Li
     items = []
     
     try:
-        parsed = feedparser.parse(url)
+        import urllib.request
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"})
+        with urllib.request.urlopen(req, timeout=4) as resp:
+            feed_content = resp.read()
+        parsed = feedparser.parse(feed_content)
         for entry in parsed.entries[:max_items]:
             title = entry.title if hasattr(entry, "title") else ""
             link = entry.link if hasattr(entry, "link") else ""

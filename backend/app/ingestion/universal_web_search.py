@@ -25,7 +25,10 @@ def search_web_news(query: str, max_results: int = 15) -> List[Dict[str, Any]]:
     results = []
 
     try:
-        parsed = feedparser.parse(feed_url)
+        req = urllib.request.Request(feed_url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content = resp.read()
+        parsed = feedparser.parse(content)
         for entry in parsed.entries[:max_results]:
             title = entry.title if hasattr(entry, "title") else ""
             link = entry.link if hasattr(entry, "link") else ""
@@ -109,7 +112,10 @@ def search_historical_political_news(query: str, year: int = 2023, max_results: 
     results = []
 
     try:
-        parsed = feedparser.parse(feed_url)
+        req = urllib.request.Request(feed_url, headers={"User-Agent": USER_AGENT})
+        with urllib.request.urlopen(req, timeout=5) as resp:
+            content = resp.read()
+        parsed = feedparser.parse(content)
         for entry in parsed.entries[:max_results]:
             title = entry.title if hasattr(entry, "title") else ""
             link = entry.link if hasattr(entry, "link") else ""
