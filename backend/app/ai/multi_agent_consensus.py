@@ -3,7 +3,8 @@ import re
 import datetime
 from typing import Dict, Any, List, Optional, Tuple
 from sqlalchemy.orm import Session
-from app.models import PoliticalParty, PoliticalProposal, IngestionLog, InstitutionalBenchmark
+from app.models import PoliticalParty, PoliticalProposal, IngestionLog, InstitutionalBenchmark, AuditLog
+from app.ai.proposal_validator import sanitize_and_validate_proposal_statement
 from app.ingestion.universal_web_search import search_web_news, search_duckduckgo_open_web
 from app.ingestion.text_extractor import compute_content_hash, clean_html
 from app.ai.extractor import extract_proposals_from_text
@@ -176,6 +177,17 @@ class ConsensusArbiterAgent:
                 matching_existing.content_hash = item_hash
                 if emb_json:
                     matching_existing.embedding = emb_json
+                db.add(AuditLog(
+                    event_type="modifica",
+                    entity_type="programma",
+                    entity_id=str(matching_existing.id),
+                    entity_name=f"{p_name}: {topic}",
+                    old_value=None,
+                    new_value=synthesis[:90] + "..." if len(synthesis) > 90 else synthesis,
+                    agent_responsible="ConsensusArbiterAgent",
+                    details=f"Modifica proposta per {p_name} ({topic}) tramite Consensus Multi-AI: '{synthesis}'.",
+                    timestamp=datetime.datetime.utcnow()
+                ))
                 updated_count += 1
             else:
                 # Brand new distinct proposal under this topic
@@ -199,7 +211,23 @@ class ConsensusArbiterAgent:
                     embedding=emb_json,
                     timestamp=item["timestamp"]
                 )
+                val_syn = sanitize_and_validate_proposal_statement(synthesis)
+                if not val_syn:
+                    continue
+                new_record.dichiarazione_sintesi = val_syn
                 db.add(new_record)
+                db.flush()
+                db.add(AuditLog(
+                    event_type="aggiunta",
+                    entity_type="programma",
+                    entity_id=str(new_record.id),
+                    entity_name=f"{p_name}: {topic}",
+                    old_value=None,
+                    new_value=new_record.dichiarazione_sintesi[:90] + "..." if len(new_record.dichiarazione_sintesi) > 90 else new_record.dichiarazione_sintesi,
+                    agent_responsible="ConsensusArbiterAgent",
+                    details=f"Aggiunta proposta per {p_name} ({topic}) tramite Consensus Multi-AI: '{new_record.dichiarazione_sintesi}'.",
+                    timestamp=datetime.datetime.utcnow()
+                ))
                 added_count += 1
 
             consensus_records.append({

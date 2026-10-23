@@ -224,6 +224,37 @@ def seed_database_if_empty():
             db.commit()
             print(f"[Database] Post-seed clean: deleted {len(db_to_delete)} duplicate proposals from database.")
 
+        # Purge any incomplete, cut-off, or clickbait proposals
+        from app.ai.proposal_validator import sanitize_and_validate_proposal_statement
+        all_current = db.query(PoliticalProposal).all()
+        purged = []
+        for p in all_current:
+            val = sanitize_and_validate_proposal_statement(p.dichiarazione_sintesi)
+            if not val:
+                del_log = AuditLog(
+                    event_type="cancellazione",
+                    entity_type="programma",
+                    entity_id=str(p.id),
+                    entity_name=f"{p.partito}: {p.macro_argomento}",
+                    old_value=p.dichiarazione_sintesi[:90] + "...",
+                    new_value=None,
+                    agent_responsible="DataSanitizerAgent",
+                    details=f"Cancellazione proposta incompleta o non valida di {p.partito} ({p.macro_argomento}): '{p.dichiarazione_sintesi}'.",
+                    timestamp=datetime.datetime.utcnow()
+                )
+                db.add(del_log)
+                db.delete(p)
+                purged.append(p)
+            elif val != p.dichiarazione_sintesi:
+                p.dichiarazione_sintesi = val
+        if purged:
+            db.commit()
+            print(f"[Database] Purged {len(purged)} incomplete/invalid proposals.")
+
+        # Synchronize 'aggiunta' audit logs for all active valid proposals
+        from app.api.audit import sync_audit_with_proposals
+        sync_audit_with_proposals(db)
+
         print(f"[Database] All proposals are up to date and deduplicated ({db.query(PoliticalProposal).count()} total).")
 
 

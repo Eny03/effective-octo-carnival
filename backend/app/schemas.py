@@ -199,9 +199,17 @@ class AuditLogSchema(BaseModel):
     class Config:
         from_attributes = True
 
+class AuditStatsSchema(BaseModel):
+    total: int
+    aggiunta: int
+    modifica: int
+    cancellazione: int
+    sondaggi: int
+
 class AuditListResponse(BaseModel):
     total: int
     logs: List[AuditLogSchema]
     event_types: List[str]
     agents: List[str]
+    stats: Optional[AuditStatsSchema] = None
 

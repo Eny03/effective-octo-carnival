@@ -21,11 +21,12 @@ import {
   Edit3,
   Trash2
 } from "lucide-react";
-import { fetchAuditLogs, triggerPollUpdate, AuditLog } from "@/lib/api";
+import { fetchAuditLogs, triggerPollUpdate, AuditLog, AuditStats } from "@/lib/api";
 
 export default function AuditPage() {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [total, setTotal] = useState<number>(0);
+  const [stats, setStats] = useState<AuditStats | null>(null);
   const [eventTypes, setEventTypes] = useState<string[]>([]);
   const [agents, setAgents] = useState<string[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -50,6 +51,7 @@ export default function AuditPage() {
       });
       setLogs(res.logs || []);
       setTotal(res.total || 0);
+      if (res.stats) setStats(res.stats);
       if (res.event_types && res.event_types.length > 0) setEventTypes(res.event_types);
       if (res.agents && res.agents.length > 0) setAgents(res.agents);
     } catch (err) {
@@ -171,30 +173,36 @@ export default function AuditPage() {
         </div>
       )}
 
-      {/* 2. Micro Stats Overview Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {/* 2. Micro Stats Overview Cards (5 Columns: Totale, Aggiunte, Modifiche, Cancellazioni, Sondaggi) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Totale Operazioni</span>
-          <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{total}</span>
-          <span className="text-[10px] text-slate-500 mt-0.5 block">Audit log certificati</span>
+          <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5 block">{stats?.total ?? total}</span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">Operazioni certificate</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Aggiunte a Programmi</span>
-          <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{aggiuntaCount}</span>
+          <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5 block">{stats?.aggiunta ?? aggiuntaCount}</span>
           <span className="text-[10px] text-slate-500 mt-0.5 block">Nuove proposte censite</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Modifiche o Rettifiche</span>
-          <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{modificaCount}</span>
+          <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 mt-0.5 block">{stats?.modifica ?? modificaCount}</span>
           <span className="text-[10px] text-slate-500 mt-0.5 block">Evoluzioni e coperture</span>
         </div>
 
         <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sondaggi & Pulizia</span>
-          <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5 block">{pollCount}</span>
-          <span className="text-[10px] text-slate-500 mt-0.5 block">Aggiornamenti consolidati</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Cancellazioni</span>
+          <span className="text-xl sm:text-2xl font-black text-rose-600 dark:text-rose-400 mt-0.5 block">{stats?.cancellazione ?? cancellazioneCount}</span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">Doppioni o testi rimossi</span>
+        </div>
+
+        <div className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-2xs col-span-2 sm:col-span-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Sondaggi Aggiornati</span>
+          <span className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-400 mt-0.5 block">{stats?.sondaggi ?? pollCount}</span>
+          <span className="text-[10px] text-slate-500 mt-0.5 block">1 unico log 18 partiti</span>
         </div>
       </div>
 

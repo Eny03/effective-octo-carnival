@@ -4,7 +4,8 @@ import datetime
 import urllib.parse
 from typing import List, Dict, Any, Tuple, Optional
 from sqlalchemy.orm import Session
-from app.models import PoliticalParty, PoliticalProposal, IngestionLog
+from app.models import PoliticalParty, PoliticalProposal, IngestionLog, AuditLog
+from app.ai.proposal_validator import sanitize_and_validate_proposal_statement
 from app.ingestion.universal_web_search import search_web_news, search_duckduckgo_open_web
 from app.ingestion.text_extractor import compute_content_hash, clean_html
 from app.ai.extractor import extract_proposals_from_text
@@ -186,12 +187,14 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
                 q_text = quote_m.group(1).strip()
                 if len(q_text) >= 18 and not any(noise in q_text.lower() for noise in ["ecco chi", "cosa è successo", "il video", "live"]):
                     act = "Proposta di legge" if any(w in t_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
-                    return {
-                        "sintesi": f"{q_text[0].upper() + q_text[1:]}",
-                        "tipo_azione": act,
-                        "costo": "Non quantificato",
-                        "coperture": "Fondi ordinari di bilancio e riordino della spesa"
-                    }
+                    valid_q = sanitize_and_validate_proposal_statement(q_text)
+                    if valid_q:
+                        return {
+                            "sintesi": f"{valid_q[0].upper() + valid_q[1:]}",
+                            "tipo_azione": act,
+                            "costo": "Non quantificato",
+                            "coperture": "Fondi ordinari di bilancio e riordino della spesa"
+                        }
 
     # 2. Check body sentences for policy commitments
     sentences = re.split(r"(?<=[.!?])\s+", text)
@@ -318,6 +321,18 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                         timestamp=art.get("published_at", datetime.datetime.utcnow())
                     )
                     db.add(record)
+                    db.flush()
+                    db.add(AuditLog(
+                        event_type="aggiunta",
+                        entity_type="programma",
+                        entity_id=str(record.id),
+                        entity_name=f"{p_name}: {topic}",
+                        old_value=None,
+                        new_value=record.dichiarazione_sintesi[:90] + "..." if len(record.dichiarazione_sintesi) > 90 else record.dichiarazione_sintesi,
+                        agent_responsible="PolicyDistillerAgent",
+                        details=f"Aggiunta proposta per {p_name} ({topic}) tramite ricerca mirata: '{record.dichiarazione_sintesi}'.",
+                        timestamp=datetime.datetime.utcnow()
+                    ))
                     total_added_or_updated += 1
                     proposals_added_for_topic += 1
                     continue
@@ -376,6 +391,18 @@ async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 3) -> Dict
                             timestamp=dt
                         )
                         db.add(new_prop)
+                        db.flush()
+                        db.add(AuditLog(
+                            event_type="aggiunta",
+                            entity_type="programma",
+                            entity_id=str(new_prop.id),
+                            entity_name=f"{item.partito}: {item.macro_argomento}",
+                            old_value=None,
+                            new_value=new_prop.dichiarazione_sintesi[:90] + "..." if len(new_prop.dichiarazione_sintesi) > 90 else new_prop.dichiarazione_sintesi,
+                            agent_responsible="PolicyDistillerAgent",
+                            details=f"Aggiunta proposta per {item.partito} ({item.macro_argomento}): '{new_prop.dichiarazione_sintesi}'.",
+                            timestamp=datetime.datetime.utcnow()
+                        ))
                         total_added_or_updated += 1
                         proposals_added_for_topic += 1
 

@@ -8,13 +8,56 @@ import datetime
 from typing import Optional, List
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 
 from app.database import get_db
 from app.models import AuditLog, PoliticalParty, PoliticalProposal
-from app.schemas import AuditLogSchema, AuditListResponse
+from app.schemas import AuditLogSchema, AuditListResponse, AuditStatsSchema
 
 router = APIRouter(prefix="/api/audit", tags=["Audit & Changelog"])
+
+def sync_audit_with_proposals(db: Session):
+    """
+    Ensures every current proposal in the database has a corresponding 'aggiunta' audit log,
+    guaranteeing perfect mathematical correspondence between the proposals count and the audit overview.
+    """
+    proposals = db.query(PoliticalProposal).all()
+    prop_id_set = {str(p.id) for p in proposals}
+
+    # Clean any orphan 'aggiunta' logs for proposals that no longer exist
+    orphan_logs = db.query(AuditLog).filter(
+        AuditLog.event_type == "aggiunta",
+        ~AuditLog.entity_id.in_(prop_id_set)
+    ).all()
+    for o in orphan_logs:
+        db.delete(o)
+    if orphan_logs:
+        db.commit()
+
+    existing_added_ids = {
+        log[0] for log in db.query(AuditLog.entity_id).filter(AuditLog.event_type == 'aggiunta').all() if log[0]
+    }
+    
+    new_logs = []
+    for p in proposals:
+        p_id_str = str(p.id)
+        if p_id_str not in existing_added_ids:
+            new_logs.append(AuditLog(
+                event_type="aggiunta",
+                entity_type="programma",
+                entity_id=p_id_str,
+                entity_name=f"{p.partito}: {p.macro_argomento}",
+                old_value=None,
+                new_value=p.dichiarazione_sintesi[:90] + "..." if len(p.dichiarazione_sintesi) > 90 else p.dichiarazione_sintesi,
+                agent_responsible="PolicyDistillerAgent",
+                details=f"Aggiunta proposta per {p.partito} ({p.macro_argomento}): '{p.dichiarazione_sintesi}'. Fonte: {p.fonte_testata or 'Atti Ufficiali'}.",
+                timestamp=p.timestamp or datetime.datetime.utcnow()
+            ))
+            existing_added_ids.add(p_id_str)
+            
+    if new_logs:
+        db.add_all(new_logs)
+        db.commit()
 
 def seed_audit_history_if_empty(db: Session):
     """Generates initial realistic institutional audit logs if the table is empty."""
@@ -109,6 +152,7 @@ def get_audit_logs(
     for events, agents, parties, and keywords.
     """
     seed_audit_history_if_empty(db)
+    sync_audit_with_proposals(db)
 
     query = db.query(AuditLog)
 
@@ -136,9 +180,25 @@ def get_audit_logs(
     distinct_types = [r[0] for r in db.query(AuditLog.event_type).distinct().all() if r[0]]
     distinct_agents = [r[0] for r in db.query(AuditLog.agent_responsible).distinct().all() if r[0]]
 
+    # Calculate real totals across the whole database
+    aggiunta_cnt = db.query(func.count(AuditLog.id)).filter(AuditLog.event_type == 'aggiunta').scalar() or 0
+    modifica_cnt = db.query(func.count(AuditLog.id)).filter(AuditLog.event_type == 'modifica').scalar() or 0
+    cancellazione_cnt = db.query(func.count(AuditLog.id)).filter(AuditLog.event_type == 'cancellazione').scalar() or 0
+    sondaggi_cnt = db.query(func.count(AuditLog.id)).filter(AuditLog.event_type.in_(['sondaggi aggiornati', 'POLL_SWEEP_COMPLETED'])).scalar() or 0
+    total_ops = aggiunta_cnt + modifica_cnt + cancellazione_cnt + sondaggi_cnt
+
+    stats_obj = AuditStatsSchema(
+        total=total_ops,
+        aggiunta=aggiunta_cnt,
+        modifica=modifica_cnt,
+        cancellazione=cancellazione_cnt,
+        sondaggi=sondaggi_cnt
+    )
+
     return AuditListResponse(
         total=total,
         logs=logs,
         event_types=distinct_types,
-        agents=distinct_agents
+        agents=distinct_agents,
+        stats=stats_obj
     )

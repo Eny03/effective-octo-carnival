@@ -329,11 +329,20 @@ export interface AuditLog {
   timestamp: string;
 }
 
+export interface AuditStats {
+  total: number;
+  aggiunta: number;
+  modifica: number;
+  cancellazione: number;
+  sondaggi: number;
+}
+
 export interface AuditListResponse {
   total: number;
   logs: AuditLog[];
   event_types: string[];
   agents: string[];
+  stats?: AuditStats;
 }
 
 export async function fetchAuditLogs(params?: {
