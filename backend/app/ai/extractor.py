@@ -105,8 +105,14 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
         return ("Moratoria e sospensione fino a 180 giorni delle procedure esecutive di pignoramento a tutela dei nuclei familiari e debitori in sovraindebitamento", "Economia", "Proposta di legge")
 
     if policy_key == "salario_minimo":
-        if party_name in OPPOSITION_PARTIES or party_name == "Azione":
+        if party_name == "Potere al Popolo":
+            return ("Salario minimo legale a 10 euro lordi l'ora indicizzato all'inflazione reale con ripristino della scala mobile", "Lavoro", "Proposta di legge")
+        elif party_name in {"Partito Democratico", "Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Rifondazione Comunista"}:
             return ("Introduzione del salario minimo legale a 9 euro lordi l'ora per tutti i lavoratori privi di contratti collettivi nazionali maggiormente rappresentativi", "Lavoro", "Proposta di legge")
+        elif party_name == "Azione":
+            return ("Salario minimo a 9 euro garantito tramite l'estensione erga omnes dei contratti collettivi leader e defiscalizzazione dei premi", "Lavoro", "Proposta di legge")
+        elif party_name in {"Partito Liberal Democratico", "ORA!"}:
+            return ("Abolizione dei vincoli erga omnes sui contratti nazionali e passaggio alla contrattazione aziendale e territoriale basata sulla produttività", "Lavoro", "Proposta di legge")
         return ("Priorità al rafforzamento della contrattazione collettiva di settore e detassazione dei premi di produttività rispetto al salario minimo legale", "Lavoro", "Dichiarazione programmatica")
 
     if policy_key == "cuneo_fiscale":
@@ -134,7 +140,13 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
         return ("Obbligo di legge di allegare una quantificazione finanziaria preventiva e asseverata dall'Ufficio Parlamentare di Bilancio per ciascuna proposta elettorale", "Istituzioni", "Proposta di legge")
 
     if policy_key == "ius_scholae":
-        return ("Riforma della legge sulla cittadinanza con introduzione dello Ius Scholae per i minori stranieri che abbiano completato 10 anni di studi in Italia", "Diritti Civili", "Proposta di legge")
+        if party_name in {"Lega - Salvini Premier", "Fratelli d'Italia", "Futuro Nazionale"}:
+            return ("Contrarietà alla modifica della legge sulla cittadinanza n. 91/1992 e priorità al contrasto all'immigrazione clandestina", "Diritti Civili", "Opposizione")
+        elif party_name in {"Forza Italia", "Noi Moderati"}:
+            return ("Riforma della cittadinanza con introduzione dello Ius Scholae per i minori stranieri dopo 10 anni di percorso scolastico completato", "Diritti Civili", "Proposta di legge")
+        elif party_name in OPPOSITION_PARTIES or party_name == "Azione":
+            return ("Riforma della legge sulla cittadinanza con introduzione dello Ius Soli mitigato e dello Ius Scholae per l'integrazione dei giovani", "Diritti Civili", "Proposta di legge")
+        return ("Riforma della cittadinanza subordinata a un rigoroso ciclo di integrazione civica e scolastica", "Diritti Civili", "Dichiarazione programmatica")
 
     if policy_key == "giustizia_carriere":
         return ("Riforma costituzionale della Giustizia con netta separazione delle carriere tra magistrati requirenti e giudicanti e sdoppiamento del CSM", "Istituzioni", "Proposta di legge")
@@ -171,10 +183,20 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
         return ("Sostegno agli aiuti multilaterali di sicurezza e rispetto degli impegni di difesa strategica nel quadro UE e NATO", "Politica Estera", "Dichiarazione programmatica")
 
     if policy_key == "fondo_sanitario":
-        return ("Incremento strutturale del Fondo Sanitario Nazionale fino al 7.5% del PIL per l'abbattimento delle liste d'attesa e il piano assunzioni di medici e infermieri", "Sanità", "Proposta di legge")
+        if party_name in {"Partito Democratico", "Movimento 5 Stelle", "Alleanza Verdi e Sinistra"}:
+            return ("Incremento strutturale del Fondo Sanitario Nazionale fino al 7.5% del PIL per l'abbattimento delle liste d'attesa e il piano assunzioni di medici e infermieri", "Sanità", "Proposta di legge")
+        elif party_name in {"Rifondazione Comunista", "Potere al Popolo"}:
+            return ("Finanziamento del Fondo Sanitario Nazionale stabilmente all'8% del PIL, reinternalizzazione dei servizi e abolizione totale dei ticket sanitari", "Sanità", "Proposta di legge")
+        elif party_name in {"Azione", "Italia Viva"}:
+            return ("Attivazione della linea sanitaria del MES da 37 miliardi per investimenti straordinari nei pronto soccorso e ammodernamento degli ospedali", "Sanità", "Proposta di legge")
+        elif party_name in {"Partito Liberal Democratico", "ORA!"}:
+            return ("Sanità di Base Universale con voucher per visite specialistiche e libera concorrenza tra strutture pubbliche e convenzionate accreditate", "Sanità", "Proposta di legge")
+        elif party_name in GOVERNMENT_PARTIES:
+            return ("Incremento mirato delle risorse per il personale sanitario, defiscalizzazione degli straordinari di medici e infermieri e piano anti-liste d'attesa", "Sanità", "Dichiarazione programmatica")
+        return ("Potenziamento delle risorse del SSN e riorganizzazione dell'assistenza territoriale per abbattere i tempi d'attesa", "Sanità", "Dichiarazione programmatica")
 
     if policy_key == "autonomia_differenziata":
-        if party_name in OPPOSITION_PARTIES:
+        if party_name in OPPOSITION_PARTIES or party_name == "Democrazia Sovrana Popolare":
             return ("Referendum abrogativo e opposizione all'Autonomia Differenziata Calderoli a tutela dei servizi essenziali e dell'unità nazionale", "Istituzioni", "Opposizione")
         elif party_name in GOVERNMENT_PARTIES:
             return ("Attuazione del regionalismo differenziato nel rispetto della determinazione preventiva e finanziamento dei Livelli Essenziali delle Prestazioni (LEP)", "Istituzioni", "Proposta di legge")
@@ -183,7 +205,11 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
     if policy_key == "premierato":
         if party_name in OPPOSITION_PARTIES:
             return ("Opposizione alla riforma costituzionale del Premierato a difesa dei poteri di garanzia del Presidente della Repubblica e del Parlamento", "Istituzioni", "Opposizione")
-        return ("Riforma costituzionale del Premierato con elezione diretta del Presidente del Consiglio e clausola di stabilità della maggioranza", "Istituzioni", "Proposta di legge")
+        elif party_name == "Italia Viva":
+            return ("Riforma costituzionale del 'Sindaco d'Italia' con elezione diretta del Premier e superamento del bicameralismo paritario", "Istituzioni", "Proposta di legge")
+        elif party_name in GOVERNMENT_PARTIES:
+            return ("Riforma costituzionale del Premierato con elezione diretta del Presidente del Consiglio e clausola di stabilità della maggioranza", "Istituzioni", "Proposta di legge")
+        return ("Riforma dell'assetto istituzionale a tutela della stabilità dei governi e della rappresentanza parlamentare", "Istituzioni", "Dichiarazione programmatica")
 
     if policy_key == "patrimoniale":
         if party_name in {"Alleanza Verdi e Sinistra", "Partito Democratico", "Rifondazione Comunista", "Potere al Popolo"}:
@@ -193,10 +219,24 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
         return ("Netta contrarietà a qualsiasi forma di imposta patrimoniale e priorità alla riduzione della pressione fiscale su famiglie e imprese", "Fisco", "Opposizione")
 
     if policy_key == "diritti_etici":
-        return ("Disegno di legge per la legalizzazione del fine vita assistito e regolamentazione del mercato della cannabis terapeutica e ricreativa", "Diritti Civili", "Proposta di legge")
+        if party_name in GOVERNMENT_PARTIES or party_name == "Futuro Nazionale":
+            return ("Contrarietà a qualsiasi legalizzazione delle droghe leggere, potenziamento delle comunità di recupero e tutela della vita dal concepimento alla morte naturale", "Diritti Civili", "Dichiarazione programmatica")
+        elif party_name in {"+Europa", "Radicali Italiani"}:
+            return ("Disegno di legge per la legalizzazione del fine vita assistito, testamento biologico e regolamentazione del mercato della cannabis", "Diritti Civili", "Proposta di legge")
+        elif party_name in {"Partito Democratico", "Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Rifondazione Comunista", "Potere al Popolo"}:
+            return ("Legge sul fine vita assistito in recepimento della Corte Costituzionale e depenalizzazione della coltivazione domestica di cannabis", "Diritti Civili", "Proposta di legge")
+        return ("Normativa per la tutela dei diritti individuali e disciplina del fine vita nel rispetto della dignità della persona", "Diritti Civili", "Dichiarazione programmatica")
 
     if policy_key == "legittima_difesa":
-        return ("Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Istituzioni", "Proposta di legge")
+        if party_name == "Lega - Salvini Premier":
+            return ("Riforma della legittima difesa con presunzione assoluta di non punibilità ed esenzione dalle spese legali per le vittime di intrusioni violente", "Istituzioni", "Proposta di legge")
+        elif party_name == "Forza Italia":
+            return ("Riforma delle garanzie processuali dei cittadini, tutela della presunzione di innocenza e risarcimento rapido per ingiusta detenzione", "Istituzioni", "Proposta di legge")
+        elif party_name == "Fratelli d'Italia":
+            return ("Tutela legale rafforzata per le forze dell'ordine e inasprimento sanzionatorio per aggressioni e occupazioni abusive", "Istituzioni", "Proposta di legge")
+        elif party_name in OPPOSITION_PARTIES:
+            return ("Contrarietà all'allentamento dei vincoli sulle armi e priorità assoluta al potenziamento degli organici delle forze dell'ordine", "Istituzioni", "Opposizione")
+        return ("Potenziamento dei presidi di pubblica sicurezza sul territorio e supporto alle vittime di reato", "Istituzioni", "Dichiarazione programmatica")
 
     if policy_key == "commercio_vicinato":
         return ("Piano nazionale di rigenerazione urbana e fiscalità di vantaggio per la riapertura dei negozi di vicinato nei centri storici", "Economia", "Proposta di legge")
@@ -214,7 +254,13 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
         return ("Gratuità universale degli asili nido e incremento del congedo parentale retribuito all'80% fino al sesto mese di vita del bambino", "Istruzione", "Proposta di legge")
 
     if policy_key == "extraprofitti":
-        return ("Tassazione straordinaria al 100% degli extraprofitti bancari ed energetici a copertura integrale del contrasto al carovita", "Fisco", "Proposta di legge")
+        if party_name in {"Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Rifondazione Comunista", "Potere al Popolo"}:
+            return ("Tassazione straordinaria al 100% degli extraprofitti bancari ed energetici a copertura integrale del contrasto al carovita", "Fisco", "Proposta di legge")
+        elif party_name == "Forza Italia":
+            return ("Netta contrarietà a qualsiasi prelievo forzoso o tassa straordinaria sugli extraprofitti bancari a tutela del credito e del risparmio privato", "Fisco", "Opposizione")
+        elif party_name in {"Fratelli d'Italia", "Lega - Salvini Premier", "Noi Moderati"}:
+            return ("Contributo di solidarietà negoziato con il sistema bancario e assicurativo destinato al fondo per i mutui prima casa e sgravi per famiglie", "Fisco", "Dichiarazione programmatica")
+        return ("Contrarietà a tassazioni retroattive e priorità alla stabilità del sistema finanziario e creditizio per le imprese", "Fisco", "Opposizione")
 
     return ("Proposta politica formalizzata di indirizzo legislativo ed economico", "Economia", "Dichiarazione programmatica")
 

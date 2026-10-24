@@ -19,12 +19,17 @@ ALLOWED_UPPERCASE_ACRONYMS = {
 }
 
 MEDIA_SOURCE_SUFFIXES = [
-    r"\s*[-–—|:]\s*(?:quotidiano sanit[àa]|panorama della sanit[àa]|orizzonte scuola(?:\s+notizie)?|il sole 24 ore|ansa|adn?kronos|corriere(?:\s+della sera)?|la repubblica|repubblica|la stampa|il giornale|il fatto quotidiano|il messaggero|open|fanpage|tgcom24|sky tg24|fisac cgil(?:\s+nazionale)?|cgil nazionale|cgil|cisl|uil|confindustria|rainews(?:\s*24)?|agi|adnkronos|askanews|dire)\s*$",
-    r"\s*[-–—|:]\s*[a-zA-Z0-9\s]{2,25}(?:notizie|news|quotidiano|online|sanit[àa]|today|tg|post)\s*$"
+    r"\s*[-–—|:]\s*(?:quotidiano sanit[àa]|panorama della sanit[àa]|orizzonte scuola(?:\s+notizie)?|il sole 24 ore|ansa|adn?kronos|corriere(?:\s+della sera)?|la repubblica|repubblica|la stampa|il giornale|il fatto quotidiano|il messaggero|open|fanpage|tgcom24|sky tg24|fisac cgil(?:\s+nazionale)?|cgil nazionale|cgil|cisl|uil|confindustria|rainews(?:\s*24)?|agi|adnkronos|askanews|dire|forbes|huffpost|affaritaliani|today|wired|linkiesta|editorialedomani)\s*$",
+    r"\s*[-–—|:]\s*[a-zA-Z0-9\s]{2,25}(?:notizie|news|quotidiano|online|sanit[àa]|today|tg|post|forbes|magazine)\s*$"
 ]
 
 NON_POLITICAL_ACTORS = [
-    r"\b(?:anaao|assomed|cgil|cisl|uil|fisac|anief|cobas|usb|confindustria|confcommercio|confesercenti|ordine dei medici|federfarma|fnopi|anm)\b"
+    # Sindacati dei lavoratori
+    r"\b(?:anaao|assomed|cgil|cisl|uil|fisac|anief|cobas|usb|flc|snals|gilda|anp|siulp|sap|coisp|sim carabinieri|uap|unisin|fabi)\b",
+    # Associazioni datoriali e ordini professionali
+    r"\b(?:confindustria|confcommercio|confesercenti|coldiretti|confagricoltura|cia|confartigianato|cna|abi|ania|federfarma|fnopi|ordine dei medici|consiglio nazionale forense|anm)\b",
+    # Associazioni consumatori e terze parti
+    r"\b(?:codacons|altroconsumo|federconsumatori|assoutenti|unione nazionale consumatori|legambiente|greenpeace|wwf|amnesty)\b"
 ]
 
 NON_POLICY_HEADLINE_PATTERNS = [
@@ -38,7 +43,9 @@ NON_POLICY_HEADLINE_PATTERNS = [
     r"tutto quello che c'è da sapere\b",
     r"cosa prevede la bozza\b",
     r"la puntata di\b",
-    r"guida completa\b"
+    r"guida completa\b",
+    r"^i programmi dei (?:principali )?partiti\b",
+    r"^cosa propongono i partiti\b"
 ]
 
 JOURNALISTIC_CLICKBAIT_PATTERNS = [
@@ -55,7 +62,9 @@ JOURNALISTIC_CLICKBAIT_PATTERNS = [
     r"^[«\"']?fondo nazionale con contributo",
     r"^[«\"']?fisco:\s*presentata in cassazione",
     r"^emendamento per pdl\b",
-    r"^emendamento per ddl\b"
+    r"^emendamento per ddl\b",
+    r"^i programmi dei (?:principali )?partiti\b",
+    r"^tasse, rincari e bonus\b"
 ]
 
 RHETORICAL_SLOGAN_PATTERNS = [

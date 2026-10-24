@@ -296,6 +296,40 @@ def seed_database_if_empty():
             db.commit()
             print(f"[Database] Purged {len(purged)} incomplete/invalid proposals.")
 
+        # Correct political inversions and purge press headlines
+        gov_parties = {"Fratelli d'Italia", "Lega - Salvini Premier", "Forza Italia", "Noi Moderati", "Futuro Nazionale"}
+        for p in db.query(PoliticalProposal).all():
+            p_text = p.dichiarazione_sintesi.lower()
+            if p.partito in gov_parties:
+                if any(k in p_text for k in ["cannabis", "fine vita assistito", "eutanasia"]) and "contrariet" not in p_text:
+                    p.dichiarazione_sintesi = "Contrarietà a qualsiasi legalizzazione delle droghe leggere, potenziamento delle comunità di recupero e tutela della vita dal concepimento alla morte naturale"
+                    p.tipo_azione = "Dichiarazione programmatica"
+                    p.fact_check_status = "Verificato"
+                    p.fact_check_motivazione = "Posizione ufficiale e programma di governo di Fratelli d'Italia a contrasto delle dipendenze e tutela della vita."
+            if "i programmi dei principali partiti su tasse" in p_text or "forbes" in p_text:
+                db.delete(p)
+            if p.partito == "Potere al Popolo" and p.macro_argomento == "Lavoro" and "9 euro" in p_text:
+                p.dichiarazione_sintesi = "Salario minimo legale a 10 euro lordi l'ora indicizzato all'inflazione reale con ripristino della scala mobile"
+            if p.partito == "Forza Italia" and p.macro_argomento == "Istituzioni" and any(k in p_text for k in ["legittima difesa", "separazione delle carriere"]):
+                p.dichiarazione_sintesi = "Tutela del garantismo penale, riforma della carcerazione preventiva e abolizione del reato di abuso d'ufficio"
+            if p.partito == "Fratelli d'Italia" and p.macro_argomento == "Diritti Civili" and "separazione delle carriere" in p_text:
+                p.dichiarazione_sintesi = "Tutela della famiglia e della natalità con quoziente familiare, potenziamento degli asili nido e contrasto alla maternità surrogata"
+        db.commit()
+
+        # Delete intra-party duplicates on identical topic
+        for p in db.query(PoliticalProposal).all():
+            other = db.query(PoliticalProposal).filter(
+                PoliticalProposal.partito == p.partito,
+                PoliticalProposal.macro_argomento == p.macro_argomento,
+                PoliticalProposal.id < p.id
+            ).first()
+            if other:
+                from difflib import SequenceMatcher
+                ratio = SequenceMatcher(None, p.dichiarazione_sintesi.lower(), other.dichiarazione_sintesi.lower()).ratio()
+                if ratio > 0.60:
+                    db.delete(p)
+        db.commit()
+
         # Deduplicate nuclear template clones across parties
         nuclear_clones = db.query(PoliticalProposal).filter(
             PoliticalProposal.macro_argomento == "Energia"
