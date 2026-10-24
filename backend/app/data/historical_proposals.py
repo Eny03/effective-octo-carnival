@@ -1191,8 +1191,7 @@ HISTORICAL_PROPOSALS_SEED = [
         "fonte_testata": "Lega - Salvini Premier",
         "timestamp": "2024-10-17T18:00:00",
         "party_color": "#2f855a"
-    }
-
+    },
     {
         "partito": "Azione",
         "macro_argomento": "Fisco",
