@@ -1,7 +1,7 @@
 import json
 import datetime
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy.orm import Session
 from app.database import get_db, SessionLocal
 from app.models import IngestionLog, PoliticalProposal, PoliticalParty
@@ -43,14 +43,21 @@ def get_monitored_sources():
     return MONITORED_FEEDS
 
 @router.get("/gaps")
-def get_detected_information_gaps(limit: int = 6, db: Session = Depends(get_db)):
+def get_detected_information_gaps(
+    limit: int = Query(100, ge=1, le=200),
+    party: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
     """
     Returns the political information voids currently detected by the AI.
     The autonomous ingestion crawler targets these specific parties and topics
     during each scheduled scanning pass to fill missing policy statements.
     """
     from app.ingestion.gap_detector import detect_information_gaps
-    return detect_information_gaps(db, max_gaps=limit)
+    gaps = detect_information_gaps(db, max_gaps=limit)
+    if party and party != "Tutti":
+        gaps = [g for g in gaps if g["party_name"].lower() == party.lower() or party.lower() in g["party_name"].lower()]
+    return gaps
 
 @router.get("/logs", response_model=List[IngestionLogSchema])
 def get_ingestion_logs(limit: int = 20, db: Session = Depends(get_db)):

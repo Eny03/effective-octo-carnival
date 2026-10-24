@@ -54,6 +54,8 @@ export default function SourcesPage() {
   const [loading, setLoading] = useState(true);
   const [scanMessage, setScanMessage] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [selectedGapParty, setSelectedGapParty] = useState<string>("Tutti");
+  const [showAllGaps, setShowAllGaps] = useState<boolean>(true);
 
   // Manual ingest form state
   const [manualUrl, setManualUrl] = useState("");
@@ -70,7 +72,7 @@ export default function SourcesPage() {
       const [srcs, lgs, gps] = await Promise.all([
         fetchMonitoredSources(),
         fetchIngestionLogs(),
-        fetchDetectedGaps(8)
+        fetchDetectedGaps(100)
       ]);
       setSources(srcs);
       setLogs(lgs);
@@ -208,48 +210,88 @@ export default function SourcesPage() {
       )}
 
       {/* Active Information Gap Targets */}
-      {gaps.length > 0 && (
-        <section className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-3 shadow-xs">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60">
-                <Target className="w-4 h-4" />
+      {gaps.length > 0 && (() => {
+        const uniqueParties = Array.from(new Set(gaps.map((g) => g.party_name))).sort();
+        const filteredGaps = selectedGapParty === "Tutti"
+          ? (showAllGaps ? gaps : gaps.slice(0, 8))
+          : gaps.filter((g) => g.party_name === selectedGapParty);
+
+        return (
+          <section className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-200/60 dark:border-blue-900/60 shrink-0">
+                  <Target className="w-4 h-4" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
+                    <span>Obiettivi di Ricerca Mirata Attiva (Active Gap Hunter)</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
+                      Auto-Learning
+                    </span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
+                      {gaps.length} lacune rilevate
+                    </span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    L'AI scandaglia sistematicamente il web per colmare ogni vuoto programmatico rilevato tra i 18 partiti e gli 11 temi chiave.
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <span>Obiettivi di Ricerca Mirata Attiva (Active Gap Hunter)</span>
-                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                    Auto-Learning
-                  </span>
-                </h2>
-                <p className="text-xs text-slate-500">
-                  L'AI individua le lacune nei programmi dei 18 partiti e scandaglia il web per reperire esattamente le posizioni mancanti.
-                </p>
+
+              {/* Controls: Filter by party & View Toggle */}
+              <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
+                <select
+                  value={selectedGapParty}
+                  onChange={(e) => setSelectedGapParty(e.target.value)}
+                  className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-700 dark:text-slate-200 focus:outline-hidden"
+                >
+                  <option value="Tutti">Tutti i partiti ({gaps.length})</option>
+                  {uniqueParties.map((p) => {
+                    const cnt = gaps.filter((g) => g.party_name === p).length;
+                    return (
+                      <option key={p} value={p}>
+                        {p} ({cnt})
+                      </option>
+                    );
+                  })}
+                </select>
+
+                {selectedGapParty === "Tutti" && gaps.length > 8 && (
+                  <button
+                    type="button"
+                    onClick={() => setShowAllGaps(!showAllGaps)}
+                    className="px-3 py-1.5 rounded-xl border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-xs font-semibold text-blue-700 dark:text-blue-300 transition-colors cursor-pointer"
+                  >
+                    {showAllGaps ? "Mostra solo priorità (8)" : `Mostra tutte (${gaps.length})`}
+                  </button>
+                )}
               </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2">
-            {gaps.map((g, idx) => (
-              <div
-                key={idx}
-                className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5"
-              >
-                <div className="flex items-center justify-between text-[11px] font-bold text-blue-600 dark:text-blue-400">
-                  <span>{g.party_name}</span>
-                  <span className="text-slate-400 font-normal">{g.topic}</span>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+              {filteredGaps.map((g, idx) => (
+                <div
+                  key={idx}
+                  className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 text-xs space-y-1.5 hover:border-blue-300 dark:hover:border-blue-800 transition-colors"
+                >
+                  <div className="flex items-center justify-between text-[11px] font-bold text-blue-600 dark:text-blue-400">
+                    <span>{g.party_name}</span>
+                    <span className="text-slate-400 font-normal">{g.topic}</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {g.reason}
+                  </p>
+                  <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                    <span>Posizioni censite: <strong>{g.existing_count}</strong></span>
+                    <span className="text-[9px] uppercase font-bold text-amber-600 dark:text-amber-400">Target Attivo</span>
+                  </div>
                 </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                  {g.reason}
-                </p>
-                <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-200/50 dark:border-slate-700/50">
-                  Posizioni censite: <strong>{g.existing_count}</strong>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-      )}
+              ))}
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Main Grid: Sources List vs Manual Ingestion Tool */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

@@ -306,9 +306,12 @@ export interface InformationGap {
   queries: string[];
 }
 
-export async function fetchDetectedGaps(limit: number = 6): Promise<InformationGap[]> {
+export async function fetchDetectedGaps(limit: number = 100, party?: string): Promise<InformationGap[]> {
   try {
-    const res = await fetch(`${API_BASE_URL}/api/ingestion/gaps?limit=${limit}`, { cache: "no-store" });
+    const url = party 
+      ? `${API_BASE_URL}/api/ingestion/gaps?limit=${limit}&party=${encodeURIComponent(party)}`
+      : `${API_BASE_URL}/api/ingestion/gaps?limit=${limit}`;
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) return [];
     return res.json();
   } catch (e) {

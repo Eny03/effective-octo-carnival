@@ -102,10 +102,14 @@ def detect_information_gaps(db: Session, max_gaps: int = 6) -> List[Dict[str, An
             if t in matrix[p_name]:
                 matrix[p_name][t].append(prop)
             else:
+                mapped = False
                 for core_t in CORE_MACRO_TOPICS:
-                    if core_t.lower() in t.lower():
+                    if core_t.lower() in t.lower() or t.lower() in core_t.lower():
                         matrix[p_name][core_t].append(prop)
+                        mapped = True
                         break
+                if not mapped and (t.lower() in ["esteri", "difesa", "affari esteri"]):
+                    matrix[p_name]["Politica Estera"].append(prop)
             party_total_counts[p_name] = party_total_counts.get(p_name, 0) + 1
 
     gap_candidates = []

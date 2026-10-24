@@ -98,22 +98,22 @@ def seed_database_if_empty():
 
         stopwords = {'e', 'il', 'la', 'i', 'gli', 'le', 'di', 'a', 'da', 'in', 'con', 'su', 'per', 'tra', 'fra', 'del', 'della', 'dei', 'delle', 'un', 'una', 'uno', 'al', 'alla', 'ai', 'alle'}
 
-        # Deduplicate all seed proposals before inserting
+        # Deduplicate all seed proposals before inserting (strict substantive matching)
         deduped_seeds = []
         for prop in (PROPOSALS_SEED + HISTORICAL_PROPOSALS_SEED):
             p_text = prop["dichiarazione_sintesi"].lower()
-            p_words = {w for w in p_text.replace(',', ' ').replace('.', ' ').replace(':', ' ').split() if w not in stopwords and len(w) > 3}
+            p_words = {w for w in p_text.replace(',', ' ').replace('.', ' ').replace(':', ' ').replace("'", ' ').split() if w not in stopwords and len(w) > 3}
             
             is_dup = False
             for existing_idx, existing_seed in enumerate(deduped_seeds):
                 if existing_seed["partito"] == prop["partito"] and existing_seed["macro_argomento"] == prop["macro_argomento"]:
                     e_text = existing_seed["dichiarazione_sintesi"].lower()
-                    e_words = {w for w in e_text.replace(',', ' ').replace('.', ' ').replace(':', ' ').split() if w not in stopwords and len(w) > 3}
+                    e_words = {w for w in e_text.replace(',', ' ').replace('.', ' ').replace(':', ' ').replace("'", ' ').split() if w not in stopwords and len(w) > 3}
                     common = p_words & e_words
                     overlap = len(common) / max(len(p_words), len(e_words)) if max(len(p_words), len(e_words)) > 0 else 0
                     ratio = SequenceMatcher(None, p_text, e_text).ratio()
                     
-                    if (overlap >= 0.30 or len(common) >= 3 or ratio >= 0.35):
+                    if (len(common) >= 3 and (overlap >= 0.50 or ratio >= 0.60)):
                         is_dup = True
                         # If current prop is more detailed or formal, replace the existing one
                         if len(prop["dichiarazione_sintesi"]) > len(existing_seed["dichiarazione_sintesi"]):
@@ -191,8 +191,9 @@ def seed_database_if_empty():
                 dup_found = False
                 for prev_p, prev_words in by_grp[grp_key]:
                     common = p_words & prev_words
+                    overlap = len(common) / max(len(p_words), len(prev_words)) if max(len(p_words), len(prev_words)) > 0 else 0
                     ratio = SequenceMatcher(None, p.dichiarazione_sintesi.lower(), prev_p.dichiarazione_sintesi.lower()).ratio()
-                    if (len(common) >= 3 or ratio >= 0.35):
+                    if (len(common) >= 3 and (overlap >= 0.50 or ratio >= 0.60)):
                         dup_found = True
                         # Keep the longer, more descriptive one
                         if len(p.dichiarazione_sintesi) > len(prev_p.dichiarazione_sintesi):
@@ -316,18 +317,21 @@ def seed_database_if_empty():
                 p.dichiarazione_sintesi = "Tutela della famiglia e della natalità con quoziente familiare, potenziamento degli asili nido e contrasto alla maternità surrogata"
         db.commit()
 
-        # Delete intra-party duplicates on identical topic
+        # Strict deduplication for any remaining duplicate identical entries
         for p in db.query(PoliticalProposal).all():
-            other = db.query(PoliticalProposal).filter(
+            others = db.query(PoliticalProposal).filter(
                 PoliticalProposal.partito == p.partito,
                 PoliticalProposal.macro_argomento == p.macro_argomento,
                 PoliticalProposal.id < p.id
-            ).first()
-            if other:
+            ).all()
+            for other in others:
                 from difflib import SequenceMatcher
                 ratio = SequenceMatcher(None, p.dichiarazione_sintesi.lower(), other.dichiarazione_sintesi.lower()).ratio()
-                if ratio > 0.60:
+                p_w = set(p.dichiarazione_sintesi.lower().split())
+                o_w = set(other.dichiarazione_sintesi.lower().split())
+                if ratio > 0.75 and len(p_w & o_w) >= 4:
                     db.delete(p)
+                    break
         db.commit()
 
         # Deduplicate nuclear template clones across parties

@@ -108,11 +108,17 @@ POLICY_DOMAIN_NOUNS = [
     r"\bpremierato\b", r"\breferendum\b", r"\bautonomia\b", r"\blep\b", r"\bcostituzion",
     r"\bcittadinanz", r"\bius scholae\b", r"\bius soli\b", r"\bfine vita\b", r"\beutanasia\b",
     r"\bcannabis\b", r"\bimmigrazion", r"\bmigrant", r"\bfrontiere\b", r"\brimpatri\b", r"\bcpr\b",
-    # Energia, Ambiente, Infrastrutture, Scuola, Esteri
-    r"\brinnovabil", r"\bnucleare\b", r"\bsmr\b", r"\bemission", r"\bfotovoltaic", r"\beolic",
+    # Energia, Ambiente, Infrastrutture, Scuola, Esteri, Istituzioni, Società
+    r"\benergi", r"\benerget", r"\bcarburant", r"\bbiocarburant", r"\bgreen deal\b", r"\bclima\b", r"\bclimatic", r"\bbollett", r"\belettric", r"\bnazionalizzazion", r"\btariff",
+    r"\brinnovabil", r"\bnucleare\b", r"\bsmr\b", r"\bemission", r"\bfotovoltaic", r"\beolic", r"\bidroelettric", r"\bautosufficienz",
     r"\bidrogeologic", r"\brigenerazion", r"\btransizione\b", r"\brifiut", r"\bponte\b",
-    r"\bferrovi", r"\btrasport", r"\bscuola\b", r"\buniversit", r"\bdocent", r"\bricerca\b",
-    r"\bdifesa\b", r"\barmamenti\b", r"\barm[ie]\b", r"\bnato\b", r"\bue\b", r"\bunione europea\b"
+    r"\binfrastruttur", r"\bferrovi", r"\btrasport", r"\bautostrad", r"\brete idrica", r"\bacquedott", r"\bidric", r"\bsiccit", r"\boper[ae]", r"\bcommissar", r"\bzes\b", r"\bportual", r"\blogistic", r"\bpnrr\b",
+    r"\bscuola\b", r"\buniversit", r"\bdocent", r"\bricerca\b", r"\bistruzion", r"\bstudent", r"\beducazion", r"\bformazion", r"\btecnic", r"\bits\b", r"\bcondotta\b", r"\bsuperior", r"\bliceo\b", r"\bdidattic", r"\bmerito\b", r"\bdispersion",
+    r"\bester", r"\bdifesa\b", r"\barmamenti\b", r"\barm[ie]\b", r"\bnato\b", r"\bue\b", r"\bunione europea\b", r"\bucraina\b", r"\bdiplomazi", r"\bcooperazion",
+    r"\bdiritt", r"\bmatrimoni", r"\bcoppie\b", r"\blibert", r"\bdiscriminazion", r"\bburocraz", r"\bminister", r"\bpa\b", r"\bpubblica amministrazione\b", r"\bdigital", r"\bcittadin",
+    r"\briform", r"\bdecret", r"\bbicameralism", r"\belezion", r"\belettor", r"\bparlament", r"\bautonom", r"\bregion", r"\bupb\b", r"\basseverazion",
+    r"\bdublino\b", r"\bricollocazion", r"\bumanitar", r"\basilo\b", r"\baccoglienz", r"\bespulsion", r"\bclandestin", r"\bong\b", r"\bdecreti sicurezza\b",
+    r"\bbilinguism", r"\bminoranz", r"\boccupazion", r"\bdelocalizzazion", r"\bsfratt", r"\ballogg", r"\bcasa\b", r"\babitativ"
 ]
 
 def strip_media_source_suffix(text: Optional[str]) -> str:

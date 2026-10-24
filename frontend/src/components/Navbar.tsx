@@ -125,44 +125,33 @@ export function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-40 w-full max-w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs">
-        {/* Subtle Accent Line */}
-        <div className="h-[2px] w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500" />
+        {/* Striscia Tricolore Bandiera Italiana in Cima */}
+        <div className="h-[3.5px] w-full grid grid-cols-3 shadow-xs">
+          <div className="bg-[#009246]" />
+          <div className="bg-white dark:bg-slate-200" />
+          <div className="bg-[#ce2b37]" />
+        </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            {/* Brand Logo */}
-            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
+            {/* Brand Logo: Solo Icona, Nome App e Live */}
+            <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0">
               <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform border border-slate-700/50 shrink-0">
                 <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 dark:text-white" />
               </div>
-              <div className="min-w-0">
-                <div className="hidden sm:flex items-center gap-1.5">
-                  <span className="text-[9px] font-black tracking-widest uppercase text-slate-500 dark:text-slate-400">
-                    Monitoraggio Civico Indipendente
-                  </span>
-                  <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                    Live • Tempo Reale
-                  </span>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-1.5 leading-tight">
-                  <span className="font-extrabold text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-white">
-                    PoliticLens
-                  </span>
-                  <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                    Analisi Politica Autonoma
-                  </span>
-                </div>
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-extrabold text-base sm:text-lg lg:text-xl tracking-tight text-slate-900 dark:text-white">
+                  PoliticLens
+                </span>
+                <span className="flex items-center gap-1.5 text-[10px] sm:text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 shrink-0">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live
+                </span>
               </div>
             </Link>
 
-            {/* Right Action: Live Status Indicator & Three Dots (⋮) Menu Button */}
+            {/* Right Action: Three Dots (⋮) Menu Button */}
             <div className="flex items-center gap-2">
-              <div className="hidden sm:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 bg-slate-100/70 dark:bg-slate-800/60 px-2.5 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
-                <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">Monitoraggio Continuo Live</span>
-              </div>
-
-              {/* Three Dots (⋮) Button */}
               <button
                 type="button"
                 onClick={() => setMenuOpen((prev) => !prev)}
