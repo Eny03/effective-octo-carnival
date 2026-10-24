@@ -38,14 +38,14 @@ export function InstallAppBanner() {
   return (
     <>
       {/* Discreet Mobile Banner */}
-      <div className="md:hidden bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sticky top-16 z-40">
-        <div className="flex items-center gap-2.5 flex-1 pr-2" onClick={() => setModalOpen(true)}>
+      <div className="md:hidden bg-gradient-to-r from-blue-700 via-indigo-700 to-slate-900 text-white px-4 py-2.5 shadow-md flex items-center justify-between text-xs sticky top-16 z-40 w-full max-w-full overflow-hidden">
+        <div className="flex items-center gap-2.5 flex-1 pr-2 min-w-0 cursor-pointer" onClick={() => setModalOpen(true)}>
           <div className="p-1 rounded-lg bg-white/20 shrink-0">
             <Smartphone className="w-4 h-4 text-white" />
           </div>
-          <div>
-            <span className="font-bold">Usa PoliticLens come App su Telefono!</span>
-            <p className="text-[11px] text-blue-200">Tocca per istruzioni di installazione rapida</p>
+          <div className="min-w-0 flex-1">
+            <span className="font-bold truncate block">Usa PoliticLens come App su Telefono!</span>
+            <p className="text-[11px] text-blue-200 truncate">Tocca per istruzioni di installazione rapida</p>
           </div>
         </div>
 

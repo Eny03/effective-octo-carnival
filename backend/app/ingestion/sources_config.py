@@ -316,7 +316,7 @@ PARTY_ALIASES = {
     "Noi Moderati": ["noi moderati", "maurizio lupi", "lupi", "saverio romano", "cugusi", "bicchielli"],
     "Partito Liberal Democratico": ["partito liberal democratico", "partito liberaldemocratico", "pld", "liberal democratici", "libdem", "orizzonti liberali", "luigi marattin", "marattin", "andrea marcucci"],
     "Futuro Nazionale": ["futuro nazionale", "fnv", "roberto vannacci", "vannacci", "massimiliano simoni"],
-    "ORA!": ["movimento ora", "ora!", "comitato ora", "ora italia", "alberto forchielli", "forchielli", "michele boldrin", "boldrin", "drin drin"],
+    "ORA!": ["movimento ora", "partito ora", "comitato ora", "ora italia", "ora-italia", "alberto forchielli", "forchielli", "michele boldrin", "boldrin", "drin drin"],
     "Radicali Italiani": ["radicali italiani", "radicali", "matteo hallissey", "hallissey", "giulia crivellini", "maurizio turco", "partito radicale"],
     "Rifondazione Comunista": ["rifondazione comunista", "prc", "maurizio acerbo", "acerbo", "sinistra europea"],
     "Potere al Popolo": ["potere al popolo", "pap", "giuliano granato", "granato", "marta collot", "collot"],

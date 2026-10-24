@@ -157,30 +157,35 @@ async def run_pipeline_scan():
                     total_proposals += 1
                 
         # Step 2: Autonomous Targeted Gap Search (Active Learning for Missing Parties & Topics)
+        # Paced to run every 30 minutes to prevent overnight saturation
+        now_dt = datetime.datetime.utcnow()
         gap_info_msg = ""
-        try:
-            from app.ingestion.gap_detector import autonomous_targeted_gap_search
-            print("[Scheduler] Rilevamento lacune informative in corso...")
-            gap_res = await autonomous_targeted_gap_search(db, max_gaps=6)
-            if gap_res:
-                gap_added = gap_res.get("proposals_added_or_updated", 0)
-                total_proposals += gap_added
-                gap_info_msg = f" • {gap_res.get('message', '')}"
-                print(f"[Scheduler] Gap search: {gap_res.get('message')}")
-        except Exception as ge:
-            print(f"[Scheduler] Targeted gap search notice: {ge}")
+        if now_dt.minute in (0, 30):
+            try:
+                from app.ingestion.gap_detector import autonomous_targeted_gap_search
+                print("[Scheduler] Rilevamento lacune informative in corso...")
+                gap_res = await autonomous_targeted_gap_search(db, max_gaps=4)
+                if gap_res:
+                    gap_added = gap_res.get("proposals_added_or_updated", 0)
+                    total_proposals += gap_added
+                    gap_info_msg = f" • {gap_res.get('message', '')}"
+                    print(f"[Scheduler] Gap search: {gap_res.get('message')}")
+            except Exception as ge:
+                print(f"[Scheduler] Targeted gap search notice: {ge}")
 
         # Step 2b: Multi-Agent AI Consensus Engine (OpenWebScout + PolicyDistiller + FiscalAuditor + ConsensusArbiter)
-        try:
-            from app.ai.multi_agent_consensus import run_multi_agent_consensus_pipeline
-            print("[Scheduler] Esecuzione Consensus Multi-AI continuo su tutto il web...")
-            consensus_res = await run_multi_agent_consensus_pipeline(db)
-            if consensus_res:
-                c_added = consensus_res.get("proposals_added", 0)
-                total_proposals += c_added
-                print(f"[Scheduler] Multi-AI Consensus: {consensus_res.get('message')}")
-        except Exception as ce:
-            print(f"[Scheduler] Multi-AI Consensus notice: {ce}")
+        # Paced to run every 60 minutes (at the top of the hour) for in-depth web consensus
+        if now_dt.minute == 0:
+            try:
+                from app.ai.multi_agent_consensus import run_multi_agent_consensus_pipeline
+                print("[Scheduler] Esecuzione Consensus Multi-AI continuo su tutto il web...")
+                consensus_res = await run_multi_agent_consensus_pipeline(db)
+                if consensus_res:
+                    c_added = consensus_res.get("proposals_added", 0)
+                    total_proposals += c_added
+                    print(f"[Scheduler] Multi-AI Consensus: {consensus_res.get('message')}")
+            except Exception as ce:
+                print(f"[Scheduler] Multi-AI Consensus notice: {ce}")
 
         # Step 2c: Guaranteed Continuous Policy Audit & Refinement (Always updates/refines every 10 min)
         if total_proposals == 0:

@@ -193,13 +193,13 @@ export default function ComparePage() {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 w-full max-w-full min-w-0">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-5 w-full min-w-0">
+        <div className="min-w-0 flex-1">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 mb-2">
-            <Layers className="w-3.5 h-3.5" />
-            <span>Manifesto Comparativo Indipendente</span>
+            <Layers className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Manifesto Comparativo Indipendente</span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
             Confronto Programmi & Sintesi Strategica AI
@@ -209,45 +209,25 @@ export default function ComparePage() {
           </p>
         </div>
 
-        {/* View Switcher Tabs */}
-        <div className="flex items-center gap-2">
-          {viewMode === "matrix" && (
-            <>
-              <button
-                onClick={() => setIsCompactView(!isCompactView)}
-                className="px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-1.5"
-                title="Attiva/disattiva visuale compatta"
-              >
-                {isCompactView ? <Maximize2 className="w-3.5 h-3.5" /> : <Minimize2 className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{isCompactView ? "Espandi" : "Compatta"}</span>
-              </button>
-
-              <button
-                onClick={handleExportCSV}
-                className="px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors flex items-center gap-1.5"
-                title="Esporta matrice in CSV / Excel"
-              >
-                <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Esporta CSV</span>
-              </button>
-            </>
-          )}
-
-          <div className="inline-flex items-center p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl shrink-0">
+        {/* View Switcher Tabs & Matrix Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto shrink-0">
+          {/* Main Segmented Toggle */}
+          <div className="grid grid-cols-2 p-1 bg-slate-200/70 dark:bg-slate-800 rounded-xl w-full sm:w-auto">
             <button
               onClick={() => setViewMode("head-to-head")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-all text-center ${
                 viewMode === "head-to-head"
                   ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
-              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-              <span>Testa a Testa (2 Forze)</span>
+              <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+              <span>Testa a Testa</span>
+              <span className="hidden xl:inline">(2 Forze)</span>
             </button>
             <button
               onClick={() => setViewMode("matrix")}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-center transition-all text-center ${
                 viewMode === "matrix"
                   ? "bg-white dark:bg-slate-900 text-slate-950 dark:text-white shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -256,11 +236,34 @@ export default function ComparePage() {
               <span>Matrice 18 Partiti</span>
             </button>
           </div>
+
+          {/* Matrix Controls (Compact toggle + CSV Export) */}
+          {viewMode === "matrix" && (
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => setIsCompactView(!isCompactView)}
+                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors flex items-center justify-center gap-1.5 border border-slate-200 dark:border-slate-700"
+                title="Attiva/disattiva visuale compatta"
+              >
+                {isCompactView ? <Maximize2 className="w-3.5 h-3.5 shrink-0" /> : <Minimize2 className="w-3.5 h-3.5 shrink-0" />}
+                <span>{isCompactView ? "Espandi" : "Compatta"}</span>
+              </button>
+
+              <button
+                onClick={handleExportCSV}
+                className="flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors flex items-center justify-center gap-1.5 shadow-2xs"
+                title="Esporta matrice in CSV / Excel"
+              >
+                <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+                <span>Esporta CSV</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Quick Macro-Topic Pills - Wraps on Desktop PC and Mobile */}
-      <div className="flex flex-wrap items-center gap-1.5 pb-1">
+      <div className="w-full max-w-full min-w-0 flex flex-wrap items-center gap-1.5 pb-1">
         {macroTopics.map((topic) => {
           const isSelected = selectedTopic === topic;
           return (
@@ -305,18 +308,18 @@ export default function ComparePage() {
         </div>
       ) : viewMode === "head-to-head" ? (
         /* Head-to-Head Comparison View */
-        <div className="space-y-5">
+        <div className="space-y-5 w-full max-w-full min-w-0">
           {/* Party Pickers Bar */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs">
-            <div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-slate-900 p-4 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xs w-full min-w-0">
+            <div className="min-w-0">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: parties.find(p => p.name === partyA)?.color || "#3b82f6" }} />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: parties.find(p => p.name === partyA)?.color || "#3b82f6" }} />
                 <span>Primo Partito:</span>
               </label>
               <select
                 value={partyA}
                 onChange={(e) => setPartyA(e.target.value)}
-                className="w-full text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden"
+                className="w-full min-w-0 text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden truncate"
               >
                 {parties.map((p) => (
                   <option key={p.name} value={p.name}>
@@ -325,15 +328,15 @@ export default function ComparePage() {
                 ))}
               </select>
             </div>
-            <div>
+            <div className="min-w-0">
               <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: parties.find(p => p.name === partyB)?.color || "#ef4444" }} />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: parties.find(p => p.name === partyB)?.color || "#ef4444" }} />
                 <span>Secondo Partito:</span>
               </label>
               <select
                 value={partyB}
                 onChange={(e) => setPartyB(e.target.value)}
-                className="w-full text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden"
+                className="w-full min-w-0 text-xs sm:text-sm font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80 rounded-xl p-2.5 text-slate-900 dark:text-slate-100 focus:outline-hidden truncate"
               >
                 {parties.map((p) => (
                   <option key={p.name} value={p.name}>
@@ -592,16 +595,16 @@ export default function ComparePage() {
         </div>
       ) : (
         /* Full Party Matrix View */
-        <div className="space-y-4">
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+        <div className="space-y-4 w-full max-w-full min-w-0">
+          <div className="w-full max-w-full min-w-0 flex items-center gap-1.5 overflow-x-auto pb-1.5 scrollbar-none">
             {["Tutte", "Centrodestra", "Centrosinistra", "Movimento 5 Stelle", "Centro / Liberaldemocratici", "Sinistra Radicale"].map((c) => (
               <button
                 key={c}
                 onClick={() => setSelectedCoalition(c)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                   selectedCoalition === c
-                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
-                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200"
+                    ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-2xs"
+                    : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                 }`}
               >
                 {c}
@@ -613,7 +616,7 @@ export default function ComparePage() {
             {filteredRows?.map((row) => (
               <div
                 key={row.macro_argomento}
-                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-2xs space-y-3"
+                className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-4 sm:p-5 shadow-2xs space-y-3 w-full max-w-full min-w-0"
               >
                 <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2.5">
                   <TopicBadge topic={row.macro_argomento} />
@@ -622,7 +625,7 @@ export default function ComparePage() {
                   </span>
                 </div>
 
-                <div className={`grid gap-2.5 ${isCompactView ? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
+                <div className={`grid gap-2.5 ${isCompactView ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"}`}>
                   {filteredParties.map((party) => {
                     const cell = row.parties[party.name];
                     const hasProposals = cell && cell.proposals.length > 0;
@@ -631,7 +634,7 @@ export default function ComparePage() {
                     return (
                       <div
                         key={party.code}
-                        className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col justify-between ${isCompactView ? "space-y-1 text-[11px]" : "space-y-1.5 text-xs"}`}
+                        className={`p-3 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800 flex flex-col justify-between min-w-0 ${isCompactView ? "space-y-1 text-[11px]" : "space-y-1.5 text-xs"}`}
                       >
                         <div>
                           <div className="flex items-center justify-between mb-1">

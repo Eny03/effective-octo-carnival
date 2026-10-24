@@ -84,16 +84,7 @@ def find_matching_existing_proposal(
             new_has_cluster = any(term in new_lower for term in cluster)
             cand_has_cluster = any(term in cand_lower for term in cluster)
             if new_has_cluster and cand_has_cluster:
-                # Check chronological distance
-                if new_timestamp and cand.timestamp:
-                    days_diff = abs((new_timestamp - cand.timestamp).days)
-                    # If same text, exact duplicate -> update
-                    if cand_lower.strip() == new_lower.strip():
-                        return cand
-                    # If from a distinct earlier legislative year (e.g. 2022 vs 2025+), do NOT overwrite:
-                    # preserve the 2022 anchor and create the new chronological evolution
-                    if days_diff > 180 or cand.timestamp.year < new_timestamp.year:
-                        continue
+                # Matching core cluster found for the same party and topic -> update existing proposal
                 return cand
 
     # 2. Match by Vector Embedding Cosine Similarity
@@ -111,11 +102,7 @@ def find_matching_existing_proposal(
                 except Exception:
                     continue
 
-        if best_candidate and best_sim >= 0.88:
-            if new_timestamp and best_candidate.timestamp:
-                days_diff = abs((new_timestamp - best_candidate.timestamp).days)
-                if days_diff > 180 or best_candidate.timestamp.year < new_timestamp.year:
-                    return None
+        if best_candidate and best_sim >= 0.82:
             return best_candidate
 
     return None

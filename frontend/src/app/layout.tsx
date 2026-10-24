@@ -52,11 +52,11 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon.svg" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col overflow-x-hidden w-full max-w-full`}
       >
         <Navbar />
         <InstallAppBanner />
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 w-full max-w-full min-w-0 overflow-x-hidden">{children}</main>
         <Footer />
       </body>
     </html>

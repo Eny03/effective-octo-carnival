@@ -18,6 +18,29 @@ ALLOWED_UPPERCASE_ACRONYMS = {
     "PA", "FSN", "MEF", "CIPE", "CIPESS", "INPS", "ISTAT", "AI", "CER", "LSU", "LPU"
 }
 
+MEDIA_SOURCE_SUFFIXES = [
+    r"\s*[-–—|:]\s*(?:quotidiano sanit[àa]|panorama della sanit[àa]|orizzonte scuola(?:\s+notizie)?|il sole 24 ore|ansa|adn?kronos|corriere(?:\s+della sera)?|la repubblica|repubblica|la stampa|il giornale|il fatto quotidiano|il messaggero|open|fanpage|tgcom24|sky tg24|fisac cgil(?:\s+nazionale)?|cgil nazionale|cgil|cisl|uil|confindustria|rainews(?:\s*24)?|agi|adnkronos|askanews|dire)\s*$",
+    r"\s*[-–—|:]\s*[a-zA-Z0-9\s]{2,25}(?:notizie|news|quotidiano|online|sanit[àa]|today|tg|post)\s*$"
+]
+
+NON_POLITICAL_ACTORS = [
+    r"\b(?:anaao|assomed|cgil|cisl|uil|fisac|anief|cobas|usb|confindustria|confcommercio|confesercenti|ordine dei medici|federfarma|fnopi|anm)\b"
+]
+
+NON_POLICY_HEADLINE_PATTERNS = [
+    r"al centro della puntata\b",
+    r"al centro del dibattito\b",
+    r"al centro dell'attenzione\b",
+    r"^[«\"']?\s*(?:è|e')\s+ora\s+di\s+cambiare\b",
+    r"^[«\"']?\s*troppi cittadini costretti a\b",
+    r"annuncia emendamento per pdl\b",
+    r"ecco cosa cambia\b",
+    r"tutto quello che c'è da sapere\b",
+    r"cosa prevede la bozza\b",
+    r"la puntata di\b",
+    r"guida completa\b"
+]
+
 JOURNALISTIC_CLICKBAIT_PATTERNS = [
     r"^perch[ée]\s+",
     r"^guida,?\s+esempi",
@@ -30,7 +53,9 @@ JOURNALISTIC_CLICKBAIT_PATTERNS = [
     r"^interrogazione al governo",
     r"^[«\"']?sanit[àa],?\s+\w+:\s*interrogazione",
     r"^[«\"']?fondo nazionale con contributo",
-    r"^[«\"']?fisco:\s*presentata in cassazione"
+    r"^[«\"']?fisco:\s*presentata in cassazione",
+    r"^emendamento per pdl\b",
+    r"^emendamento per ddl\b"
 ]
 
 RHETORICAL_SLOGAN_PATTERNS = [
@@ -81,59 +106,98 @@ POLICY_DOMAIN_NOUNS = [
     r"\bdifesa\b", r"\barmamenti\b", r"\barm[ie]\b", r"\bnato\b", r"\bue\b", r"\bunione europea\b"
 ]
 
+def strip_media_source_suffix(text: Optional[str]) -> str:
+    """
+    Cleans media outlet suffixes, broadcast mentions and trailing quotes from proposal statements.
+    E.g. "Proposta sanità - Quotidiano Sanità" -> "Proposta sanità"
+    """
+    if not text:
+        return ""
+    cleaned = text.strip()
+    # Strip leading quotes
+    cleaned = re.sub(r'^[«"\'“\s]+', '', cleaned)
+    # Strip repeated trailing source tags
+    for _ in range(3):
+        prev = cleaned
+        for pat in MEDIA_SOURCE_SUFFIXES:
+            cleaned = re.sub(pat, '', cleaned, flags=re.IGNORECASE).strip()
+        cleaned = re.sub(r'[«"\'”\s\-\–—]+$', '', cleaned).strip()
+        if cleaned == prev:
+            break
+    # Strip repetitive internal newspaper mentions
+    cleaned = re.sub(r'\s*[-–—]\s*(?:Orizzonte Scuola Notizie|Quotidiano Sanità|Panorama della Sanità)\s*', ' ', cleaned, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned
+
 def sanitize_and_validate_proposal_statement(text: Optional[str]) -> Optional[str]:
     """
     Rigorously validates and cleans a political proposal statement.
     Returns the clean, complete statement, or None if the statement is incomplete,
-    truncated, a vague political slogan, or non-policy journalistic noise.
+    truncated, a vague political slogan, attributed to non-political actors (unions),
+    or non-policy journalistic noise.
     """
     if not text:
         return None
 
-    cleaned = text.strip()
+    cleaned = strip_media_source_suffix(text)
     
     # 1. Fix stuck quotation marks without space (e.g. '"30%"epartiranno' -> '"30%" e partiranno')
-    # Note: Do NOT space single apostrophe (') which is normal Italian elision (l'ora, d'attesa, etc.)
     cleaned = re.sub(r'([”"»])([a-zA-ZÀ-ÿ])', r'\1 \2', cleaned)
     cleaned = re.sub(r'([a-zA-ZÀ-ÿ])([“"«])', r'\1 \2', cleaned)
     cleaned = re.sub(r'\s+', ' ', cleaned).strip()
 
     # 2. Check minimum length for a complete policy proposal
-    if len(cleaned) < 35:
+    if len(cleaned) < 30:
         return None
 
-    # 3. Discard if contains ellipsis or suspension dots
+    cleaned_lower = cleaned.lower()
+
+    # 3. Discard if attributed primarily to non-political actors (unions, employer guilds, medical orders)
+    for actor_pat in NON_POLITICAL_ACTORS:
+        # If text starts with or has subject as the union/guild (e.g. "anaao assomed lancia", "cgil chiede", etc.)
+        if re.search(r'^(?:' + actor_pat + r')\b', cleaned_lower):
+            return None
+        if re.search(r'^(?:la|il|lo|l\')\s*(?:' + actor_pat + r')\s+(?:chiede|lancia|propone|annuncia|boccia)\b', cleaned_lower):
+            return None
+        if re.search(r'\b(?:anaao assomed|fisac cgil|anief|cobas|ordine dei medici)\b', cleaned_lower):
+            return None
+
+    # 4. Discard non-policy headlines, media broadcasts, or rhetorical laments
+    for pat in NON_POLICY_HEADLINE_PATTERNS:
+        if re.search(pat, cleaned_lower):
+            return None
+
+    # 5. Discard if contains ellipsis or suspension dots
     if '...' in cleaned or '…' in cleaned or '..' in cleaned:
         return None
 
-    # 4. Discard if ends with dangling prepositions, articles, conjunctions or punctuation
-    cleaned_lower = cleaned.lower()
+    # 6. Discard if ends with dangling prepositions, articles, conjunctions or punctuation
     for ending in DISALLOWED_ENDINGS:
         if cleaned_lower.endswith(ending):
             return None
 
-    # 5. Discard if ends with cut-off word or dangling single/double letters
+    # 7. Discard if ends with cut-off word or dangling single/double letters
     if re.search(r'\s[a-zA-Z]{1,2}$', cleaned):
         last_word = cleaned.split()[-1].strip(".,;:?!'\"")
         if not (last_word.isupper() and last_word in ALLOWED_UPPERCASE_ACRONYMS):
             return None
 
-    # 6. Discard journalistic clickbait or article headlines
+    # 8. Discard journalistic clickbait or article headlines
     for pat in JOURNALISTIC_CLICKBAIT_PATTERNS:
         if re.search(pat, cleaned, re.IGNORECASE):
             return None
 
-    # 7. Discard purely rhetorical or empty campaign slogans
+    # 9. Discard purely rhetorical or empty campaign slogans
     for pat in RHETORICAL_SLOGAN_PATTERNS:
         if re.search(pat, cleaned, re.IGNORECASE):
             return None
 
-    # 8. Must contain at least ONE concrete public policy concept / domain noun
+    # 10. Must contain at least ONE concrete public policy concept / domain noun
     has_policy_noun = any(re.search(pat, cleaned_lower) for pat in POLICY_DOMAIN_NOUNS)
     if not has_policy_noun:
         return None
 
-    # 9. Discard if ends with colon, semicolon, comma or dash
+    # 11. Discard if ends with colon, semicolon, comma or dash
     if cleaned.endswith((':', ';', ',', '-', '–', '—', '/', '\\')):
         return None
 

@@ -296,6 +296,55 @@ def seed_database_if_empty():
             db.commit()
             print(f"[Database] Purged {len(purged)} incomplete/invalid proposals.")
 
+        # Deduplicate nuclear template clones across parties
+        nuclear_clones = db.query(PoliticalProposal).filter(
+            PoliticalProposal.macro_argomento == "Energia"
+        ).all()
+        for p in nuclear_clones:
+            if "reintegro dell'energia nucleare pulita di nuova generazione" in p.dichiarazione_sintesi.lower():
+                other = db.query(PoliticalProposal).filter(
+                    PoliticalProposal.partito == p.partito,
+                    PoliticalProposal.macro_argomento == "Energia",
+                    PoliticalProposal.id != p.id
+                ).first()
+                if other:
+                    db.delete(p)
+                elif p.partito == "Azione":
+                    p.dichiarazione_sintesi = "Piano Nazionale per il Nucleare con la realizzazione di 8 reattori modulari SMR entro il 2040 per assicurare energia a basso costo all'industria manifatturiera"
+                elif p.partito == "Radicali Italiani":
+                    p.dichiarazione_sintesi = "Abolizione immediata di tutti i sussidi ambientalmente dannosi (SAD), introduzione di una carbon tax neutra e riavvio dell'energia nucleare pulita"
+                elif p.partito == "Partito Liberal Democratico":
+                    p.dichiarazione_sintesi = "Quadro normativo e regolatorio per investimenti privati nel nucleare civile SMR e snellimento delle autorizzazioni per parchi rinnovabili"
+        db.commit()
+
+        # Ensure ORA! has clean authentic Sanità proposal
+        ora_sanita = db.query(PoliticalProposal).filter(
+            PoliticalProposal.partito == "ORA!",
+            PoliticalProposal.macro_argomento == "Sanità"
+        ).first()
+        if not ora_sanita:
+            ora_party = db.query(PoliticalProposal).filter(PoliticalProposal.partito == "ORA!").first()
+            p_id = ora_party.party_id if ora_party else None
+            new_ora = PoliticalProposal(
+                party_id=p_id,
+                partito="ORA!",
+                macro_argomento="Sanità",
+                dichiarazione_sintesi="Sanità di prossimità con convenzioni trasparenti e voucher universali per l'abbattimento immediato delle liste d'attesa",
+                tipo_azione="Proposta di legge",
+                costo_stimato="Non quantificato",
+                coperture_dichiarate="Riorganizzazione delle convenzioni regionali e fondi ordinari SSN",
+                fattibilita_finanziaria="Compatibile con i saldi di bilancio sanitario a parità di spesa pro-capite.",
+                fact_check_status="In attesa di copertura",
+                fact_check_motivazione="Proposta programmatica di ORA! per l'efficientamento del servizio sanitario e la riduzione dei tempi d'attesa.",
+                fact_check_fonte="Programma Politico ORA! - Sezione Sanità e Servizi",
+                fonte_url="https://movimento-ora.it",
+                fonte_titolo="Programma Sanità e Liste d'Attesa",
+                fonte_testata="ORA! Ufficio Studi",
+                timestamp=datetime.datetime.utcnow()
+            )
+            db.add(new_ora)
+            db.commit()
+
         # Synchronize 'aggiunta' audit logs for all active valid proposals
         from app.api.audit import sync_audit_with_proposals
         sync_audit_with_proposals(db)

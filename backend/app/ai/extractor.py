@@ -142,6 +142,18 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
     if policy_key == "nucleare":
         if party_name in {"Movimento 5 Stelle", "Alleanza Verdi e Sinistra", "Rifondazione Comunista", "Potere al Popolo"}:
             return ("Contrarietà al riavvio del nucleare e concentrazione del 100% delle risorse su fonti rinnovabili ed efficienza energetica", "Energia", "Opposizione")
+        elif party_name == "Azione":
+            return ("Piano Nazionale per il Nucleare con la realizzazione di 8 reattori modulari SMR entro il 2040 per abbattere i costi industriali", "Energia", "Proposta di legge")
+        elif party_name == "Partito Liberal Democratico":
+            return ("Quadro normativo e regolatorio per investimenti privati nel nucleare civile SMR e snellimento delle autorizzazioni per parchi rinnovabili", "Energia", "Proposta di legge")
+        elif party_name == "Radicali Italiani":
+            return ("Riavvio del nucleare civile pulito di quarta generazione accompagnato dall'azzeramento dei sussidi ai combustibili fossili (SAD)", "Energia", "Proposta di legge")
+        elif party_name == "ORA!":
+            return ("Apertura totale del mercato all'energia nucleare avanzata (SMR e IV generazione) e abbattimento dei vincoli burocratici", "Energia", "Proposta di legge")
+        elif party_name == "Lega - Salvini Premier":
+            return ("Piano per il ritorno al nucleare civile di quarta generazione con Small Modular Reactors (SMR)", "Energia", "Proposta di legge")
+        elif party_name == "Forza Italia":
+            return ("Ritorno all'energia nucleare pulita con microreattori di quarta generazione (SMR)", "Energia", "Proposta di legge")
         return ("Reintegro dell'energia nucleare pulita di nuova generazione (Small Modular Reactors SMR) nel piano energetico nazionale entro il 2035", "Energia", "Proposta di legge")
 
     if policy_key == "rinnovabili":
@@ -206,10 +218,11 @@ def resolve_policy_transformation(policy_key: str, party_name: str) -> tuple:
 
     return ("Proposta politica formalizzata di indirizzo legislativo ed economico", "Economia", "Dichiarazione programmatica")
 
-def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tuple]:
+def _extract_dynamic_policy_statement(full_text: str, lower: str, party_name: Optional[str] = None) -> Optional[tuple]:
     """
     Intelligently identifies concrete policy commitments across any political news or parliamentary report.
     Extracts the policy statement, maps it to the proper macro-topic, and determines the action type.
+    If party_name is specified, verifies that the policy action is attributable to that party.
     """
     sentences = re.split(r"(?<=[.!?])\s+", full_text)
     
@@ -231,7 +244,9 @@ def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tu
         "marchese", "farsa", "ipocrisia", "vergogna", "chiacchiere", "faida", "rissa verbale"
     ]
 
-    for sentence in sentences:
+    party_aliases = [a.lower() for a in PARTY_ALIASES.get(party_name, [])] if party_name else []
+
+    for idx, sentence in enumerate(sentences):
         s_clean = sentence.strip()
         s_lower = s_clean.lower()
         
@@ -239,6 +254,16 @@ def _extract_dynamic_policy_statement(full_text: str, lower: str) -> Optional[tu
         if any(noise in s_lower for noise in POLEMIC_KEYWORDS):
             continue
             
+        # If party specified, ensure party is mentioned in current sentence, previous sentence, or next sentence
+        if party_aliases:
+            context_window = s_lower
+            if idx > 0:
+                context_window = sentences[idx - 1].lower() + " " + context_window
+            if idx + 1 < len(sentences):
+                context_window = context_window + " " + sentences[idx + 1].lower()
+            if not any(re.search(r"\b" + re.escape(a) + r"\b", context_window) for a in party_aliases):
+                continue
+
         for pattern, act_type in ACTION_PATTERNS:
             m = re.search(pattern, s_clean, re.I)
             if m:
@@ -305,12 +330,6 @@ def _extract_heuristically(
             matched_key = key
             break
 
-    dynamic_res = None
-    if not matched_key:
-        dynamic_res = _extract_dynamic_policy_statement(full_text, lower)
-        if not dynamic_res:
-            return []
-
     # Extract cost if mentioned
     raw_cost = None
     cost_match = re.search(r"(?:costo|spesa|stanziat[oi]|investimento|risorse|fondo)\s*(?:pari a|stimato in|di)?\s*(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln)?\s*€|\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln)\s*euro)", lower)
@@ -324,11 +343,40 @@ def _extract_heuristically(
         raw_cov = cov_match.group(1).strip()
 
     results = []
+    seen_syntheses = set()
+
     for party_name in matched_parties[:2]: # At most 2 explicit parties per article
-        if matched_key:
+        party_aliases = [a.lower() for a in PARTY_ALIASES.get(party_name, [party_name.lower()])]
+        party_in_title = any(re.search(r"\b" + re.escape(a) + r"\b", (title or "").lower()) for a in party_aliases)
+
+        # 1. Always prioritize dynamic extraction linked to this specific party
+        dynamic_res = _extract_dynamic_policy_statement(full_text, lower, party_name)
+        if dynamic_res:
+            proposal_synthesis, chosen_topic, action_type = dynamic_res
+        elif matched_key:
+            # Check if party is in proximity (within 250 chars) of the matched policy keyword, or in title
+            party_near_key = False
+            for pat, k in POLICY_ACTION_TRANSFORMATIONS:
+                if k == matched_key:
+                    m = re.search(pat, lower)
+                    if m:
+                        start_pos = max(0, m.start() - 250)
+                        end_pos = min(len(lower), m.end() + 250)
+                        window = lower[start_pos:end_pos]
+                        if any(re.search(r"\b" + re.escape(a) + r"\b", window) for a in party_aliases):
+                            party_near_key = True
+                            break
+            if not (party_in_title or party_near_key):
+                continue
             proposal_synthesis, chosen_topic, action_type = resolve_policy_transformation(matched_key, party_name)
         else:
-            proposal_synthesis, chosen_topic, action_type = dynamic_res
+            continue
+
+        # Prevent cross-party clones from the same article
+        synth_lower = proposal_synthesis.strip().lower()
+        if synth_lower in seen_syntheses:
+            continue
+        seen_syntheses.add(synth_lower)
 
         # Quality Gate: Strict Proposal Validation (discards incomplete texts, clickbait, and vague slogans)
         valid_synthesis = sanitize_and_validate_proposal_statement(proposal_synthesis)

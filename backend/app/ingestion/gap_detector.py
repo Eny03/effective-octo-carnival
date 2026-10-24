@@ -5,7 +5,8 @@ import urllib.parse
 from typing import List, Dict, Any, Tuple, Optional
 from sqlalchemy.orm import Session
 from app.models import PoliticalParty, PoliticalProposal, IngestionLog, AuditLog
-from app.ai.proposal_validator import sanitize_and_validate_proposal_statement
+from app.ai.proposal_validator import sanitize_and_validate_proposal_statement, strip_media_source_suffix
+from app.ingestion.sources_config import PARTY_ALIASES
 from app.ingestion.universal_web_search import search_web_news, search_duckduckgo_open_web
 from app.ingestion.text_extractor import compute_content_hash, clean_html
 from app.ai.extractor import extract_proposals_from_text
@@ -148,12 +149,15 @@ def detect_information_gaps(db: Session, max_gaps: int = 6) -> List[Dict[str, An
                 k1 = focused_terms[0]
                 k2 = focused_terms[1] if len(focused_terms) > 1 else topic
                 
+                # Use disambiguated search name for parties whose name is a common word (e.g. ORA!)
+                search_name = "Movimento ORA!" if p_name == "ORA!" else p_name
+
                 # Crisp, high-yield search queries tailored for search engines
                 queries = [
-                    f'"{p_name}" {topic} proposta',
+                    f'"{search_name}" {topic} proposta',
                     f'"{anchor}" {k1} ddl',
-                    f'"{p_name}" {topic} disegno di legge',
-                    f'"{p_name}" programma {k2}'
+                    f'"{search_name}" {topic} disegno di legge',
+                    f'"{search_name}" programma {k2}'
                 ]
                 if party.official_website:
                     domain = urllib.parse.urlparse(party.official_website).netloc.replace("www.", "")
@@ -198,23 +202,35 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
     """
     Analyzes article text and title specifically for the targeted party and topic to extract
     concrete programmatic commitments and public policy proposals.
+    Requires explicit party attribution to avoid attributing union/media noise.
     """
+    party_aliases = [a.lower() for a in PARTY_ALIASES.get(party_name, [party_name.lower()])]
+    full_corpus = f"{title or ''} {text}".lower()
+    
+    # 0. Party Attribution Gate: party must be explicitly mentioned in the text or headline
+    has_party = any(re.search(r"\b" + re.escape(a) + r"\b", full_corpus) for a in party_aliases)
+    if not has_party:
+        return None
+
+    clean_title = strip_media_source_suffix(title) if title else ""
     topic_keywords = TOPIC_FOCUSED_KEYWORDS.get(topic, [topic])
     topic_keywords_all = topic_keywords + [topic.lower()]
     
     # 1. Check headline / title for explicit proposal quotes or statements
-    if title:
-        t_low = title.lower()
+    if clean_title:
+        t_low = clean_title.lower()
         if any(kw.lower() in t_low for kw in topic_keywords_all):
-            quote_m = re.search(r"[:'\"«]\s*([^'\"»]{18,150})", title)
+            quote_m = re.search(r"[:'\"«]\s*([^'\"»]{18,150})", clean_title)
             if quote_m:
-                q_text = quote_m.group(1).strip()
-                if len(q_text) >= 18 and not any(noise in q_text.lower() for noise in ["ecco chi", "cosa è successo", "il video", "live"]):
-                    act = "Proposta di legge" if any(w in t_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
-                    if any(w in t_low for w in ["no a", "stop a", "contro", "boccia", "respinge"]):
-                        act = "Opposizione"
+                # Ensure the party was mentioned BEFORE the quote in the headline!
+                prefix_headline = t_low[:quote_m.start()]
+                if any(re.search(r"\b" + re.escape(a) + r"\b", prefix_headline) for a in party_aliases):
+                    q_text = quote_m.group(1).strip()
                     valid_q = sanitize_and_validate_proposal_statement(q_text)
                     if valid_q:
+                        act = "Proposta di legge" if any(w in t_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]) else "Dichiarazione programmatica"
+                        if any(w in t_low for w in ["no a", "stop a", "contro", "boccia", "respinge"]):
+                            act = "Opposizione"
                         return {
                             "sintesi": f"{valid_q[0].upper() + valid_q[1:]}",
                             "tipo_azione": act,
@@ -234,48 +250,60 @@ def _extract_gap_policy_commitment(text: str, party_name: str, topic: str, title
         r"(?:per riformare|per rilanciare|per sostenere|per tagliare|per finanziare)\s+([^.!?]{18,180})"
     ]
     
-    for sentence in sentences:
+    for idx, sentence in enumerate(sentences):
         s_low = sentence.lower()
-        if any(kw.lower() in s_low for kw in topic_keywords_all):
-            for pat in commitment_patterns:
-                match = re.search(pat, sentence, re.I)
-                if match:
-                    raw_prop = match.group(1).strip()
-                    raw_prop = re.sub(r"\s+", " ", raw_prop)
-                    raw_prop = re.sub(r"^(?:che\s+|di\s+|per\s+|a\s+|e\s+)", "", raw_prop, flags=re.I).strip()
-                    raw_prop = re.sub(r"[,;:\-–—\s]+$", "", raw_prop).strip()
-                    if len(raw_prop) >= 18 and not any(noise in raw_prop.lower() for noise in ["arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti"]):
-                        # Strict validation: verify proposal statement is not an abstract slogan
-                        valid_prop = sanitize_and_validate_proposal_statement(raw_prop)
-                        if not valid_prop:
-                            # If raw_prop was a rhetorical phrase, check if title mentions a specific legislative bill
-                            if title and re.search(r"\b(ddl|disegno di legge|proposta di legge|legge|emendamento)\b", title, re.I):
-                                title_clean = re.sub(r"^.*?:\s*", "", title).strip()
-                                valid_prop = sanitize_and_validate_proposal_statement(title_clean)
-                        if not valid_prop:
-                            continue
+        if not any(kw.lower() in s_low for kw in topic_keywords_all):
+            continue
 
-                        if any(w in s_low for w in ["ferma opposizione", "chiede lo stop", "referendum abrogativo", "contrari"]):
-                            act = "Opposizione"
-                        elif any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]):
-                            act = "Proposta di legge"
-                        else:
-                            act = "Dichiarazione programmatica"
+        # Context window: check that party is mentioned in sentence or adjacent sentence
+        context = s_low
+        if idx > 0:
+            context = sentences[idx - 1].lower() + " " + context
+        if idx + 1 < len(sentences):
+            context = context + " " + sentences[idx + 1].lower()
+        if not any(re.search(r"\b" + re.escape(a) + r"\b", context) for a in party_aliases):
+            continue
+
+        for pat in commitment_patterns:
+            match = re.search(pat, sentence, re.I)
+            if match:
+                raw_prop = match.group(1).strip()
+                raw_prop = re.sub(r"\s+", " ", raw_prop)
+                raw_prop = re.sub(r"^(?:che\s+|di\s+|per\s+|a\s+|e\s+)", "", raw_prop, flags=re.I).strip()
+                raw_prop = re.sub(r"[,;:\-–—\s]+$", "", raw_prop).strip()
+                if len(raw_prop) >= 18 and not any(noise in raw_prop.lower() for noise in ["arrestato", "indagato", "sfida", "congresso", "lite", "bufera", "scandalo", "insulti"]):
+                    # Strict validation: verify proposal statement is not an abstract slogan
+                    valid_prop = sanitize_and_validate_proposal_statement(raw_prop)
+                    if not valid_prop:
+                        # If raw_prop was a rhetorical phrase, check if title mentions a specific legislative bill
+                        if clean_title and re.search(r"\b(ddl|disegno di legge|proposta di legge|legge|emendamento)\b", clean_title, re.I):
+                            title_clean = re.sub(r"^.*?:\s*", "", clean_title).strip()
+                            valid_prop = sanitize_and_validate_proposal_statement(title_clean)
+                    if not valid_prop:
+                        continue
+
+                    if any(w in s_low for w in ["ferma opposizione", "chiede lo stop", "referendum abrogativo", "contrari"]):
+                        act = "Opposizione"
+                    elif any(w in s_low for w in ["ddl", "disegno di legge", "legge", "emendamento"]):
+                        act = "Proposta di legge"
+                    else:
+                        act = "Dichiarazione programmatica"
+                    
+                    cost_m = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", sentence, re.I)
+                    cost = cost_m.group(1) if cost_m else "Non quantificato"
+                    
+                    cov = "Fondi ordinari di bilancio e riordino delle spese"
+                    cov_m = re.search(r"(?:coperture|finanziat[oa]|risorse da|tramite)\s*([^.;]{10,80})", sentence, re.I)
+                    if cov_m:
+                        cov = cov_m.group(1).strip()
                         
-                        cost_m = re.search(r"(\d+(?:[.,]\d+)?\s*(?:miliardi|milioni|mld|mln|€|euro))", sentence, re.I)
-                        cost = cost_m.group(1) if cost_m else "Non quantificato"
-                        
-                        cov = "Fondi ordinari di bilancio e riordino delle spese"
-                        cov_m = re.search(r"(?:coperture|finanziat[oa]|risorse da|tramite)\s*([^.;]{10,80})", sentence, re.I)
-                        if cov_m:
-                            cov = cov_m.group(1).strip()
-                            
-                        return {
-                            "sintesi": f"{valid_prop[0].upper() + valid_prop[1:]}",
-                            "tipo_azione": act,
-                            "costo": cost,
-                            "coperture": cov
-                        }
+                    return {
+                        "sintesi": f"{valid_prop[0].upper() + valid_prop[1:]}",
+                        "tipo_azione": act,
+                        "costo": cost,
+                        "coperture": cov
+                    }
+
     return None
 
 async def autonomous_targeted_gap_search(db: Session, max_gaps: int = 6) -> Dict[str, Any]:

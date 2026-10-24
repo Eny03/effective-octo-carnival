@@ -124,15 +124,15 @@ export function Navbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs">
+      <header className="sticky top-0 z-40 w-full max-w-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800 shadow-2xs">
         {/* Subtle Accent Line */}
         <div className="h-[2px] w-full bg-gradient-to-r from-blue-600 via-indigo-600 to-emerald-500" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Brand Logo */}
-            <Link href="/" className="flex items-center gap-2.5 group min-w-0">
-              <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform border border-slate-700/50 shrink-0">
+            <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group min-w-0">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-slate-900 dark:bg-blue-600 flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform border border-slate-700/50 shrink-0">
                 <Scale className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 dark:text-white" />
               </div>
               <div className="min-w-0">
@@ -144,8 +144,8 @@ export function Navbar() {
                     Live • Tempo Reale
                   </span>
                 </div>
-                <div className="flex items-center gap-1.5 leading-tight">
-                  <span className="font-extrabold text-base sm:text-lg tracking-tight text-slate-900 dark:text-white">
+                <div className="flex items-center gap-1 sm:gap-1.5 leading-tight">
+                  <span className="font-extrabold text-sm sm:text-base lg:text-lg tracking-tight text-slate-900 dark:text-white">
                     PoliticLens
                   </span>
                   <span className="text-[9px] sm:text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
