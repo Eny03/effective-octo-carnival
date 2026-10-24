@@ -1193,4 +1193,55 @@ HISTORICAL_PROPOSALS_SEED = [
         "party_color": "#2f855a"
     }
 
+    {
+        "partito": "Azione",
+        "macro_argomento": "Fisco",
+        "dichiarazione_sintesi": "Rimodulazione fiscale con aumento del prelievo erariale su tabacchi e giochi d'azzardo a integrale copertura della riduzione delle accise sui carburanti",
+        "tipo_azione": "Proposta di legge",
+        "costo_stimato": "Circa 2.5 miliardi €",
+        "coperture_dichiarate": "Aumento del prelievo erariale unico (PREU) sui giochi e allineamento accise sui prodotti da fumo.",
+        "fattibilita_finanziaria": "Coperture compensative quantificate nel ddl depositato dal gruppo parlamentare di Azione.",
+        "fact_check_status": "Verificato",
+        "fact_check_motivazione": "Proposta formale presentata da Carlo Calenda a supporto del ceto medio e delle imprese di trasporto.",
+        "fact_check_fonte": "https://www.finanze.gov.it",
+        "fonte_url": "https://www.azione.it/fisco-accise-carburanti",
+        "fonte_titolo": "Azione: taglio delle accise coperto da tasse su tabacchi e gioco",
+        "fonte_testata": "Azione",
+        "timestamp": "2024-10-19T10:00:00",
+        "party_color": "#1e3a8a"
+    },
+    {
+        "partito": "Rifondazione Comunista",
+        "macro_argomento": "Fisco",
+        "dichiarazione_sintesi": "Imposta straordinaria e progressiva sui patrimoni superiori a 5 milioni di euro destinata a sanità pubblica, scuola e transizione ecologica",
+        "tipo_azione": "Proposta di legge di iniziativa popolare",
+        "costo_stimato": "Maggior gettito stimato in circa 10 miliardi € annui",
+        "coperture_dichiarate": "Aliquota progressiva dall'1% al 3% sui patrimoni netti mobiliari e immobiliari oltre i 5 milioni di euro.",
+        "fattibilita_finanziaria": "Prevede gettito aggiuntivo per l'Erario, richiede potenziamento dell'anagrafe tributaria e lotta all'elusione.",
+        "fact_check_status": "Verificato",
+        "fact_check_motivazione": "Testo depositato in Cassazione dai comitati popolari e sostenuto ufficialmente da Rifondazione Comunista.",
+        "fact_check_fonte": "https://www.cassazione.net",
+        "fonte_url": "https://www.rifondazione.it/patrimoniale-grandi-ricchezze",
+        "fonte_titolo": "Rifondazione Comunista: imposta sui grandi patrimoni per finanziare scuola e sanità",
+        "fonte_testata": "Rifondazione Comunista",
+        "timestamp": "2024-10-18T11:00:00",
+        "party_color": "#b91c1c"
+    },
+    {
+        "partito": "Forza Italia",
+        "macro_argomento": "Istituzioni",
+        "dichiarazione_sintesi": "Tutela del garantismo penale, riforma della carcerazione preventiva e abolizione del reato di abuso d'ufficio",
+        "tipo_azione": "Disegno di legge approvato",
+        "costo_stimato": "Invarianza finanziaria",
+        "coperture_dichiarate": "Nessun onere a carico della finanza pubblica.",
+        "fattibilita_finanziaria": "Approvata in via definitiva dal Parlamento come Legge Nordio (L. 114/2024).",
+        "fact_check_status": "Verificato",
+        "fact_check_motivazione": "Riforma della giustizia e cancellazione dell'abuso d'ufficio approvata in Gazzetta Ufficiale nell'agosto 2024.",
+        "fact_check_fonte": "https://www.gazzettaufficiale.it/eli/id/2024/08/10/24G00130/sg",
+        "fonte_url": "https://www.forzaitalia.it/giustizia-garantismo-riforma",
+        "fonte_titolo": "Forza Italia: vittoria del garantismo con l'abolizione dell'abuso d'ufficio",
+        "fonte_testata": "Forza Italia",
+        "timestamp": "2024-08-15T10:00:00",
+        "party_color": "#3182ce"
+    },
 ]

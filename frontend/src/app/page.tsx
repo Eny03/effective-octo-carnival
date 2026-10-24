@@ -171,7 +171,7 @@ function DashboardContent() {
       setError(null);
       const [statsData, propsData, schedData, partiesData, gapsData] = await Promise.all([
         fetchStatsOverview(),
-        fetchProposals({ limit: 120 }),
+        fetchProposals({ limit: 350 }),
         fetchSchedulerStatus().catch(() => null),
         fetchParties().catch(() => []),
         fetchDetectedGaps(4)

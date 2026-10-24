@@ -16,7 +16,7 @@ def get_proposals(
     action_type: Optional[str] = Query(None, description="Filtra per tipo_azione"),
     year: Optional[int] = Query(None, description="Filtra per anno di pubblicazione (dal 2022 in poi)"),
     search: Optional[str] = Query(None, description="Ricerca testuale nella sintesi o coperture"),
-    limit: int = Query(50, ge=1, le=200),
+    limit: int = Query(100, ge=1, le=500),
     offset: int = Query(0, ge=0),
     db: Session = Depends(get_db)
 ):

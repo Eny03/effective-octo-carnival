@@ -216,6 +216,9 @@ export default function SourcesPage() {
           ? (showAllGaps ? gaps : gaps.slice(0, 8))
           : gaps.filter((g) => g.party_name === selectedGapParty);
 
+        const totalZeros = gaps.filter((g) => g.existing_count === 0).length;
+        const totalMinimal = gaps.filter((g) => g.existing_count > 0).length;
+
         return (
           <section className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-4 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -225,16 +228,25 @@ export default function SourcesPage() {
                 </div>
                 <div>
                   <h2 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2 flex-wrap">
-                    <span>Obiettivi di Ricerca Mirata Attiva (Active Gap Hunter)</span>
+                    <span>Radar di Ricerca Continua dell'AI (Active Gap Hunter)</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
-                      Auto-Learning
+                      Auto-Learning Web
                     </span>
+                    {totalZeros > 0 ? (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300">
+                        {totalZeros} vuoti assoluti in ricerca
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        100% temi presidiati
+                      </span>
+                    )}
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300">
-                      {gaps.length} lacune rilevate
+                      {gaps.length} target di approfondimento attivo
                     </span>
                   </h2>
                   <p className="text-xs text-slate-500">
-                    L'AI scandaglia sistematicamente il web per colmare ogni vuoto programmatico rilevato tra i 18 partiti e gli 11 temi chiave.
+                    Questo è il radar con cui l'AI scandaglia autonomamente Google News e DuckDuckGo ogni 10-30 min per individuare nuovi atti parlamentari e arricchire i temi a copertura minima.
                   </p>
                 </div>
               </div>
